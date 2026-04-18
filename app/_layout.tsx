@@ -6,8 +6,15 @@ import { StatusBar } from "expo-status-bar";
 import { useFonts } from "expo-font";
 import * as SplashScreen from "expo-splash-screen";
 import { AuthProvider, useAuth } from "@/lib/auth";
+import { initBackgroundAudio } from "@/lib/backgroundAudio";
 
 SplashScreen.preventAutoHideAsync();
+
+// Initialize background audio as early as possible so iOS allocates the
+// correct audio session category before any playback begins. This must
+// happen at module scope (not inside a component) so it runs once on
+// cold start, even before the React tree mounts.
+initBackgroundAudio().catch(() => {});
 
 const applyDefaultFont = (Component: any) => {
   Component.defaultProps = Component.defaultProps || {};

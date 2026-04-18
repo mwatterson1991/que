@@ -14,7 +14,8 @@
         "NSMicrophoneUsageDescription": "Mantra Alarm uses your microphone so you can set alarms with your voice.",
         "NSSpeechRecognitionUsageDescription": "Mantra Alarm transcribes what you say to create alarms and mantras.",
         "UIBackgroundModes": [
-          "audio"
+          "audio",
+          "processing"
         ]
       }
     },
@@ -24,7 +25,8 @@
         "RECORD_AUDIO",
         "SCHEDULE_EXACT_ALARM",
         "POST_NOTIFICATIONS",
-        "WAKE_LOCK"
+        "WAKE_LOCK",
+        "FOREGROUND_SERVICE"
       ]
     },
     "plugins": [

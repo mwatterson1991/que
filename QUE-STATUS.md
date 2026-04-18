@@ -4,7 +4,7 @@
 >
 > Legend: `[ ]` not started · `[~]` in progress (auto-branch exists) · `[✴]` PR open, awaiting review · `[x]` merged / complete · `[🚫]` blocked (see QUE-BLOCKERS.md)
 
-Last agent run: *none yet*
+Last agent run: 2026-04-18 17:30
 
 ## Checklist state
 
@@ -15,7 +15,7 @@ Last agent run: *none yet*
 - [ ] ElevenLabs integration — generate motivational audio files via Claude
 - [ ] Replace dummy data with real generated audio content
 - [ ] Alarm trigger plays correct audio reliably
-- [ ] Background audio works when app is closed (iOS background modes)
+- [✴] Background audio works when app is closed (iOS background modes)
 - [ ] Edge cases handled — no alarm, late permissions, silent mode
 
 ### Phase 02 — App Polish
@@ -60,11 +60,21 @@ Last agent run: *none yet*
 
 ## Open auto-branches
 
-*(None yet. Agent will list branches and PR links here after its first run.)*
+- `auto/agent-20260418-1500-onboarding-flow` — [PR #1](https://github.com/mwatterson1991/que/pull/1) — Onboarding flow for new users
+- `auto/agent-20260418-1530-notification-permissions` — [PR #2](https://github.com/mwatterson1991/que/pull/2) — Push notification permissions requested gracefully
+- `auto/agent-20260418-1630-alarm-scheduling` — [PR #3](https://github.com/mwatterson1991/que/pull/3) — Alarm trigger plays correct audio reliably
+- `auto/agent-20260418-1730-background-audio` — PR pending — Background audio works when app is closed
 
 ## Run journal
 
 *(Most recent at top. Agent appends one entry per run.)*
+
+## 2026-04-18 17:30
+- **Task:** Background audio works when app is closed (iOS background modes)
+- **Branch:** `auto/agent-20260418-1730-background-audio`
+- **PR:** pending
+- **Summary:** Added background audio lifecycle module with early audio session init, AppState-driven re-assertion, audio interruption recovery (auto-resume after phone calls), and proper iOS/Android background mode config.
+- **Next:** Device testing to confirm audio persists through lock screen, app switch, and phone calls. Edge case handling (silent mode, late permissions).
 
 ---
 

@@ -1,4 +1,5 @@
-import { Audio, AVPlaybackStatus } from "expo-av";
+import { Audio, AVPlaybackStatus, InterruptionModeIOS, InterruptionModeAndroid } from "expo-av";
+import { registerPlaybackCallbacks, handleInterruptionEnded } from "./backgroundAudio";
 
 // ─── Bundled audio assets ───────────────────────────────
 // Maps audio_asset keys (from the sessions table) to local require() sources.
@@ -19,13 +20,28 @@ const BUNDLED_ASSETS: Record<string, any> = {
 // ─── Audio playback engine ──────────────────────────────
 let currentSound: Audio.Sound | null = null;
 let onStatusUpdate: ((status: AVPlaybackStatus) => void) | null = null;
+let isCurrentlyPlaying = false;
+
+// Register with the background audio module so it can coordinate
+// interruption recovery (e.g. resume after a phone call).
+registerPlaybackCallbacks({
+  getIsPlaying: () => isCurrentlyPlaying,
+  onResume: () => {
+    if (currentSound) {
+      currentSound.playAsync().catch(() => {});
+    }
+  },
+});
 
 /** Configure the audio session for background/silent-mode playback */
 export async function configureAudio() {
   await Audio.setAudioModeAsync({
     playsInSilentModeIOS: true,
     staysActiveInBackground: true,
+    interruptionModeIOS: InterruptionModeIOS.DuckOthers,
+    interruptionModeAndroid: InterruptionModeAndroid.DuckOthers,
     shouldDuckAndroid: true,
+    playThroughEarpieceAndroid: false,
   });
 }
 
@@ -69,10 +85,22 @@ export async function playSession(
   });
 
   currentSound = sound;
+  isCurrentlyPlaying = true;
 
-  if (onStatusUpdate) {
-    sound.setOnPlaybackStatusUpdate(onStatusUpdate);
-  }
+  sound.setOnPlaybackStatusUpdate((status: AVPlaybackStatus) => {
+    if (status.isLoaded) {
+      const wasPlaying = isCurrentlyPlaying;
+      isCurrentlyPlaying = status.isPlaying;
+
+      // Detect interruption ending: we were playing, got paused externally
+      // (not by user action), and now the system is giving control back.
+      // This happens after phone calls, Siri, etc.
+      if (wasPlaying && !status.isPlaying && !status.didJustFinish) {
+        handleInterruptionEnded();
+      }
+    }
+    onStatusUpdate?.(status);
+  });
 
   return sound;
 }
@@ -107,6 +135,7 @@ export async function stopSession() {
     } catch {}
     currentSound = null;
     onStatusUpdate = null;
+    isCurrentlyPlaying = false;
   }
 }
 
