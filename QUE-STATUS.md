@@ -4,7 +4,7 @@
 >
 > Legend: `[ ]` not started · `[~]` in progress (auto-branch exists) · `[✴]` PR open, awaiting review · `[x]` merged / complete · `[🚫]` blocked (see QUE-BLOCKERS.md)
 
-Last agent run: *none yet*
+Last agent run: 2026-04-18 15:30
 
 ## Checklist state
 
@@ -20,7 +20,7 @@ Last agent run: *none yet*
 
 ### Phase 02 — App Polish
 - [ ] Onboarding flow for new users
-- [ ] Push notification permissions requested gracefully
+- [✴] Push notification permissions requested gracefully — [PR #2](https://github.com/mwatterson1991/que/pull/2)
 - [ ] Empty states designed (no alarms set, etc.)
 - [🚫] Crash-free on iPhone and iPad — tested on real devices *(human-only)*
 - [ ] Dark mode support
@@ -60,11 +60,18 @@ Last agent run: *none yet*
 
 ## Open auto-branches
 
-*(None yet. Agent will list branches and PR links here after its first run.)*
+- `auto/agent-20260418-1530-notification-permissions` — [PR #2](https://github.com/mwatterson1991/que/pull/2) — Push notification permissions requested gracefully
 
 ## Run journal
 
 *(Most recent at top. Agent appends one entry per run.)*
+
+## 2026-04-18 15:30
+- **Task:** Push notification permissions requested gracefully
+- **Branch:** `auto/agent-20260418-1530-notification-permissions`
+- **PR:** #2 — https://github.com/mwatterson1991/que/pull/2
+- **Summary:** Added graceful notification permission flow with double-prompt pattern, Android channel setup, Settings toggle sync with real device permissions, and permission guards on alarm create/enable actions.
+- **Next:** Wire notification scheduling into alarm create/update so alarms actually fire as local notifications (checklist item: "Alarm trigger plays correct audio reliably").
 
 ---
 
