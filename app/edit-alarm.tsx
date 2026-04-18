@@ -13,6 +13,7 @@ import { Ionicons } from "@expo/vector-icons";
 import { useLocalSearchParams, useRouter, useFocusEffect, useNavigation } from "expo-router";
 import { useAlarms, useSessions } from "@/lib/useSupabase";
 import { consumePickedSound } from "@/lib/soundPicker";
+import { ensurePermissions } from "@/lib/notifications";
 import { F } from "@/lib/fonts";
 
 // ─── Scroll-wheel column ──────────────────────────────────
@@ -132,6 +133,10 @@ export default function EditAlarmScreen() {
   );
 
   const save = async () => {
+    // Ensure notification permissions before saving — alarms need them to fire
+    const granted = await ensurePermissions();
+    if (!granted) return;
+
     let h = hourIdx + 1;
     if (merIdx === 1 && h < 12) h += 12;
     if (merIdx === 0 && h === 12) h = 0;

@@ -6,6 +6,7 @@ import { StatusBar } from "expo-status-bar";
 import { useFonts } from "expo-font";
 import * as SplashScreen from "expo-splash-screen";
 import { AuthProvider, useAuth } from "@/lib/auth";
+import { initNotifications } from "@/lib/notifications";
 
 SplashScreen.preventAutoHideAsync();
 
@@ -19,6 +20,14 @@ const applyDefaultFont = (Component: any) => {
 };
 applyDefaultFont(Text);
 applyDefaultFont(TextInput);
+
+// ─── Notification setup (runs once at app start) ────────
+function NotificationInit() {
+  useEffect(() => {
+    initNotifications();
+  }, []);
+  return null;
+}
 
 // ─── Auth-gated routing ──────────────────────────────────
 function AuthGate() {
@@ -81,6 +90,7 @@ export default function RootLayout() {
         onLayout={onLayoutReady}
       >
         <StatusBar style="light" />
+        <NotificationInit />
         <AuthGate />
         <Stack screenOptions={{ headerShown: false }}>
           <Stack.Screen

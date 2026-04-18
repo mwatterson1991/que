@@ -5,6 +5,11 @@ import { useState, useEffect } from "react";
 import { F } from "@/lib/fonts";
 import { useAuth } from "@/lib/auth";
 import { useProfile, usePreferences } from "@/lib/useSupabase";
+import {
+  useNotificationPermission,
+  requestPermissionsGracefully,
+  promptOpenSettings,
+} from "@/lib/notifications";
 
 type SettingsRowProps = {
   icon: keyof typeof Ionicons.glyphMap;
@@ -48,22 +53,41 @@ export default function SettingsScreen() {
   const { user, signOut } = useAuth();
   const { profile } = useProfile();
   const { prefs, update: updatePrefs } = usePreferences();
-  const [notifications, setNotifications] = useState(true);
+  const { status: permStatus, refresh: refreshPerm } = useNotificationPermission();
   const [haptics, setHaptics] = useState(true);
   const [darkMode, setDarkMode] = useState(true);
+
+  // Notifications toggle reflects real device permission + user preference.
+  // Both must be true for notifications to be "on."
+  const notificationsOn = permStatus === "granted" && (prefs?.notifications ?? true);
 
   // Sync local toggles with Supabase preferences
   useEffect(() => {
     if (prefs) {
-      setNotifications(prefs.notifications);
       setHaptics(prefs.haptics);
       setDarkMode(prefs.dark_mode);
     }
   }, [prefs]);
 
-  const toggleNotifications = (val: boolean) => {
-    setNotifications(val);
-    updatePrefs({ notifications: val });
+  const toggleNotifications = async (val: boolean) => {
+    if (val) {
+      // Turning on — need device permission
+      if (permStatus === "undetermined") {
+        const result = await requestPermissionsGracefully();
+        await refreshPerm();
+        if (result === "granted") {
+          updatePrefs({ notifications: true });
+        }
+      } else if (permStatus === "denied") {
+        promptOpenSettings();
+      } else {
+        // Already granted at OS level, just flip the preference
+        updatePrefs({ notifications: true });
+      }
+    } else {
+      // Turning off — just update the preference (don't revoke OS permission)
+      updatePrefs({ notifications: false });
+    }
   };
   const toggleHaptics = (val: boolean) => {
     setHaptics(val);
@@ -109,7 +133,7 @@ export default function SettingsScreen() {
         icon="notifications-outline"
         label="Notifications"
         hasToggle
-        toggleValue={notifications}
+        toggleValue={notificationsOn}
         onToggle={toggleNotifications}
       />
       <View style={styles.rowSep} />

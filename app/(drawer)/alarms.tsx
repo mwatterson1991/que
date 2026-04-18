@@ -1,6 +1,7 @@
 import { View, Text, FlatList, Switch, Pressable, StyleSheet, ActivityIndicator } from "react-native";
 import { useRouter } from "expo-router";
 import { useAlarms, useSessions } from "@/lib/useSupabase";
+import { ensurePermissions } from "@/lib/notifications";
 import { F } from "@/lib/fonts";
 import type { Database } from "@/lib/database.types";
 
@@ -52,7 +53,15 @@ function AlarmRow({ item, onToggle, sessionMap }: { item: Alarm; onToggle: (id: 
 }
 
 export default function AlarmsScreen() {
-  const { alarms, loading, toggle } = useAlarms();
+  const { alarms, loading, toggle: rawToggle } = useAlarms();
+
+  const toggle = async (id: string, enabled: boolean) => {
+    if (enabled) {
+      const granted = await ensurePermissions();
+      if (!granted) return;
+    }
+    rawToggle(id, enabled);
+  };
   const { sessions } = useSessions();
   const router = useRouter();
 
