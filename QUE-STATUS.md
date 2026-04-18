@@ -4,7 +4,7 @@
 >
 > Legend: `[ ]` not started · `[~]` in progress (auto-branch exists) · `[✴]` PR open, awaiting review · `[x]` merged / complete · `[🚫]` blocked (see QUE-BLOCKERS.md)
 
-Last agent run: *none yet*
+Last agent run: 2026-04-18 16:30
 
 ## Checklist state
 
@@ -14,7 +14,7 @@ Last agent run: *none yet*
 - [x] Dummy data populated
 - [ ] ElevenLabs integration — generate motivational audio files via Claude
 - [ ] Replace dummy data with real generated audio content
-- [ ] Alarm trigger plays correct audio reliably
+- [✴] Alarm trigger plays correct audio reliably — [PR #3](https://github.com/mwatterson1991/que/pull/3)
 - [ ] Background audio works when app is closed (iOS background modes)
 - [ ] Edge cases handled — no alarm, late permissions, silent mode
 
@@ -60,11 +60,18 @@ Last agent run: *none yet*
 
 ## Open auto-branches
 
-*(None yet. Agent will list branches and PR links here after its first run.)*
+- `auto/agent-20260418-1630-alarm-scheduling` — [PR #3](https://github.com/mwatterson1991/que/pull/3) — Alarm trigger plays correct audio reliably
 
 ## Run journal
 
 *(Most recent at top. Agent appends one entry per run.)*
+
+## 2026-04-18 16:30
+- **Task:** Alarm trigger plays correct audio reliably
+- **Branch:** `auto/agent-20260418-1630-alarm-scheduling`
+- **PR:** #3 — https://github.com/mwatterson1991/que/pull/3
+- **Summary:** Added alarm scheduling engine (lib/alarmScheduler.ts) that schedules/cancels local notifications on all alarm CRUD operations, with notification-tap → player navigation and cold-start handling.
+- **Next:** Background audio when app is closed (iOS background modes), and merging with PR #2 (notification permissions) for the complete alarm flow.
 
 ---
 
