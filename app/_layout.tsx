@@ -6,6 +6,10 @@ import { StatusBar } from "expo-status-bar";
 import { useFonts } from "expo-font";
 import * as SplashScreen from "expo-splash-screen";
 import { AuthProvider, useAuth } from "@/lib/auth";
+import {
+  registerAlarmResponseHandler,
+  handleInitialNotification,
+} from "@/lib/alarmScheduler";
 
 SplashScreen.preventAutoHideAsync();
 
@@ -42,6 +46,14 @@ function AuthGate() {
 
     if (!initialRouted) setInitialRouted(true);
   }, [session, loading, segments]);
+
+  // Register alarm notification response handler when authenticated
+  useEffect(() => {
+    if (!session) return;
+    const cleanup = registerAlarmResponseHandler();
+    handleInitialNotification();
+    return cleanup;
+  }, [session]);
 
   return null;
 }

@@ -1,6 +1,11 @@
 import { useEffect, useState, useCallback } from "react";
 import { supabase } from "./supabase";
 import { useAuth } from "./auth";
+import {
+  scheduleAlarmNotification,
+  cancelAlarmNotification,
+  syncAllAlarmNotifications,
+} from "./alarmScheduler";
 import type { Database } from "./database.types";
 
 type Profile = Database["public"]["Tables"]["profiles"]["Row"];
@@ -58,8 +63,11 @@ export function useAlarms() {
       .select("*")
       .eq("user_id", user.id)
       .order("next_fire_at", { ascending: true });
-    setAlarms(data ?? []);
+    const list = data ?? [];
+    setAlarms(list);
     setLoading(false);
+    // Sync local notifications with the current alarm list
+    syncAllAlarmNotifications(list).catch(() => {});
   }, [user]);
 
   useEffect(() => { fetch(); }, [fetch]);
@@ -71,7 +79,10 @@ export function useAlarms() {
       .insert({ ...alarm, user_id: user.id })
       .select()
       .single();
-    if (data) setAlarms((prev) => [...prev, data]);
+    if (data) {
+      setAlarms((prev) => [...prev, data]);
+      scheduleAlarmNotification(data).catch(() => {});
+    }
     return { data, error };
   };
 
@@ -82,11 +93,19 @@ export function useAlarms() {
       .eq("id", id)
       .select()
       .single();
-    if (data) setAlarms((prev) => prev.map((a) => (a.id === id ? data : a)));
+    if (data) {
+      setAlarms((prev) => prev.map((a) => (a.id === id ? data : a)));
+      if (data.enabled) {
+        scheduleAlarmNotification(data).catch(() => {});
+      } else {
+        cancelAlarmNotification(data.id).catch(() => {});
+      }
+    }
     return { data, error };
   };
 
   const remove = async (id: string) => {
+    cancelAlarmNotification(id).catch(() => {});
     await supabase.from("alarms").delete().eq("id", id);
     setAlarms((prev) => prev.filter((a) => a.id !== id));
   };
