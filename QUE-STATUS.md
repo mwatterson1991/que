@@ -4,7 +4,7 @@
 >
 > Legend: `[ ]` not started · `[~]` in progress (auto-branch exists) · `[✴]` PR open, awaiting review · `[x]` merged / complete · `[🚫]` blocked (see QUE-BLOCKERS.md)
 
-Last agent run: *none yet*
+Last agent run: 2026-04-18 15:00
 
 ## Checklist state
 
@@ -19,7 +19,7 @@ Last agent run: *none yet*
 - [ ] Edge cases handled — no alarm, late permissions, silent mode
 
 ### Phase 02 — App Polish
-- [ ] Onboarding flow for new users
+- [✴] Onboarding flow for new users — [PR #1](https://github.com/mwatterson1991/que/pull/1)
 - [ ] Push notification permissions requested gracefully
 - [ ] Empty states designed (no alarms set, etc.)
 - [🚫] Crash-free on iPhone and iPad — tested on real devices *(human-only)*
@@ -60,11 +60,18 @@ Last agent run: *none yet*
 
 ## Open auto-branches
 
-*(None yet. Agent will list branches and PR links here after its first run.)*
+- `auto/agent-20260418-1500-onboarding-flow` — [PR #1](https://github.com/mwatterson1991/que/pull/1) — Onboarding flow for new users
 
 ## Run journal
 
 *(Most recent at top. Agent appends one entry per run.)*
+
+## 2026-04-18 15:00
+- **Task:** Onboarding flow for new users
+- **Branch:** `auto/agent-20260418-1500-onboarding-flow`
+- **PR:** #1 — https://github.com/mwatterson1991/que/pull/1
+- **Summary:** Built a 4-step onboarding flow (name, goal, wake time, summary) with AsyncStorage persistence, profile updates, and AuthGate routing for first-time users.
+- **Next:** Wire stored wake time into automatic first-alarm creation; use primary goal to select default session at alarm time.
 
 ---
 
