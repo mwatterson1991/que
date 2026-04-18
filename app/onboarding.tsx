@@ -1,4 +1,4 @@
-import { useState, useRef } from "react";
+import { useState, useRef, useMemo } from "react";
 import {
   View,
   Text,
@@ -9,21 +9,29 @@ import {
   StyleSheet,
   Platform,
   KeyboardAvoidingView,
+  Alert,
 } from "react-native";
 import { useRouter } from "expo-router";
-import { Ionicons } from "@expo/vector-icons";
 import { useProfile } from "@/lib/useSupabase";
 import {
   markOnboardingComplete,
   setPrimaryGoal,
   setWakeTime,
+  setHypnotizability,
+  setGoalContext,
   GOALS,
+  HYPNO_CHOICES,
+  GOAL_CONTEXT,
   type GoalId,
 } from "@/lib/onboarding";
 import { F } from "@/lib/fonts";
-import { C, FS, SPACE } from "@/lib/tokens";
+import { C, FS, SPACE, LS } from "@/lib/tokens";
 
-const TOTAL_STEPS = 4;
+const TOTAL_STEPS = 6;
+
+// One accent. One foreground. One background. That's the palette.
+const ACCENT = C.alarm;       // #ff9f0a
+const HAIRLINE = "#1f1f24";  // low-contrast divider
 
 export default function OnboardingScreen() {
   const router = useRouter();
@@ -32,27 +40,39 @@ export default function OnboardingScreen() {
   const [step, setStep] = useState(0);
   const fadeAnim = useRef(new Animated.Value(1)).current;
 
-  // Step 1 — Name
-  const [name, setName] = useState("");
+  // Step 2 — Hypnotizability
+  const [hypno, setHypno] = useState<string | null>(null);
 
-  // Step 2 — Goal
+  // Step 3 — Goal
   const [selectedGoal, setSelectedGoal] = useState<GoalId | null>(null);
 
-  // Step 3 — Wake time
+  // Step 4 — Goal context (depends on selectedGoal)
+  const [goalCtx, setGoalCtx] = useState<string | null>(null);
+
+  // Step 5 — Wake time
   const [wakeHour, setWakeHour] = useState(7);
   const [wakeMinute, setWakeMinute] = useState(0);
   const [wakePeriod, setWakePeriod] = useState<"AM" | "PM">("AM");
 
+  // Step 6 — Name
+  const [name, setName] = useState("");
+
+  // Reset goal context when goal changes
+  const handleGoalSelect = (id: GoalId) => {
+    if (id !== selectedGoal) setGoalCtx(null);
+    setSelectedGoal(id);
+  };
+
   const animateTransition = (next: number) => {
     Animated.timing(fadeAnim, {
       toValue: 0,
-      duration: 150,
+      duration: 120,
       useNativeDriver: true,
     }).start(() => {
       setStep(next);
       Animated.timing(fadeAnim, {
         toValue: 1,
-        duration: 200,
+        duration: 180,
         useNativeDriver: true,
       }).start();
     });
@@ -67,101 +87,141 @@ export default function OnboardingScreen() {
   };
 
   const canAdvance = (): boolean => {
-    if (step === 0) return name.trim().length > 0;
-    if (step === 1) return selectedGoal !== null;
-    if (step === 2) return true;
+    if (step === 0) return true;                     // Premise — always advance
+    if (step === 1) return hypno !== null;          // Hypnotizability
+    if (step === 2) return selectedGoal !== null;   // Goal
+    if (step === 3) return goalCtx !== null;        // Goal context
+    if (step === 4) return true;                    // Wake time always valid
+    if (step === 5) return name.trim().length > 0;  // Name required to "Begin"
     return true;
   };
 
-  const finish = async () => {
-    // Save name to profile
-    if (name.trim()) {
-      await updateProfile({ first_name: name.trim() });
-    }
+  const persistAndExit = async () => {
+    // Save whatever the user provided (some may be null on skip)
+    if (selectedGoal) await setPrimaryGoal(selectedGoal);
+    if (goalCtx) await setGoalContext(goalCtx);
+    if (hypno) await setHypnotizability(hypno);
+    if (name.trim()) await updateProfile({ first_name: name.trim() });
 
-    // Save goal locally
-    if (selectedGoal) {
-      await setPrimaryGoal(selectedGoal);
-    }
-
-    // Save wake time locally
     const hour24 =
       wakePeriod === "AM"
-        ? wakeHour === 12
-          ? 0
-          : wakeHour
-        : wakeHour === 12
-          ? 12
-          : wakeHour + 12;
+        ? wakeHour === 12 ? 0 : wakeHour
+        : wakeHour === 12 ? 12 : wakeHour + 12;
     await setWakeTime(hour24, wakeMinute);
 
-    // Mark onboarding done
     await markOnboardingComplete();
-
     router.replace("/");
   };
 
-  // ─── Progress dots ──────────────────────────────────────
-  const ProgressDots = () => (
-    <View style={styles.dots}>
+  const confirmSkip = () => {
+    Alert.alert(
+      "Skip setup?",
+      "You can finish this later from Settings. Your morning session will use defaults until you do.",
+      [
+        { text: "Keep going", style: "cancel" },
+        { text: "Skip", style: "destructive", onPress: persistAndExit },
+      ]
+    );
+  };
+
+  const stepLabel = (n: number) =>
+    `${String(n + 1).padStart(2, "0")} / ${String(TOTAL_STEPS).padStart(2, "0")}`;
+
+  // ─── Progress bar ──────────────────────────────────────────
+  const ProgressBar = () => (
+    <View style={styles.progressRow}>
       {Array.from({ length: TOTAL_STEPS }).map((_, i) => (
         <View
           key={i}
-          style={[styles.dot, i === step && styles.dotActive, i < step && styles.dotDone]}
+          style={[styles.progressSegment, i <= step && styles.progressSegmentDone]}
         />
       ))}
     </View>
   );
 
-  // ─── Step 1: Name ──────────────────────────────────────
-  const StepName = () => (
+  // ─── Step 1: Premise ────────────────────────────────────────
+  const StepPremise = () => (
     <View style={styles.stepContainer}>
-      <Text style={styles.stepLabel}>STEP 1 OF {TOTAL_STEPS}</Text>
-      <Text style={styles.heading}>What should we call you?</Text>
-      <Text style={styles.subheading}>
-        Your morning session starts with your name. Make it personal.
+      <Text style={styles.stepLabel}>{stepLabel(0)}</Text>
+      <Text style={styles.heading}>
+        Most alarms attack{"\n"}you awake.{"\n"}
+        <Text style={styles.headingAccent}>Que doesn&apos;t.</Text>
       </Text>
-      <TextInput
-        value={name}
-        onChangeText={setName}
-        placeholder="Your first name"
-        placeholderTextColor={C.fgFaint}
-        style={styles.nameInput}
-        autoCapitalize="words"
-        autoFocus
-        returnKeyType="next"
-        onSubmitEditing={() => canAdvance() && goNext()}
-      />
+      <Text style={styles.bodyLead}>
+        Que meets you in the moment between sleep and waking — the window when
+        the mind is most open to suggestion — and uses it.
+      </Text>
+      <Text style={styles.bodyLead}>
+        No shock. No snooze. A short, personalized session in your ear, then
+        the day. That&apos;s it.
+      </Text>
     </View>
   );
 
-  // ─── Step 2: Goal ──────────────────────────────────────
+  // ─── Step 2: Hypnotizability ───────────────────────────────
+  const StepHypno = () => (
+    <View style={styles.stepContainer}>
+      <Text style={styles.stepLabel}>{stepLabel(1)}</Text>
+      <Text style={styles.heading}>Have you ever been{"\n"}hypnotized?</Text>
+      <Text style={styles.subheading}>
+        No wrong answer. Most people don&apos;t know yet.
+      </Text>
+
+      <View style={styles.choiceList}>
+        {HYPNO_CHOICES.map((choice, idx) => {
+          const active = hypno === choice.id;
+          return (
+            <Pressable
+              key={choice.id}
+              style={[styles.choiceRow, idx === 0 && styles.choiceRowFirst]}
+              onPress={() => setHypno(choice.id)}
+            >
+              <View style={styles.choiceRowInner}>
+                <Text style={[styles.choiceLabel, active && styles.choiceLabelActive]}>
+                  {choice.label}
+                </Text>
+                <View style={[styles.choiceMark, active && styles.choiceMarkActive]} />
+              </View>
+            </Pressable>
+          );
+        })}
+      </View>
+    </View>
+  );
+
+  // ─── Step 3: Goal ──────────────────────────────────────────
   const StepGoal = () => (
     <View style={styles.stepContainer}>
-      <Text style={styles.stepLabel}>STEP 2 OF {TOTAL_STEPS}</Text>
-      <Text style={styles.heading}>What are you working on?</Text>
+      <Text style={styles.stepLabel}>{stepLabel(2)}</Text>
+      <Text style={styles.heading}>What are you{"\n"}working on?</Text>
       <Text style={styles.subheading}>
-        Pick the thing that matters most right now. You can always change this later.
+        Pick what matters most right now. You can change it later.
       </Text>
       <ScrollView
         style={styles.goalScroll}
-        contentContainerStyle={styles.goalGrid}
+        contentContainerStyle={styles.goalList}
         showsVerticalScrollIndicator={false}
       >
-        {GOALS.map((goal) => {
+        {GOALS.map((goal, idx) => {
           const active = selectedGoal === goal.id;
           return (
             <Pressable
               key={goal.id}
-              style={[styles.goalCard, active && styles.goalCardActive]}
-              onPress={() => setSelectedGoal(goal.id)}
+              style={[styles.goalRow, idx === 0 && styles.goalRowFirst]}
+              onPress={() => handleGoalSelect(goal.id)}
             >
-              <Text style={[styles.goalLabel, active && styles.goalLabelActive]}>
-                {goal.label}
-              </Text>
-              <Text style={[styles.goalDesc, active && styles.goalDescActive]}>
-                {goal.description}
-              </Text>
+              <View style={styles.goalRowInner}>
+                <Text style={styles.goalIndex}>
+                  {String(idx + 1).padStart(2, "0")}
+                </Text>
+                <View style={styles.goalTextWrap}>
+                  <Text style={[styles.goalLabel, active && styles.goalLabelActive]}>
+                    {goal.label}
+                  </Text>
+                  <Text style={styles.goalDesc}>{goal.description}</Text>
+                </View>
+                <View style={[styles.choiceMark, active && styles.choiceMarkActive]} />
+              </View>
             </Pressable>
           );
         })}
@@ -169,33 +229,62 @@ export default function OnboardingScreen() {
     </View>
   );
 
-  // ─── Step 3: Wake time ─────────────────────────────────
+  // ─── Step 4: Goal-specific follow-up ───────────────────────
+  const goalQuestion = useMemo(() => {
+    if (!selectedGoal) return null;
+    return GOAL_CONTEXT[selectedGoal];
+  }, [selectedGoal]);
+
+  const StepGoalContext = () => (
+    <View style={styles.stepContainer}>
+      <Text style={styles.stepLabel}>{stepLabel(3)}</Text>
+      <Text style={styles.heading}>{goalQuestion?.prompt ?? ""}</Text>
+      <Text style={styles.subheading}>
+        Helps us shape the session around what&apos;s actually true for you.
+      </Text>
+
+      <View style={styles.choiceList}>
+        {goalQuestion?.choices.map((choice, idx) => {
+          const active = goalCtx === choice.id;
+          return (
+            <Pressable
+              key={choice.id}
+              style={[styles.choiceRow, idx === 0 && styles.choiceRowFirst]}
+              onPress={() => setGoalCtx(choice.id)}
+            >
+              <View style={styles.choiceRowInner}>
+                <Text style={[styles.choiceLabel, active && styles.choiceLabelActive]}>
+                  {choice.label}
+                </Text>
+                <View style={[styles.choiceMark, active && styles.choiceMarkActive]} />
+              </View>
+            </Pressable>
+          );
+        })}
+      </View>
+    </View>
+  );
+
+  // ─── Step 5: Wake time ─────────────────────────────────────
   const hours = Array.from({ length: 12 }, (_, i) => i + 1);
   const minutes = [0, 5, 10, 15, 20, 25, 30, 35, 40, 45, 50, 55];
 
   const StepWakeTime = () => (
     <View style={styles.stepContainer}>
-      <Text style={styles.stepLabel}>STEP 3 OF {TOTAL_STEPS}</Text>
-      <Text style={styles.heading}>When do you wake up?</Text>
+      <Text style={styles.stepLabel}>{stepLabel(4)}</Text>
+      <Text style={styles.heading}>What time should{"\n"}we wake you?</Text>
       <Text style={styles.subheading}>
-        We&apos;ll set your first alarm. Your session plays the moment it goes off.
+        Your session plays the moment your alarm fires.
       </Text>
 
       <View style={styles.timePickerWrap}>
-        {/* Hour */}
         <ScrollView
           style={styles.timeColumn}
           contentContainerStyle={styles.timeColumnContent}
           showsVerticalScrollIndicator={false}
-          snapToInterval={52}
-          decelerationRate="fast"
         >
           {hours.map((h) => (
-            <Pressable
-              key={h}
-              style={[styles.timeCell, wakeHour === h && styles.timeCellActive]}
-              onPress={() => setWakeHour(h)}
-            >
+            <Pressable key={h} style={styles.timeCell} onPress={() => setWakeHour(h)}>
               <Text style={[styles.timeDigit, wakeHour === h && styles.timeDigitActive]}>
                 {h}
               </Text>
@@ -205,20 +294,13 @@ export default function OnboardingScreen() {
 
         <Text style={styles.timeColon}>:</Text>
 
-        {/* Minute */}
         <ScrollView
           style={styles.timeColumn}
           contentContainerStyle={styles.timeColumnContent}
           showsVerticalScrollIndicator={false}
-          snapToInterval={52}
-          decelerationRate="fast"
         >
           {minutes.map((m) => (
-            <Pressable
-              key={m}
-              style={[styles.timeCell, wakeMinute === m && styles.timeCellActive]}
-              onPress={() => setWakeMinute(m)}
-            >
+            <Pressable key={m} style={styles.timeCell} onPress={() => setWakeMinute(m)}>
               <Text style={[styles.timeDigit, wakeMinute === m && styles.timeDigitActive]}>
                 {String(m).padStart(2, "0")}
               </Text>
@@ -226,20 +308,13 @@ export default function OnboardingScreen() {
           ))}
         </ScrollView>
 
-        {/* AM/PM */}
         <View style={styles.periodColumn}>
-          <Pressable
-            style={[styles.periodCell, wakePeriod === "AM" && styles.periodCellActive]}
-            onPress={() => setWakePeriod("AM")}
-          >
+          <Pressable style={styles.periodCell} onPress={() => setWakePeriod("AM")}>
             <Text style={[styles.periodText, wakePeriod === "AM" && styles.periodTextActive]}>
               AM
             </Text>
           </Pressable>
-          <Pressable
-            style={[styles.periodCell, wakePeriod === "PM" && styles.periodCellActive]}
-            onPress={() => setWakePeriod("PM")}
-          >
+          <Pressable style={styles.periodCell} onPress={() => setWakePeriod("PM")}>
             <Text style={[styles.periodText, wakePeriod === "PM" && styles.periodTextActive]}>
               PM
             </Text>
@@ -247,47 +322,59 @@ export default function OnboardingScreen() {
         </View>
       </View>
 
-      <Text style={styles.timePreview}>
-        {wakeHour}:{String(wakeMinute).padStart(2, "0")} {wakePeriod}
-      </Text>
-    </View>
-  );
-
-  // ─── Step 4: Ready ─────────────────────────────────────
-  const goalLabel = GOALS.find((g) => g.id === selectedGoal)?.label ?? "";
-
-  const StepReady = () => (
-    <View style={styles.stepContainer}>
-      <Text style={styles.stepLabel}>YOU&apos;RE ALL SET</Text>
-      <Text style={styles.heading}>Good morning, {name}.</Text>
-      <Text style={styles.readyBody}>
-        Every morning at {wakeHour}:{String(wakeMinute).padStart(2, "0")} {wakePeriod}, Que will
-        guide you through a personalized audio session designed to help you{" "}
-        <Text style={styles.readyHighlight}>{goalLabel.toLowerCase()}</Text>.
-      </Text>
-      <Text style={styles.readyBody}>
-        You&apos;ll hear it in that half-asleep window — the theta state — when your mind is most
-        open to positive change. No jarring alarm. No snooze button. Just a calm, focused start.
-      </Text>
-
-      <View style={styles.readyFeatures}>
-        <View style={styles.featureRow}>
-          <Ionicons name="musical-notes-outline" size={20} color={C.accent} />
-          <Text style={styles.featureText}>Personalized audio sessions</Text>
-        </View>
-        <View style={styles.featureRow}>
-          <Ionicons name="moon-outline" size={20} color={C.accent} />
-          <Text style={styles.featureText}>Theta-state guided programming</Text>
-        </View>
-        <View style={styles.featureRow}>
-          <Ionicons name="alarm-outline" size={20} color={C.accent} />
-          <Text style={styles.featureText}>Smart alarm with ambient sound</Text>
-        </View>
+      <View style={styles.timePreviewWrap}>
+        <Text style={styles.timePreviewLabel}>SET FOR</Text>
+        <Text style={styles.timePreview}>
+          {wakeHour}:{String(wakeMinute).padStart(2, "0")}
+          <Text style={styles.timePreviewPeriod}>  {wakePeriod}</Text>
+        </Text>
       </View>
     </View>
   );
 
-  const steps = [StepName, StepGoal, StepWakeTime, StepReady];
+  // ─── Step 6: Name + Payoff ─────────────────────────────────
+  const goalLabel = GOALS.find((g) => g.id === selectedGoal)?.label ?? "your focus";
+  const greetingName = name.trim() || "there";
+
+  const StepNamePayoff = () => (
+    <View style={styles.stepContainer}>
+      <Text style={styles.stepLabel}>{stepLabel(5)}</Text>
+      <Text style={styles.heading}>What should we{"\n"}call you?</Text>
+      <Text style={styles.subheading}>
+        Your session opens with your name, spoken in your ear.
+      </Text>
+
+      <TextInput
+        value={name}
+        onChangeText={setName}
+        placeholder="First name"
+        placeholderTextColor={C.fgFaint}
+        style={styles.nameInput}
+        autoCapitalize="words"
+        autoFocus
+        returnKeyType="done"
+        onSubmitEditing={() => canAdvance() && persistAndExit()}
+      />
+      <View style={styles.inputRule} />
+
+      <View style={styles.payoffBlock}>
+        <Text style={styles.payoffLabel}>TOMORROW MORNING</Text>
+        <Text style={styles.payoffLine}>
+          <Text style={styles.payoffAccent}>
+            {wakeHour}:{String(wakeMinute).padStart(2, "0")} {wakePeriod}
+          </Text>
+          {"  ·  "}
+          <Text style={styles.payoffMid}>{goalLabel}</Text>
+        </Text>
+        <Text style={styles.payoffBody}>
+          &quot;Good morning, {greetingName}. Let&apos;s build a better one
+          together.&quot;
+        </Text>
+      </View>
+    </View>
+  );
+
+  const steps = [StepPremise, StepHypno, StepGoal, StepGoalContext, StepWakeTime, StepNamePayoff];
   const CurrentStep = steps[step];
 
   return (
@@ -295,37 +382,35 @@ export default function OnboardingScreen() {
       behavior={Platform.OS === "ios" ? "padding" : undefined}
       style={styles.container}
     >
-      {/* Back button */}
-      {step > 0 && (
-        <Pressable style={styles.backButton} onPress={goBack} hitSlop={16}>
-          <Ionicons name="arrow-back" size={24} color={C.fg} />
-        </Pressable>
-      )}
-
-      <ProgressDots />
+      <View style={styles.header}>
+        <ProgressBar />
+        <View style={styles.headerActions}>
+          {step > 0 ? (
+            <Pressable onPress={goBack} hitSlop={16}>
+              <Text style={styles.headerLink}>BACK</Text>
+            </Pressable>
+          ) : (
+            <View />
+          )}
+          <Pressable onPress={confirmSkip} hitSlop={16}>
+            <Text style={styles.headerLink}>SKIP SETUP</Text>
+          </Pressable>
+        </View>
+      </View>
 
       <Animated.View style={[styles.content, { opacity: fadeAnim }]}>
         <CurrentStep />
       </Animated.View>
 
-      {/* Bottom button */}
       <View style={styles.bottomBar}>
         <Pressable
           style={[styles.nextButton, !canAdvance() && styles.nextButtonDisabled]}
-          onPress={step === TOTAL_STEPS - 1 ? finish : goNext}
+          onPress={step === TOTAL_STEPS - 1 ? persistAndExit : goNext}
           disabled={!canAdvance()}
         >
           <Text style={[styles.nextButtonText, !canAdvance() && styles.nextButtonTextDisabled]}>
-            {step === TOTAL_STEPS - 1 ? "Get Started" : "Continue"}
+            {step === TOTAL_STEPS - 1 ? "Begin" : "Continue"}
           </Text>
-          {step < TOTAL_STEPS - 1 && (
-            <Ionicons
-              name="arrow-forward"
-              size={18}
-              color={canAdvance() ? "#000" : C.fgFaint}
-              style={{ marginLeft: 6 }}
-            />
-          )}
         </Pressable>
       </View>
     </KeyboardAvoidingView>
@@ -337,233 +422,311 @@ const styles = StyleSheet.create({
     flex: 1,
     backgroundColor: C.bgDeep,
   },
-  backButton: {
-    position: "absolute",
-    top: 60,
-    left: SPACE.screenPad,
-    zIndex: 99,
-    padding: 8,
+
+  // ─── Header ────────────────────────────────────────────────
+  header: {
+    paddingTop: 64,
+    paddingHorizontal: SPACE.inputPad,
+    paddingBottom: 28,
   },
-  dots: {
+  progressRow: {
     flexDirection: "row",
-    justifyContent: "center",
-    gap: 8,
-    paddingTop: 68,
-    paddingBottom: 12,
+    gap: 4,
   },
-  dot: {
-    width: 8,
-    height: 8,
-    borderRadius: 4,
-    backgroundColor: C.panelHigh,
+  progressSegment: {
+    flex: 1,
+    height: 2,
+    backgroundColor: HAIRLINE,
   },
-  dotActive: {
-    backgroundColor: C.accent,
-    width: 24,
+  progressSegmentDone: {
+    backgroundColor: C.fg,
   },
-  dotDone: {
-    backgroundColor: C.fgDim,
+  headerActions: {
+    flexDirection: "row",
+    justifyContent: "space-between",
+    alignItems: "center",
+    height: 28,
+    marginTop: 20,
   },
+  headerLink: {
+    fontFamily: F.medium,
+    fontSize: FS.xs,
+    color: C.fgDim,
+    letterSpacing: LS.widest,
+  },
+
+  // ─── Content ───────────────────────────────────────────────
   content: {
     flex: 1,
     paddingHorizontal: SPACE.inputPad,
   },
   stepContainer: {
     flex: 1,
-    paddingTop: 32,
   },
   stepLabel: {
-    fontFamily: F.semibold,
+    fontFamily: F.medium,
     fontSize: FS.xs,
-    color: C.accent,
-    letterSpacing: 2,
-    marginBottom: 16,
+    color: ACCENT,
+    letterSpacing: LS.widest,
+    marginBottom: 24,
   },
   heading: {
-    fontFamily: F.bold,
-    fontSize: 28,
+    fontFamily: F.regular,
+    fontSize: 34,
     color: C.fg,
-    marginBottom: 12,
+    lineHeight: 40,
+    letterSpacing: -0.5,
+    marginBottom: 16,
+  },
+  headingAccent: {
+    color: ACCENT,
   },
   subheading: {
     fontFamily: F.regular,
-    fontSize: FS.base,
+    fontSize: FS.md,
     color: C.fgDim,
     lineHeight: 22,
     marginBottom: 32,
   },
-
-  // Step 1 — Name
-  nameInput: {
-    backgroundColor: C.panelMid,
-    borderRadius: 14,
-    paddingHorizontal: 20,
-    paddingVertical: 18,
-    color: C.fg,
-    fontSize: FS["2xl"],
-    fontFamily: F.medium,
-    borderWidth: 1,
-    borderColor: C.border,
-  },
-
-  // Step 2 — Goal
-  goalScroll: {
-    flex: 1,
-  },
-  goalGrid: {
-    gap: 10,
-    paddingBottom: 20,
-  },
-  goalCard: {
-    backgroundColor: C.panel,
-    borderRadius: 14,
-    paddingVertical: 16,
-    paddingHorizontal: 18,
-    borderWidth: 1,
-    borderColor: C.border,
-  },
-  goalCardActive: {
-    borderColor: C.accent,
-    backgroundColor: "#1a1528",
-  },
-  goalLabel: {
-    fontFamily: F.semibold,
-    fontSize: FS.md,
-    color: C.fg,
-    marginBottom: 4,
-  },
-  goalLabelActive: {
-    color: C.accent,
-  },
-  goalDesc: {
-    fontFamily: F.regular,
-    fontSize: FS.sm,
-    color: C.fgDim,
-  },
-  goalDescActive: {
-    color: C.fgMid,
-  },
-
-  // Step 3 — Wake time
-  timePickerWrap: {
-    flexDirection: "row",
-    alignItems: "center",
-    justifyContent: "center",
-    gap: 8,
-    marginTop: 8,
-  },
-  timeColumn: {
-    height: 208,
-    width: 72,
-  },
-  timeColumnContent: {
-    paddingVertical: 4,
-  },
-  timeCell: {
-    height: 48,
-    marginVertical: 2,
-    borderRadius: 12,
-    alignItems: "center",
-    justifyContent: "center",
-    backgroundColor: C.panel,
-  },
-  timeCellActive: {
-    backgroundColor: C.accent,
-  },
-  timeDigit: {
-    fontFamily: F.semibold,
-    fontSize: FS["3xl"],
-    color: C.fgDim,
-  },
-  timeDigitActive: {
-    color: "#000",
-  },
-  timeColon: {
-    fontFamily: F.light,
-    fontSize: 36,
-    color: C.fgDim,
-    marginHorizontal: 2,
-  },
-  periodColumn: {
-    gap: 4,
-    marginLeft: 8,
-  },
-  periodCell: {
-    height: 48,
-    width: 56,
-    borderRadius: 12,
-    alignItems: "center",
-    justifyContent: "center",
-    backgroundColor: C.panel,
-  },
-  periodCellActive: {
-    backgroundColor: C.accent,
-  },
-  periodText: {
-    fontFamily: F.semibold,
-    fontSize: FS.md,
-    color: C.fgDim,
-  },
-  periodTextActive: {
-    color: "#000",
-  },
-  timePreview: {
-    fontFamily: F.light,
-    fontSize: 48,
-    color: C.fg,
-    textAlign: "center",
-    marginTop: 28,
-    letterSpacing: -2,
-  },
-
-  // Step 4 — Ready
-  readyBody: {
+  bodyLead: {
     fontFamily: F.regular,
     fontSize: FS.md,
     color: C.fgMid,
     lineHeight: 24,
     marginBottom: 16,
   },
-  readyHighlight: {
-    fontFamily: F.semibold,
-    color: C.accent,
+
+  // ─── Choice rows (used by hypno + goal context) ────────────
+  choiceList: {
+    marginTop: 4,
   },
-  readyFeatures: {
-    marginTop: 16,
-    gap: 16,
+  choiceRow: {
+    borderTopWidth: 1,
+    borderTopColor: HAIRLINE,
   },
-  featureRow: {
+  choiceRowFirst: {
+    borderTopWidth: 0,
+  },
+  choiceRowInner: {
     flexDirection: "row",
     alignItems: "center",
-    gap: 12,
+    justifyContent: "space-between",
+    paddingVertical: 18,
   },
-  featureText: {
+  choiceLabel: {
+    flex: 1,
     fontFamily: F.regular,
-    fontSize: FS.base,
+    fontSize: FS.lg,
     color: C.fg,
+    paddingRight: 16,
+  },
+  choiceLabelActive: {
+    color: ACCENT,
+  },
+  choiceMark: {
+    width: 10,
+    height: 10,
+    backgroundColor: "transparent",
+    borderWidth: 1,
+    borderColor: C.fgFaint,
+  },
+  choiceMarkActive: {
+    backgroundColor: ACCENT,
+    borderColor: ACCENT,
   },
 
-  // Bottom bar
+  // ─── Goal step ─────────────────────────────────────────────
+  goalScroll: {
+    flex: 1,
+  },
+  goalList: {
+    paddingBottom: 20,
+  },
+  goalRow: {
+    borderTopWidth: 1,
+    borderTopColor: HAIRLINE,
+  },
+  goalRowFirst: {
+    borderTopWidth: 0,
+  },
+  goalRowInner: {
+    flexDirection: "row",
+    alignItems: "center",
+    paddingVertical: 18,
+    gap: 14,
+  },
+  goalIndex: {
+    fontFamily: F.medium,
+    fontSize: FS.xs,
+    color: C.fgFaint,
+    letterSpacing: LS.wider,
+    width: 28,
+  },
+  goalTextWrap: {
+    flex: 1,
+  },
+  goalLabel: {
+    fontFamily: F.regular,
+    fontSize: FS.lg,
+    color: C.fg,
+    marginBottom: 2,
+  },
+  goalLabelActive: {
+    color: ACCENT,
+  },
+  goalDesc: {
+    fontFamily: F.regular,
+    fontSize: FS.sm,
+    color: C.fgDim,
+  },
+
+  // ─── Wake time ─────────────────────────────────────────────
+  timePickerWrap: {
+    flexDirection: "row",
+    alignItems: "flex-start",
+    marginTop: 4,
+  },
+  timeColumn: {
+    height: 200,
+    width: 60,
+  },
+  timeColumnContent: {
+    paddingVertical: 2,
+  },
+  timeCell: {
+    height: 44,
+    justifyContent: "center",
+    alignItems: "flex-start",
+  },
+  timeDigit: {
+    fontFamily: F.light,
+    fontSize: 32,
+    color: C.fgFaint,
+    letterSpacing: -1,
+  },
+  timeDigitActive: {
+    color: C.fg,
+    fontFamily: F.medium,
+  },
+  timeColon: {
+    fontFamily: F.light,
+    fontSize: 32,
+    color: C.fgDim,
+    marginTop: 6,
+    marginHorizontal: 4,
+  },
+  periodColumn: {
+    marginLeft: 24,
+    marginTop: 4,
+    gap: 4,
+  },
+  periodCell: {
+    paddingVertical: 8,
+    paddingRight: 12,
+  },
+  periodText: {
+    fontFamily: F.regular,
+    fontSize: FS.md,
+    color: C.fgFaint,
+    letterSpacing: LS.wide,
+  },
+  periodTextActive: {
+    color: C.fg,
+  },
+  timePreviewWrap: {
+    marginTop: 24,
+    borderTopWidth: 1,
+    borderTopColor: HAIRLINE,
+    paddingTop: 18,
+  },
+  timePreviewLabel: {
+    fontFamily: F.medium,
+    fontSize: FS.xs,
+    color: C.fgFaint,
+    letterSpacing: LS.widest,
+    marginBottom: 6,
+  },
+  timePreview: {
+    fontFamily: F.light,
+    fontSize: 56,
+    color: C.fg,
+    letterSpacing: -3,
+  },
+  timePreviewPeriod: {
+    fontFamily: F.medium,
+    fontSize: 20,
+    color: C.fgDim,
+    letterSpacing: LS.wide,
+  },
+
+  // ─── Name + Payoff ─────────────────────────────────────────
+  nameInput: {
+    color: C.fg,
+    fontSize: 30,
+    fontFamily: F.regular,
+    paddingVertical: 12,
+    paddingHorizontal: 0,
+    letterSpacing: -0.3,
+  },
+  inputRule: {
+    height: 1,
+    backgroundColor: C.fg,
+    marginTop: 4,
+  },
+  payoffBlock: {
+    marginTop: 36,
+    borderTopWidth: 1,
+    borderTopColor: HAIRLINE,
+    paddingTop: 20,
+  },
+  payoffLabel: {
+    fontFamily: F.medium,
+    fontSize: FS.xs,
+    color: C.fgFaint,
+    letterSpacing: LS.widest,
+    marginBottom: 10,
+  },
+  payoffLine: {
+    fontFamily: F.regular,
+    fontSize: FS.md,
+    color: C.fg,
+    marginBottom: 14,
+  },
+  payoffAccent: {
+    color: ACCENT,
+  },
+  payoffMid: {
+    color: C.fgMid,
+  },
+  payoffBody: {
+    fontFamily: F.regular,
+    fontSize: FS.md,
+    color: C.fgMid,
+    lineHeight: 24,
+    fontStyle: "italic",
+  },
+
+  // ─── Bottom bar ────────────────────────────────────────────
   bottomBar: {
     paddingHorizontal: SPACE.inputPad,
     paddingBottom: 44,
-    paddingTop: 12,
+    paddingTop: 16,
   },
   nextButton: {
     backgroundColor: C.fg,
-    borderRadius: 14,
     height: 56,
-    flexDirection: "row",
     alignItems: "center",
     justifyContent: "center",
   },
   nextButtonDisabled: {
-    backgroundColor: C.panelHigh,
+    backgroundColor: HAIRLINE,
   },
   nextButtonText: {
-    fontFamily: F.semibold,
-    fontSize: FS.lg,
+    fontFamily: F.regular,
+    fontSize: FS.md,
     color: "#000",
+    letterSpacing: LS.wider,
+    textTransform: "uppercase",
   },
   nextButtonTextDisabled: {
     color: C.fgFaint,
