@@ -6,6 +6,7 @@ import { StatusBar } from "expo-status-bar";
 import { useFonts } from "expo-font";
 import * as SplashScreen from "expo-splash-screen";
 import { AuthProvider, useAuth } from "@/lib/auth";
+import { isOnboardingComplete } from "@/lib/onboarding";
 
 SplashScreen.preventAutoHideAsync();
 
@@ -26,22 +27,41 @@ function AuthGate() {
   const router = useRouter();
   const segments = useSegments();
   const [initialRouted, setInitialRouted] = useState(false);
+  const [onboardingChecked, setOnboardingChecked] = useState(false);
+  const [needsOnboarding, setNeedsOnboarding] = useState(false);
+
+  useEffect(() => {
+    if (loading || !session) {
+      setOnboardingChecked(false);
+      setNeedsOnboarding(false);
+      return;
+    }
+    isOnboardingComplete().then((done) => {
+      setNeedsOnboarding(!done);
+      setOnboardingChecked(true);
+    });
+  }, [session, loading]);
 
   useEffect(() => {
     if (loading) return;
 
     const onAuthScreen = segments[0] === "auth";
+    const onOnboarding = segments[0] === "onboarding";
 
     if (!session && !onAuthScreen) {
-      // Not logged in and not on auth → send to auth
       router.replace("/auth");
     } else if (session && onAuthScreen) {
-      // Logged in but still on auth → send to app
-      router.replace("/");
+      if (onboardingChecked && needsOnboarding) {
+        router.replace("/onboarding");
+      } else if (onboardingChecked) {
+        router.replace("/");
+      }
+    } else if (session && onboardingChecked && needsOnboarding && !onOnboarding) {
+      router.replace("/onboarding");
     }
 
     if (!initialRouted) setInitialRouted(true);
-  }, [session, loading, segments]);
+  }, [session, loading, segments, onboardingChecked, needsOnboarding]);
 
   return null;
 }
@@ -89,6 +109,15 @@ export default function RootLayout() {
               headerShown: false,
               animation: "none",
               contentStyle: { backgroundColor: "#000000" },
+            }}
+          />
+          <Stack.Screen
+            name="onboarding"
+            options={{
+              headerShown: false,
+              animation: "fade",
+              contentStyle: { backgroundColor: "#000000" },
+              gestureEnabled: false,
             }}
           />
           <Stack.Screen
