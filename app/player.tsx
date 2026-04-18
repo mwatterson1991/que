@@ -260,6 +260,7 @@ export default function PlayerScreen() {
   const [completed, setCompleted] = useState(false);
   const [scrubbing, setScrubbing] = useState(false);
   const [scrubPos, setScrubPos] = useState(0);
+  const [audioError, setAudioError] = useState<string | null>(null);
   const startedRef = useRef(false);
   const trackRef = useRef<View>(null);
   const trackXRef = useRef(0);
@@ -269,7 +270,10 @@ export default function PlayerScreen() {
     startedRef.current = true;
 
     const source = resolveSource(session.audio_url, session.audio_asset);
-    if (!source) return;
+    if (!source) {
+      setAudioError("This session doesn't have audio yet. Check back soon.");
+      return;
+    }
 
     setDuration(session.duration_sec);
     playSession(source, (status: AVPlaybackStatus) => {
@@ -278,6 +282,11 @@ export default function PlayerScreen() {
       setPlaying(status.isPlaying);
       if (status.durationMillis) setDuration(Math.floor(status.durationMillis / 1000));
       if (status.didJustFinish) { setPlaying(false); setCompleted(true); }
+    }).then((result) => {
+      if (result.error) {
+        setAudioError(result.error.message);
+        setPlaying(false);
+      }
     });
 
     setPlaying(true);
@@ -360,6 +369,27 @@ export default function PlayerScreen() {
   const progress = duration > 0 ? displayElapsed / duration : 0;
   const mantras = session?.mantras ?? [];
 
+  // No session found for this ID
+  if (!session && !startedRef.current) {
+    return (
+      <View style={styles.container}>
+        <View style={[styles.navBar, { paddingTop: insets.top }]}>
+          <Pressable style={styles.backButton} onPress={() => router.back()} hitSlop={12}>
+            <Ionicons name="chevron-back" size={28} color="#f5f5f7" />
+          </Pressable>
+        </View>
+        <View style={styles.errorContainer}>
+          <Ionicons name="alert-circle-outline" size={48} color="#71717a" />
+          <Text style={styles.errorTitle}>Session not found</Text>
+          <Text style={styles.errorMessage}>This session may have been removed or is unavailable.</Text>
+          <Pressable style={styles.errorButton} onPress={() => router.back()}>
+            <Text style={styles.errorButtonText}>Go Back</Text>
+          </Pressable>
+        </View>
+      </View>
+    );
+  }
+
   return (
     <View style={styles.container}>
       {/* Nav bar */}
@@ -371,6 +401,14 @@ export default function PlayerScreen() {
 
       {/* Particle orb */}
       <HypnoticOrb playing={playing} />
+
+      {/* Audio error banner */}
+      {audioError ? (
+        <View style={styles.errorBanner}>
+          <Ionicons name="warning-outline" size={20} color="#fbbf24" style={{ marginRight: 10 }} />
+          <Text style={styles.errorBannerText}>{audioError}</Text>
+        </View>
+      ) : null}
 
       {/* Teleprompter mantras */}
       <MantraTeleprompter mantras={mantras} activeMantra={activeMantra} />
@@ -627,5 +665,55 @@ const styles = StyleSheet.create({
     fontSize: 15,
     fontFamily: F.bold,
     letterSpacing: 1.5,
+  },
+
+  // Error states
+  errorContainer: {
+    flex: 1,
+    alignItems: "center",
+    justifyContent: "center",
+    paddingHorizontal: 40,
+  },
+  errorTitle: {
+    color: "#f5f5f7",
+    fontSize: 20,
+    fontFamily: F.semibold,
+    marginTop: 16,
+    marginBottom: 8,
+  },
+  errorMessage: {
+    color: "#71717a",
+    fontSize: 15,
+    fontFamily: F.regular,
+    textAlign: "center",
+    lineHeight: 22,
+    marginBottom: 24,
+  },
+  errorButton: {
+    backgroundColor: "#1c1c1e",
+    borderRadius: 14,
+    paddingVertical: 14,
+    paddingHorizontal: 32,
+  },
+  errorButtonText: {
+    color: "#f5f5f7",
+    fontSize: 15,
+    fontFamily: F.medium,
+  },
+  errorBanner: {
+    flexDirection: "row",
+    alignItems: "center",
+    backgroundColor: "#1a1500",
+    borderRadius: 10,
+    marginHorizontal: 24,
+    marginBottom: 8,
+    paddingVertical: 12,
+    paddingHorizontal: 16,
+  },
+  errorBannerText: {
+    color: "#fbbf24",
+    fontSize: 14,
+    fontFamily: F.regular,
+    flex: 1,
   },
 });

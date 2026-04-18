@@ -5,6 +5,7 @@ import { useState, useEffect } from "react";
 import { F } from "@/lib/fonts";
 import { useAuth } from "@/lib/auth";
 import { useProfile, usePreferences } from "@/lib/useSupabase";
+import { getNotificationStatus, requestNotificationPermission, promptOpenSettings } from "@/lib/permissions";
 
 type SettingsRowProps = {
   icon: keyof typeof Ionicons.glyphMap;
@@ -52,18 +53,38 @@ export default function SettingsScreen() {
   const [haptics, setHaptics] = useState(true);
   const [darkMode, setDarkMode] = useState(true);
 
-  // Sync local toggles with Supabase preferences
+  // Sync local toggles with Supabase preferences and OS state
   useEffect(() => {
     if (prefs) {
-      setNotifications(prefs.notifications);
       setHaptics(prefs.haptics);
       setDarkMode(prefs.dark_mode);
     }
   }, [prefs]);
 
-  const toggleNotifications = (val: boolean) => {
-    setNotifications(val);
-    updatePrefs({ notifications: val });
+  // Sync notification toggle with actual OS permission state
+  useEffect(() => {
+    getNotificationStatus().then((status) => {
+      const granted = status === "granted";
+      setNotifications(granted);
+      if (prefs && prefs.notifications !== granted) {
+        updatePrefs({ notifications: granted });
+      }
+    });
+  }, [prefs]);
+
+  const toggleNotifications = async (val: boolean) => {
+    if (val) {
+      const status = await requestNotificationPermission();
+      if (status === "granted") {
+        setNotifications(true);
+        updatePrefs({ notifications: true });
+      } else {
+        promptOpenSettings("notification");
+      }
+    } else {
+      setNotifications(false);
+      updatePrefs({ notifications: false });
+    }
   };
   const toggleHaptics = (val: boolean) => {
     setHaptics(val);

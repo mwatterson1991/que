@@ -1,6 +1,7 @@
 import { View, Text, FlatList, Switch, Pressable, StyleSheet, ActivityIndicator } from "react-native";
 import { useRouter } from "expo-router";
 import { useAlarms, useSessions } from "@/lib/useSupabase";
+import { ensureNotificationPermission } from "@/lib/permissions";
 import { F } from "@/lib/fonts";
 import type { Database } from "@/lib/database.types";
 
@@ -56,6 +57,14 @@ export default function AlarmsScreen() {
   const { sessions } = useSessions();
   const router = useRouter();
 
+  const handleToggle = async (id: string, enabled: boolean) => {
+    if (enabled) {
+      const permitted = await ensureNotificationPermission();
+      if (!permitted) return;
+    }
+    toggle(id, enabled);
+  };
+
   const sessionMap: SessionMap = {};
   for (const s of sessions) sessionMap[s.id] = s;
 
@@ -80,7 +89,7 @@ export default function AlarmsScreen() {
             keyExtractor={(a) => a.id}
             ItemSeparatorComponent={() => <View style={styles.separator} />}
             renderItem={({ item }) => (
-              <AlarmRow item={item} onToggle={toggle} sessionMap={sessionMap} />
+              <AlarmRow item={item} onToggle={handleToggle} sessionMap={sessionMap} />
             )}
             ListFooterComponent={() => <View style={styles.separator} />}
           />

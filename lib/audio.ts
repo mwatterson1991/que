@@ -43,11 +43,19 @@ export function resolveSource(
   return null;
 }
 
-/** Start playing audio. Returns the Sound instance. */
+export type PlaybackError =
+  | { code: "NO_SOURCE"; message: string }
+  | { code: "LOAD_FAILED"; message: string };
+
+export type PlaySessionResult =
+  | { sound: Audio.Sound; error: null }
+  | { sound: null; error: PlaybackError };
+
+/** Start playing audio. Returns the Sound instance or a typed error. */
 export async function playSession(
   source: PlaybackSource,
   statusCallback?: (status: AVPlaybackStatus) => void,
-): Promise<Audio.Sound | null> {
+): Promise<PlaySessionResult> {
   await stopSession();
   await configureAudio();
 
@@ -60,21 +68,27 @@ export async function playSession(
 
   if (!avSource) {
     console.warn("[audio] No audio source found");
-    return null;
+    return { sound: null, error: { code: "NO_SOURCE", message: "No audio file available for this session." } };
   }
 
-  const { sound } = await Audio.Sound.createAsync(avSource, {
-    shouldPlay: true,
-    progressUpdateIntervalMillis: 500,
-  });
+  try {
+    const { sound } = await Audio.Sound.createAsync(avSource, {
+      shouldPlay: true,
+      progressUpdateIntervalMillis: 500,
+    });
 
-  currentSound = sound;
+    currentSound = sound;
 
-  if (onStatusUpdate) {
-    sound.setOnPlaybackStatusUpdate(onStatusUpdate);
+    if (onStatusUpdate) {
+      sound.setOnPlaybackStatusUpdate(onStatusUpdate);
+    }
+
+    return { sound, error: null };
+  } catch (err) {
+    const message = err instanceof Error ? err.message : "Failed to load audio.";
+    console.warn("[audio] Load failed:", message);
+    return { sound: null, error: { code: "LOAD_FAILED", message } };
   }
-
-  return sound;
 }
 
 /** Pause current playback */
