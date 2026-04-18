@@ -63,7 +63,7 @@ Last agent run: 2026-04-18 17:30
 - `auto/agent-20260418-1500-onboarding-flow` — [PR #1](https://github.com/mwatterson1991/que/pull/1) — Onboarding flow for new users
 - `auto/agent-20260418-1530-notification-permissions` — [PR #2](https://github.com/mwatterson1991/que/pull/2) — Push notification permissions requested gracefully
 - `auto/agent-20260418-1630-alarm-scheduling` — [PR #3](https://github.com/mwatterson1991/que/pull/3) — Alarm trigger plays correct audio reliably
-- `auto/agent-20260418-1730-background-audio` — PR pending — Background audio works when app is closed
+- `auto/agent-20260418-1730-background-audio` — [PR #4](https://github.com/mwatterson1991/que/pull/4) — Background audio works when app is closed
 
 ## Run journal
 
@@ -72,7 +72,7 @@ Last agent run: 2026-04-18 17:30
 ## 2026-04-18 17:30
 - **Task:** Background audio works when app is closed (iOS background modes)
 - **Branch:** `auto/agent-20260418-1730-background-audio`
-- **PR:** pending
+- **PR:** #4 — https://github.com/mwatterson1991/que/pull/4
 - **Summary:** Added background audio lifecycle module with early audio session init, AppState-driven re-assertion, audio interruption recovery (auto-resume after phone calls), and proper iOS/Android background mode config.
 - **Next:** Device testing to confirm audio persists through lock screen, app switch, and phone calls. Edge case handling (silent mode, late permissions).
 
