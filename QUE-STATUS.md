@@ -4,7 +4,7 @@
 >
 > Legend: `[ ]` not started · `[~]` in progress (auto-branch exists) · `[✴]` PR open, awaiting review · `[x]` merged / complete · `[🚫]` blocked (see QUE-BLOCKERS.md)
 
-Last agent run: *none yet*
+Last agent run: 2026-04-18 18:30
 
 ## Checklist state
 
@@ -16,7 +16,7 @@ Last agent run: *none yet*
 - [ ] Replace dummy data with real generated audio content
 - [ ] Alarm trigger plays correct audio reliably
 - [ ] Background audio works when app is closed (iOS background modes)
-- [ ] Edge cases handled — no alarm, late permissions, silent mode
+- [✴] Edge cases handled — no alarm, late permissions, silent mode — [PR #5](https://github.com/mwatterson1991/que/pull/5)
 
 ### Phase 02 — App Polish
 - [ ] Onboarding flow for new users
@@ -60,11 +60,18 @@ Last agent run: *none yet*
 
 ## Open auto-branches
 
-*(None yet. Agent will list branches and PR links here after its first run.)*
+- `auto/agent-20260418-1830-edge-cases` — [PR #5](https://github.com/mwatterson1991/que/pull/5) — Edge cases handled — no alarm, late permissions, silent mode
 
 ## Run journal
 
 *(Most recent at top. Agent appends one entry per run.)*
+
+## 2026-04-18 18:30
+- **Task:** Edge cases handled — no alarm, late permissions, silent mode
+- **Branch:** `auto/agent-20260418-1830-edge-cases`
+- **PR:** #5 — https://github.com/mwatterson1991/que/pull/5
+- **Summary:** Added notification permission gating on alarm save/toggle, player error states for missing sessions and failed audio loads, typed error returns from the audio engine, and Settings-screen permission sync.
+- **Next:** Device testing to confirm permission prompts behave correctly on iOS and Android.
 
 ---
 
