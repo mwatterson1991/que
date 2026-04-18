@@ -1,0 +1,41 @@
+{
+  "expo": {
+    "name": "Mantra Alarm",
+    "slug": "mantra-alarm",
+    "version": "0.1.0",
+    "orientation": "portrait",
+    "scheme": "mantraalarm",
+    "userInterfaceStyle": "automatic",
+    "newArchEnabled": true,
+    "ios": {
+      "supportsTablet": true,
+      "bundleIdentifier": "com.michaelwatterson.mantraalarm",
+      "infoPlist": {
+        "NSMicrophoneUsageDescription": "Mantra Alarm uses your microphone so you can set alarms with your voice.",
+        "NSSpeechRecognitionUsageDescription": "Mantra Alarm transcribes what you say to create alarms and mantras.",
+        "UIBackgroundModes": [
+          "audio"
+        ]
+      }
+    },
+    "android": {
+      "package": "com.michaelwatterson.mantraalarm",
+      "permissions": [
+        "RECORD_AUDIO",
+        "SCHEDULE_EXACT_ALARM",
+        "POST_NOTIFICATIONS",
+        "WAKE_LOCK"
+      ]
+    },
+    "plugins": [
+      "expo-router",
+      "expo-av",
+      "expo-notifications",
+      "expo-speech-recognition",
+      "expo-font"
+    ],
+    "experiments": {
+      "typedRoutes": true
+    }
+  }
+}

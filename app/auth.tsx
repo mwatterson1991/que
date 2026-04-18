@@ -1,0 +1,386 @@
+import { useState, useEffect, useRef } from "react";
+import {
+  View,
+  Text,
+  TextInput,
+  Pressable,
+  Alert,
+  KeyboardAvoidingView,
+  Platform,
+  StyleSheet,
+} from "react-native";
+import { Ionicons } from "@expo/vector-icons";
+import { useRouter } from "expo-router";
+import { useAuth } from "@/lib/auth";
+import { F } from "@/lib/fonts";
+
+const PHRASES = [
+  "Start your day the right way",
+  "The alarm clock that doesn't suck",
+  "Wake up on the right side of the bed",
+];
+
+// ─── Cycling tagline ─────────────────────────────────────
+function CyclingTagline() {
+  const [phraseIndex, setPhraseIndex] = useState(0);
+  const [displayed, setDisplayed] = useState("");
+  const [visible, setVisible] = useState(true);
+  const phaseRef = useRef<"typing" | "holding" | "fading" | "waiting">("typing");
+  const charRef = useRef(0);
+  const idxRef = useRef(0);
+
+  useEffect(() => {
+    let timer: ReturnType<typeof setTimeout>;
+
+    function tick() {
+      const phase = phaseRef.current;
+      const phrase = PHRASES[idxRef.current];
+
+      if (phase === "typing") {
+        charRef.current++;
+        setDisplayed(phrase.slice(0, charRef.current));
+        if (charRef.current >= phrase.length) {
+          phaseRef.current = "holding";
+          timer = setTimeout(tick, 2000);
+        } else {
+          timer = setTimeout(tick, 35);
+        }
+      } else if (phase === "holding") {
+        phaseRef.current = "fading";
+        setVisible(false);
+        timer = setTimeout(tick, 400);
+      } else if (phase === "fading") {
+        phaseRef.current = "waiting";
+        idxRef.current = (idxRef.current + 1) % PHRASES.length;
+        charRef.current = 0;
+        setDisplayed("");
+        setPhraseIndex(idxRef.current);
+        timer = setTimeout(tick, 200);
+      } else if (phase === "waiting") {
+        phaseRef.current = "typing";
+        setVisible(true);
+        timer = setTimeout(tick, 35);
+      }
+    }
+
+    timer = setTimeout(tick, 35);
+    return () => clearTimeout(timer);
+  }, []);
+
+  return (
+    <View style={styles.taglineRow}>
+      <Text style={[styles.taglineText, { opacity: visible ? 1 : 0 }]}>
+        {displayed}
+        {visible && displayed.length > 0 && displayed.length < PHRASES[phraseIndex].length && (
+          <Text style={styles.cursor}>|</Text>
+        )}
+      </Text>
+    </View>
+  );
+}
+
+// ─── Auth modes ──────────────────────────────────────────
+type Mode = "landing" | "login" | "signup";
+
+export default function AuthScreen() {
+  const router = useRouter();
+  const { signInWithEmail, signUpWithEmail } = useAuth();
+
+  const [mode, setMode] = useState<Mode>("landing");
+  const [email, setEmail] = useState("");
+  const [password, setPassword] = useState("");
+  const [firstName, setFirstName] = useState("");
+  const [lastName, setLastName] = useState("");
+  const [busy, setBusy] = useState(false);
+
+  const handleLogin = async () => {
+    if (!email || !password) {
+      Alert.alert("Missing fields", "Please enter your email and password.");
+      return;
+    }
+    setBusy(true);
+    const { error } = await signInWithEmail(email, password);
+    setBusy(false);
+    if (error) {
+      Alert.alert("Login failed", error.message);
+    } else {
+      router.replace("/");
+    }
+  };
+
+  const handleSignUp = async () => {
+    if (!email || !password) {
+      Alert.alert("Missing fields", "Please enter your email and password.");
+      return;
+    }
+    if (password.length < 6) {
+      Alert.alert("Weak password", "Password must be at least 6 characters.");
+      return;
+    }
+    setBusy(true);
+    const { error } = await signUpWithEmail(email, password, firstName, lastName);
+    setBusy(false);
+    if (error) {
+      Alert.alert("Sign up failed", error.message);
+    } else {
+      Alert.alert(
+        "Check your email",
+        "We sent you a confirmation link. Tap it to activate your account, then log in.",
+        [{ text: "OK", onPress: () => setMode("login") }]
+      );
+    }
+  };
+
+  // ─── Landing (buttons only) ─────────────────────────────
+  if (mode === "landing") {
+    return (
+      <View style={styles.container}>
+        <Pressable onPress={() => router.replace("/")} style={styles.closeButton} hitSlop={16}>
+          <Ionicons name="close" size={24} color="#f5f5f7" />
+        </Pressable>
+
+        <View style={styles.center}>
+          <Text style={styles.logoText}>Morning Q</Text>
+          <CyclingTagline />
+        </View>
+
+        <View style={styles.bottomSheet}>
+          <Pressable style={styles.appleButton}>
+            <Ionicons name="logo-apple" size={20} color="#000" />
+            <Text style={styles.appleText}>Continue with Apple</Text>
+          </Pressable>
+
+          <Pressable style={styles.darkButton}>
+            <Text style={styles.googleG}>G</Text>
+            <Text style={styles.darkButtonText}>Continue with Google</Text>
+          </Pressable>
+
+          <Pressable style={styles.darkButton} onPress={() => setMode("signup")}>
+            <Text style={styles.darkButtonText}>Sign up</Text>
+          </Pressable>
+
+          <Pressable style={styles.loginButton} onPress={() => setMode("login")}>
+            <Text style={styles.darkButtonText}>Log in</Text>
+          </Pressable>
+        </View>
+      </View>
+    );
+  }
+
+  // ─── Login / Sign-up form ───────────────────────────────
+  const isSignUp = mode === "signup";
+
+  return (
+    <KeyboardAvoidingView
+      behavior={Platform.OS === "ios" ? "padding" : undefined}
+      style={styles.container}
+    >
+      <Pressable onPress={() => setMode("landing")} style={styles.closeButton} hitSlop={16}>
+        <Ionicons name="arrow-back" size={24} color="#f5f5f7" />
+      </Pressable>
+
+      <View style={styles.formCenter}>
+        <Text style={styles.formTitle}>{isSignUp ? "Create account" : "Welcome back"}</Text>
+
+        {isSignUp && (
+          <View style={styles.nameRow}>
+            <TextInput
+              value={firstName}
+              onChangeText={setFirstName}
+              placeholder="First name"
+              placeholderTextColor="#52525b"
+              style={[styles.input, { flex: 1 }]}
+              autoCapitalize="words"
+            />
+            <TextInput
+              value={lastName}
+              onChangeText={setLastName}
+              placeholder="Last name"
+              placeholderTextColor="#52525b"
+              style={[styles.input, { flex: 1 }]}
+              autoCapitalize="words"
+            />
+          </View>
+        )}
+
+        <TextInput
+          value={email}
+          onChangeText={setEmail}
+          placeholder="Email"
+          placeholderTextColor="#52525b"
+          style={styles.input}
+          keyboardType="email-address"
+          autoCapitalize="none"
+          autoCorrect={false}
+        />
+
+        <TextInput
+          value={password}
+          onChangeText={setPassword}
+          placeholder="Password"
+          placeholderTextColor="#52525b"
+          style={styles.input}
+          secureTextEntry
+        />
+
+        <Pressable
+          style={[styles.submitButton, busy && { opacity: 0.5 }]}
+          onPress={isSignUp ? handleSignUp : handleLogin}
+          disabled={busy}
+        >
+          <Text style={styles.submitText}>
+            {busy ? "Please wait..." : isSignUp ? "Create account" : "Log in"}
+          </Text>
+        </Pressable>
+
+        <Pressable onPress={() => setMode(isSignUp ? "login" : "signup")}>
+          <Text style={styles.switchText}>
+            {isSignUp ? "Already have an account? Log in" : "Don't have an account? Sign up"}
+          </Text>
+        </Pressable>
+      </View>
+    </KeyboardAvoidingView>
+  );
+}
+
+const styles = StyleSheet.create({
+  container: {
+    flex: 1,
+    backgroundColor: "#000000",
+  },
+  closeButton: {
+    position: "absolute",
+    top: 60,
+    right: 20,
+    zIndex: 99,
+    padding: 12,
+  },
+  center: {
+    flex: 1,
+    alignItems: "center",
+    justifyContent: "center",
+  },
+  logoText: {
+    fontFamily: "Lora",
+    fontSize: 32,
+    fontWeight: "400",
+    color: "#f5f5f7",
+    marginBottom: 12,
+  },
+  taglineRow: {
+    height: 24,
+    alignItems: "center",
+    justifyContent: "center",
+  },
+  taglineText: {
+    fontSize: 16,
+    fontFamily: F.regular,
+    color: "#f5f5f7",
+  },
+  cursor: {
+    color: "#71717a",
+    fontWeight: "300",
+  },
+
+  // Bottom sheet (landing)
+  bottomSheet: {
+    backgroundColor: "#1c1c1e",
+    borderTopLeftRadius: 24,
+    borderTopRightRadius: 24,
+    paddingHorizontal: 20,
+    paddingTop: 24,
+    paddingBottom: 40,
+    gap: 12,
+  },
+  appleButton: {
+    flexDirection: "row",
+    alignItems: "center",
+    justifyContent: "center",
+    backgroundColor: "#f5f5f7",
+    borderRadius: 14,
+    height: 56,
+    gap: 8,
+  },
+  appleText: {
+    fontSize: 17,
+    fontFamily: F.semibold,
+    color: "#000000",
+  },
+  darkButton: {
+    flexDirection: "row",
+    alignItems: "center",
+    justifyContent: "center",
+    backgroundColor: "#2c2c2e",
+    borderRadius: 14,
+    height: 56,
+    borderWidth: 1,
+    borderColor: "#3a3a3c",
+    gap: 8,
+  },
+  darkButtonText: {
+    fontSize: 17,
+    fontFamily: F.semibold,
+    color: "#f5f5f7",
+  },
+  loginButton: {
+    flexDirection: "row",
+    alignItems: "center",
+    justifyContent: "center",
+    height: 56,
+    borderRadius: 14,
+  },
+  googleG: {
+    fontSize: 18,
+    fontFamily: F.bold,
+    color: "#f5f5f7",
+  },
+
+  // Form screen
+  formCenter: {
+    flex: 1,
+    justifyContent: "center",
+    paddingHorizontal: 24,
+  },
+  formTitle: {
+    fontSize: 28,
+    fontFamily: F.bold,
+    color: "#f5f5f7",
+    marginBottom: 28,
+  },
+  nameRow: {
+    flexDirection: "row",
+    gap: 12,
+  },
+  input: {
+    backgroundColor: "#1c1c1e",
+    borderRadius: 12,
+    paddingHorizontal: 16,
+    paddingVertical: 16,
+    color: "#f5f5f7",
+    fontSize: 16,
+    fontFamily: F.regular,
+    marginBottom: 14,
+    borderWidth: 1,
+    borderColor: "#2c2c2e",
+  },
+  submitButton: {
+    backgroundColor: "#f5f5f7",
+    borderRadius: 14,
+    height: 56,
+    alignItems: "center",
+    justifyContent: "center",
+    marginTop: 8,
+  },
+  submitText: {
+    fontSize: 17,
+    fontFamily: F.semibold,
+    color: "#000000",
+  },
+  switchText: {
+    color: "#71717a",
+    fontSize: 15,
+    fontFamily: F.regular,
+    textAlign: "center",
+    marginTop: 20,
+  },
+});
