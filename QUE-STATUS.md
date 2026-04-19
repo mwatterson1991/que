@@ -4,7 +4,7 @@
 >
 > Legend: `[ ]` not started · `[~]` in progress (auto-branch exists) · `[✴]` PR open, awaiting review · `[x]` merged / complete · `[🚫]` blocked (see QUE-BLOCKERS.md)
 
-Last agent run: *none yet*
+Last agent run: 2026-04-19 08:00
 
 ## Checklist state
 
@@ -28,7 +28,7 @@ Last agent run: *none yet*
 
 ### Phase 03 — App Store Content
 - [ ] Final app name locked — Cue / Que / Quake / Arma
-- [ ] App Store subtitle (30 chars max)
+- [✴] App Store subtitle (30 chars max) — PR #10
 - [ ] Full App Store description (4000 chars)
 - [ ] Keywords field (100 chars max, comma-separated)
 - [ ] Promotional text (170 chars — updatable without resubmit)
@@ -60,11 +60,18 @@ Last agent run: *none yet*
 
 ## Open auto-branches
 
-*(None yet. Agent will list branches and PR links here after its first run.)*
+- `auto/agent-20260419-0800-appstore-subtitle` — PR #10
 
 ## Run journal
 
 *(Most recent at top. Agent appends one entry per run.)*
+
+## 2026-04-19 08:00
+- **Task:** App Store subtitle (30 chars max)
+- **Branch:** `auto/agent-20260419-0800-appstore-subtitle`
+- **PR:** #10 — https://github.com/mwatterson1991/que/pull/10
+- **Summary:** Wrote App Store subtitle "Wake Up With Purpose" (20 chars) with rationale and alternates for review.
+- **Next:** Remaining Phase 03 copy: keywords field, promotional text.
 
 ---
 
