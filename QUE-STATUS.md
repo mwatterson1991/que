@@ -4,7 +4,7 @@
 >
 > Legend: `[ ]` not started · `[~]` in progress (auto-branch exists) · `[✴]` PR open, awaiting review · `[x]` merged / complete · `[🚫]` blocked (see QUE-BLOCKERS.md)
 
-Last agent run: *none yet*
+Last agent run: 2026-04-19 09:00
 
 ## Checklist state
 
@@ -30,7 +30,7 @@ Last agent run: *none yet*
 - [ ] Final app name locked — Cue / Que / Quake / Arma
 - [ ] App Store subtitle (30 chars max)
 - [ ] Full App Store description (4000 chars)
-- [ ] Keywords field (100 chars max, comma-separated)
+- [✴] Keywords field (100 chars max, comma-separated) — PR #TBD
 - [ ] Promotional text (170 chars — updatable without resubmit)
 - [ ] Screenshots — 6.9" iPhone, 6.5" iPhone, 12.9" iPad (if supported)
 - [ ] App preview video (optional — 15–30 sec)
@@ -60,11 +60,18 @@ Last agent run: *none yet*
 
 ## Open auto-branches
 
-*(None yet. Agent will list branches and PR links here after its first run.)*
+- `auto/agent-20260419-0900-appstore-keywords` — PR #TBD
 
 ## Run journal
 
 *(Most recent at top. Agent appends one entry per run.)*
+
+## 2026-04-19 09:00
+- **Task:** Keywords field (100 chars max, comma-separated)
+- **Branch:** `auto/agent-20260419-0900-appstore-keywords`
+- **PR:** #TBD
+- **Summary:** Wrote 13 App Store keywords (97 chars) targeting alarm, self-improvement, and guided-audio search intents.
+- **Next:** Remaining Phase 03 copy: promotional text, privacy policy draft, support page.
 
 ---
 
