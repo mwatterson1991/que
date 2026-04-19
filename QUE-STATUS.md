@@ -4,7 +4,7 @@
 >
 > Legend: `[ ]` not started · `[~]` in progress (auto-branch exists) · `[✴]` PR open, awaiting review · `[x]` merged / complete · `[🚫]` blocked (see QUE-BLOCKERS.md)
 
-Last agent run: 2026-04-19 12:20
+Last agent run: 2026-04-19 18:30
 
 ## Checklist state
 
@@ -33,7 +33,7 @@ Last agent run: 2026-04-19 12:20
 - [ ] Keywords field (100 chars max, comma-separated)
 - [ ] Promotional text (170 chars — updatable without resubmit)
 - [✴] Screenshots — 6.9" iPhone, 6.5" iPhone, 12.9" iPad (if supported) → [PR #20](https://github.com/mwatterson1991/que/pull/20)
-- [ ] App preview video (optional — 15–30 sec)
+- [✴] App preview video (optional — 15–30 sec) → [PR #21](https://github.com/mwatterson1991/que/pull/21)
 - [✴] App icon — 1024×1024px, no alpha channel → [PR #19](https://github.com/mwatterson1991/que/pull/19)
 - [ ] Privacy policy URL — hosted online
 - [ ] Support URL — even a simple landing page works
@@ -62,8 +62,16 @@ Last agent run: 2026-04-19 12:20
 
 - `auto/agent-20260419-1700-app-icon` → [PR #19](https://github.com/mwatterson1991/que/pull/19) — App icon
 - `auto/agent-20260419-1217-appstore-screenshots` → [PR #20](https://github.com/mwatterson1991/que/pull/20) — App Store screenshots
+- `auto/agent-20260419-1800-preview-video` → [PR #21](https://github.com/mwatterson1991/que/pull/21) — App Store preview video
 
 ## Run journal
+
+## 2026-04-19 18:30 local time
+- **Task:** App preview video (optional — 15–30 sec)
+- **Branch:** `auto/agent-20260419-1800-preview-video`
+- **PR:** #21 — https://github.com/mwatterson1991/que/pull/21
+- **Summary:** Generated a 20-second App Store preview video (1290×2796, H.264) with 5 branded slides and cross-fade transitions using Swift/Core Graphics + AVFoundation.
+- **Next:** If Michael wants additional device sizes (6.5" iPhone, iPad), adjust the resolution constants in the script and re-run. Copy/slide changes are also simple edits to the `slides` array.
 
 ## 2026-04-19 12:20 local time
 - **Task:** Screenshots — 6.9" iPhone, 6.5" iPhone, 12.9" iPad (if supported)
