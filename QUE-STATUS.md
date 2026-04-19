@@ -4,7 +4,7 @@
 >
 > Legend: `[ ]` not started · `[~]` in progress (auto-branch exists) · `[✴]` PR open, awaiting review · `[x]` merged / complete · `[🚫]` blocked (see QUE-BLOCKERS.md)
 
-Last agent run: *none yet*
+Last agent run: 2026-04-19 15:00
 
 ## Checklist state
 
@@ -27,7 +27,7 @@ Last agent run: *none yet*
 - [ ] Accessibility pass — Dynamic Type, VoiceOver basics
 
 ### Phase 03 — App Store Content
-- [ ] Final app name locked — Cue / Que / Quake / Arma
+- [✴] Final app name locked — Que — PR #17
 - [ ] App Store subtitle (30 chars max)
 - [ ] Full App Store description (4000 chars)
 - [ ] Keywords field (100 chars max, comma-separated)
@@ -60,11 +60,18 @@ Last agent run: *none yet*
 
 ## Open auto-branches
 
-*(None yet. Agent will list branches and PR links here after its first run.)*
+- `auto/agent-20260419-1500-lock-app-name` — PR #17 — Lock app name as Que
 
 ## Run journal
 
 *(Most recent at top. Agent appends one entry per run.)*
+
+## 2026-04-19 15:00
+- **Task:** Final app name locked — Que
+- **Branch:** `auto/agent-20260419-1500-lock-app-name`
+- **PR:** #17 — https://github.com/mwatterson1991/que/pull/17
+- **Summary:** Renamed app from "Mantra Alarm" to "Que" in app.json, package.json, and user-facing copy; updated bundle identifiers and URL schemes to com.michaelwatterson.que.
+- **Next:** After merge, run `npx expo prebuild --clean` to regenerate native project directories with new bundle IDs.
 
 ---
 
