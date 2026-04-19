@@ -4,7 +4,7 @@
 >
 > Legend: `[ ]` not started · `[~]` in progress (auto-branch exists) · `[✴]` PR open, awaiting review · `[x]` merged / complete · `[🚫]` blocked (see QUE-BLOCKERS.md)
 
-Last agent run: *none yet*
+Last agent run: 2026-04-18 19:30
 
 ## Checklist state
 
@@ -21,7 +21,7 @@ Last agent run: *none yet*
 ### Phase 02 — App Polish
 - [ ] Onboarding flow for new users
 - [ ] Push notification permissions requested gracefully
-- [ ] Empty states designed (no alarms set, etc.)
+- [✴] Empty states designed (no alarms set, etc.) — [PR #6](https://github.com/mwatterson1991/que/pull/6)
 - [🚫] Crash-free on iPhone and iPad — tested on real devices *(human-only)*
 - [ ] Dark mode support
 - [ ] Accessibility pass — Dynamic Type, VoiceOver basics
@@ -60,11 +60,18 @@ Last agent run: *none yet*
 
 ## Open auto-branches
 
-*(None yet. Agent will list branches and PR links here after its first run.)*
+- `auto/agent-20260418-1930-empty-states` — [PR #6](https://github.com/mwatterson1991/que/pull/6) — Empty states designed (no alarms set, etc.)
 
 ## Run journal
 
 *(Most recent at top. Agent appends one entry per run.)*
+
+## 2026-04-18 19:30
+- **Task:** Empty states designed (no alarms set, etc.)
+- **Branch:** `auto/agent-20260418-1930-empty-states`
+- **PR:** #6 — https://github.com/mwatterson1991/que/pull/6
+- **Summary:** Added reusable EmptyState component with icon ring and upgraded empty states across alarms, search, sounds, and profile screens with contextual icons and helpful copy.
+- **Next:** Dark mode support or accessibility pass are the next Phase 02 polish items.
 
 ---
 
