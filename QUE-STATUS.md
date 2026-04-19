@@ -4,7 +4,7 @@
 >
 > Legend: `[ ]` not started · `[~]` in progress (auto-branch exists) · `[✴]` PR open, awaiting review · `[x]` merged / complete · `[🚫]` blocked (see QUE-BLOCKERS.md)
 
-Last agent run: *none yet*
+Last agent run: 2026-04-19 12:00
 
 ## Checklist state
 
@@ -45,8 +45,8 @@ Last agent run: *none yet*
 - [🚫] Bundle ID registered in App Store Connect *(human-only)*
 - [🚫] App record created in App Store Connect *(human-only)*
 - [ ] Distribution certificate and provisioning profile set up in Xcode
-- [ ] Required capabilities enabled — background audio, notifications
-- [ ] Entitlements file correct for all capabilities used
+- [✴] Required capabilities enabled — background audio, notifications — PR #13
+- [✴] Entitlements file correct for all capabilities used — PR #14
 
 ### Phase 05 — Submission
 - [ ] Archive built in Xcode (Product → Archive)
@@ -65,6 +65,13 @@ Last agent run: *none yet*
 ## Run journal
 
 *(Most recent at top. Agent appends one entry per run.)*
+
+## 2026-04-19 12:00
+- **Task:** Entitlements file correct for all capabilities used
+- **Branch:** `auto/agent-20260419-1200-entitlements-audit`
+- **PR:** #14 — https://github.com/mwatterson1991/que/pull/14
+- **Summary:** Declared iOS entitlements in app.json for push notifications (aps-environment) and time-sensitive notifications (critical for alarm delivery through Focus/DND).
+- **Next:** Phase 01 foundation work (ElevenLabs integration blocked on API keys). Next unblocked items: alarm audio reliability, or Phase 03 copy items.
 
 ---
 
