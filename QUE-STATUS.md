@@ -4,7 +4,7 @@
 >
 > Legend: `[ ]` not started · `[~]` in progress (auto-branch exists) · `[✴]` PR open, awaiting review · `[x]` merged / complete · `[🚫]` blocked (see QUE-BLOCKERS.md)
 
-Last agent run: *none yet*
+Last agent run: 2026-04-19 11:00
 
 ## Checklist state
 
@@ -45,7 +45,7 @@ Last agent run: *none yet*
 - [🚫] Bundle ID registered in App Store Connect *(human-only)*
 - [🚫] App record created in App Store Connect *(human-only)*
 - [ ] Distribution certificate and provisioning profile set up in Xcode
-- [ ] Required capabilities enabled — background audio, notifications
+- [✴] Required capabilities enabled — background audio, notifications — PR #13
 - [ ] Entitlements file correct for all capabilities used
 
 ### Phase 05 — Submission
@@ -65,6 +65,13 @@ Last agent run: *none yet*
 ## Run journal
 
 *(Most recent at top. Agent appends one entry per run.)*
+
+## 2026-04-19 11:00
+- **Task:** Required capabilities enabled — background audio, notifications
+- **Branch:** `auto/agent-20260419-1100-ios-capabilities`
+- **PR:** #13 — https://github.com/mwatterson1991/que/pull/13
+- **Summary:** Added remote-notification background mode for iOS, configured expo-notifications plugin with alarm channel, and added Android permissions for boot-completed and foreground service media playback.
+- **Next:** Entitlements file audit (related Phase 04 item), then remaining Phase 03 copy items.
 
 ---
 
