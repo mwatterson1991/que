@@ -12,6 +12,7 @@ import {
 } from "react-native";
 import { Ionicons } from "@expo/vector-icons";
 import { F } from "@/lib/fonts";
+import { useColors } from "@/lib/theme";
 import { useSessions } from "@/lib/useSupabase";
 import type { Session } from "@/lib/types";
 
@@ -26,28 +27,28 @@ function formatPlays(plays: number) {
   return plays.toLocaleString();
 }
 
-// ─── Session row ─────────────────────────────────────────
 function SessionRow({ session }: { session: Session }) {
   const router = useRouter();
+  const c = useColors();
   return (
     <Pressable
       onPress={() => router.push(`/player?id=${session.id}` as any)}
-      style={styles.sessionRow}
+      style={[styles.sessionRow, { borderBottomColor: c.borderFaint }]}
     >
-      <Text style={styles.sessionTitle}>{session.title}</Text>
-      <Text style={styles.sessionDescription}>{session.description}</Text>
+      <Text style={[styles.sessionTitle, { color: c.fg }]}>{session.title}</Text>
+      <Text style={[styles.sessionDescription, { color: c.fgDim }]}>{session.description}</Text>
       <View style={styles.sessionBottom}>
-        <Text style={styles.sessionNarrator}>{session.narrator}</Text>
-        <Text style={styles.sessionPlays}>{formatPlays(session.plays)}</Text>
-        <Text style={styles.sessionDuration}>{formatDuration(session.duration_sec)}</Text>
+        <Text style={[styles.sessionNarrator, { color: c.fgFaint }]}>{session.narrator}</Text>
+        <Text style={[styles.sessionPlays, { color: c.fgFaint }]}>{formatPlays(session.plays)}</Text>
+        <Text style={[styles.sessionDuration, { color: c.fgFaint }]}>{formatDuration(session.duration_sec)}</Text>
       </View>
     </Pressable>
   );
 }
 
-// ─── Screen ──────────────────────────────────────────────
 export default function SearchScreen() {
   const { sessions, loading } = useSessions();
+  const c = useColors();
   const [query, setQuery] = useState("");
   const [activeCategory, setActiveCategory] = useState("All");
 
@@ -64,20 +65,18 @@ export default function SearchScreen() {
   }, [sessions, activeCategory, query]);
 
   return (
-    <View style={styles.container}>
-      {/* Search bar */}
-      <View style={styles.searchBar}>
-        <Ionicons name="search" size={18} color="#71717a" />
+    <View style={[styles.container, { backgroundColor: c.bgDeep }]}>
+      <View style={[styles.searchBar, { backgroundColor: c.panelMid }]}>
+        <Ionicons name="search" size={18} color={c.fgDim} />
         <TextInput
           value={query}
           onChangeText={setQuery}
           placeholder="Search sessions, topics, goals..."
-          placeholderTextColor="#52525b"
-          style={styles.searchInput}
+          placeholderTextColor={c.fgFaint}
+          style={[styles.searchInput, { color: c.fg }]}
         />
       </View>
 
-      {/* Category pills */}
       <View style={styles.pillWrapper}>
         <ScrollView
           horizontal
@@ -90,12 +89,17 @@ export default function SearchScreen() {
             <Pressable
               key={cat}
               onPress={() => setActiveCategory(cat)}
-              style={[styles.categoryPill, active && styles.categoryPillActive]}
+              style={[
+                styles.categoryPill,
+                { borderColor: c.borderMid },
+                active && { backgroundColor: c.fg, borderColor: c.fg },
+              ]}
             >
               <Text
                 style={[
                   styles.categoryText,
-                  active && styles.categoryTextActive,
+                  { color: c.fgMid },
+                  active && { color: c.fgInverted },
                 ]}
               >
                 {cat}
@@ -106,9 +110,8 @@ export default function SearchScreen() {
         </ScrollView>
       </View>
 
-      {/* List */}
       {loading ? (
-        <ActivityIndicator color="#f5f5f7" style={{ marginTop: 40 }} />
+        <ActivityIndicator color={c.fg} style={{ marginTop: 40 }} />
       ) : (
         <FlatList
           data={filtered}
@@ -119,7 +122,7 @@ export default function SearchScreen() {
           showsVerticalScrollIndicator={false}
           nestedScrollEnabled={true}
           ListEmptyComponent={
-            <Text style={styles.emptyText}>No sessions match your search.</Text>
+            <Text style={[styles.emptyText, { color: c.fgFaint }]}>No sessions match your search.</Text>
           }
         />
       )}
@@ -130,14 +133,11 @@ export default function SearchScreen() {
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    backgroundColor: "#000000",
   },
 
-  // Search bar
   searchBar: {
     flexDirection: "row",
     alignItems: "center",
-    backgroundColor: "#1c1c1e",
     borderRadius: 12,
     marginHorizontal: 16,
     marginTop: 12,
@@ -147,13 +147,11 @@ const styles = StyleSheet.create({
   },
   searchInput: {
     flex: 1,
-    color: "#f5f5f7",
     fontSize: 16,
     marginLeft: 10,
     fontFamily: F.regular,
   },
 
-  // Category pills
   pillWrapper: {
     height: 44,
     marginBottom: 12,
@@ -166,28 +164,17 @@ const styles = StyleSheet.create({
   },
   categoryPill: {
     borderWidth: 1,
-    borderColor: "#3f3f46",
     borderRadius: 20,
     paddingHorizontal: 16,
     paddingVertical: 8,
     height: 36,
     justifyContent: "center",
   },
-  categoryPillActive: {
-    backgroundColor: "#f5f5f7",
-    borderColor: "#f5f5f7",
-  },
   categoryText: {
-    color: "#a1a1aa",
     fontSize: 14,
     fontFamily: F.medium,
   },
-  categoryTextActive: {
-    color: "#000000",
-    fontFamily: F.medium,
-  },
 
-  // Session rows
   list: {
     paddingHorizontal: 20,
     paddingBottom: 32,
@@ -195,16 +182,13 @@ const styles = StyleSheet.create({
   sessionRow: {
     paddingVertical: 20,
     borderBottomWidth: StyleSheet.hairlineWidth,
-    borderBottomColor: "#1c1c1e",
   },
   sessionTitle: {
-    color: "#f5f5f7",
     fontSize: 20,
     fontFamily: F.medium,
     marginBottom: 6,
   },
   sessionDescription: {
-    color: "#71717a",
     fontSize: 15,
     fontFamily: F.regular,
     lineHeight: 21,
@@ -215,26 +199,21 @@ const styles = StyleSheet.create({
     alignItems: "center",
   },
   sessionNarrator: {
-    color: "#52525b",
     fontSize: 14,
     fontFamily: F.regular,
   },
   sessionPlays: {
-    color: "#52525b",
     fontSize: 14,
     fontFamily: F.regular,
     marginLeft: 12,
   },
   sessionDuration: {
-    color: "#52525b",
     fontSize: 14,
     fontFamily: F.regular,
     marginLeft: "auto",
   },
 
-  // Empty
   emptyText: {
-    color: "#52525b",
     fontSize: 15,
     textAlign: "center",
     marginTop: 40,

@@ -12,6 +12,7 @@ import {
 import { Ionicons } from "@expo/vector-icons";
 import { useRouter } from "expo-router";
 import { useAuth } from "@/lib/auth";
+import { useColors } from "@/lib/theme";
 import { F } from "@/lib/fonts";
 
 const PHRASES = [
@@ -20,8 +21,8 @@ const PHRASES = [
   "Wake up on the right side of the bed",
 ];
 
-// ─── Cycling tagline ─────────────────────────────────────
 function CyclingTagline() {
+  const c = useColors();
   const [phraseIndex, setPhraseIndex] = useState(0);
   const [displayed, setDisplayed] = useState("");
   const [visible, setVisible] = useState(true);
@@ -69,22 +70,22 @@ function CyclingTagline() {
 
   return (
     <View style={styles.taglineRow}>
-      <Text style={[styles.taglineText, { opacity: visible ? 1 : 0 }]}>
+      <Text style={[styles.taglineText, { color: c.fg, opacity: visible ? 1 : 0 }]}>
         {displayed}
         {visible && displayed.length > 0 && displayed.length < PHRASES[phraseIndex].length && (
-          <Text style={styles.cursor}>|</Text>
+          <Text style={[styles.cursor, { color: c.fgDim }]}>|</Text>
         )}
       </Text>
     </View>
   );
 }
 
-// ─── Auth modes ──────────────────────────────────────────
 type Mode = "landing" | "login" | "signup";
 
 export default function AuthScreen() {
   const router = useRouter();
   const { signInWithEmail, signUpWithEmail } = useAuth();
+  const c = useColors();
 
   const [mode, setMode] = useState<Mode>("landing");
   const [email, setEmail] = useState("");
@@ -131,56 +132,54 @@ export default function AuthScreen() {
     }
   };
 
-  // ─── Landing (buttons only) ─────────────────────────────
   if (mode === "landing") {
     return (
-      <View style={styles.container}>
+      <View style={[styles.container, { backgroundColor: c.bgDeep }]}>
         <Pressable onPress={() => router.replace("/")} style={styles.closeButton} hitSlop={16}>
-          <Ionicons name="close" size={24} color="#f5f5f7" />
+          <Ionicons name="close" size={24} color={c.fg} />
         </Pressable>
 
         <View style={styles.center}>
-          <Text style={styles.logoText}>Morning Q</Text>
+          <Text style={[styles.logoText, { color: c.fg }]}>Morning Q</Text>
           <CyclingTagline />
         </View>
 
-        <View style={styles.bottomSheet}>
-          <Pressable style={styles.appleButton}>
-            <Ionicons name="logo-apple" size={20} color="#000" />
-            <Text style={styles.appleText}>Continue with Apple</Text>
+        <View style={[styles.bottomSheet, { backgroundColor: c.panelMid }]}>
+          <Pressable style={[styles.appleButton, { backgroundColor: c.fg }]}>
+            <Ionicons name="logo-apple" size={20} color={c.fgInverted} />
+            <Text style={[styles.appleText, { color: c.fgInverted }]}>Continue with Apple</Text>
           </Pressable>
 
-          <Pressable style={styles.darkButton}>
-            <Text style={styles.googleG}>G</Text>
-            <Text style={styles.darkButtonText}>Continue with Google</Text>
+          <Pressable style={[styles.darkButton, { backgroundColor: c.panelHigh, borderColor: c.borderMid }]}>
+            <Text style={[styles.googleG, { color: c.fg }]}>G</Text>
+            <Text style={[styles.darkButtonText, { color: c.fg }]}>Continue with Google</Text>
           </Pressable>
 
-          <Pressable style={styles.darkButton} onPress={() => setMode("signup")}>
-            <Text style={styles.darkButtonText}>Sign up</Text>
+          <Pressable style={[styles.darkButton, { backgroundColor: c.panelHigh, borderColor: c.borderMid }]} onPress={() => setMode("signup")}>
+            <Text style={[styles.darkButtonText, { color: c.fg }]}>Sign up</Text>
           </Pressable>
 
           <Pressable style={styles.loginButton} onPress={() => setMode("login")}>
-            <Text style={styles.darkButtonText}>Log in</Text>
+            <Text style={[styles.darkButtonText, { color: c.fg }]}>Log in</Text>
           </Pressable>
         </View>
       </View>
     );
   }
 
-  // ─── Login / Sign-up form ───────────────────────────────
   const isSignUp = mode === "signup";
 
   return (
     <KeyboardAvoidingView
       behavior={Platform.OS === "ios" ? "padding" : undefined}
-      style={styles.container}
+      style={[styles.container, { backgroundColor: c.bgDeep }]}
     >
       <Pressable onPress={() => setMode("landing")} style={styles.closeButton} hitSlop={16}>
-        <Ionicons name="arrow-back" size={24} color="#f5f5f7" />
+        <Ionicons name="arrow-back" size={24} color={c.fg} />
       </Pressable>
 
       <View style={styles.formCenter}>
-        <Text style={styles.formTitle}>{isSignUp ? "Create account" : "Welcome back"}</Text>
+        <Text style={[styles.formTitle, { color: c.fg }]}>{isSignUp ? "Create account" : "Welcome back"}</Text>
 
         {isSignUp && (
           <View style={styles.nameRow}>
@@ -188,16 +187,16 @@ export default function AuthScreen() {
               value={firstName}
               onChangeText={setFirstName}
               placeholder="First name"
-              placeholderTextColor="#52525b"
-              style={[styles.input, { flex: 1 }]}
+              placeholderTextColor={c.fgFaint}
+              style={[styles.input, { flex: 1, backgroundColor: c.panelMid, borderColor: c.panelHigh, color: c.fg }]}
               autoCapitalize="words"
             />
             <TextInput
               value={lastName}
               onChangeText={setLastName}
               placeholder="Last name"
-              placeholderTextColor="#52525b"
-              style={[styles.input, { flex: 1 }]}
+              placeholderTextColor={c.fgFaint}
+              style={[styles.input, { flex: 1, backgroundColor: c.panelMid, borderColor: c.panelHigh, color: c.fg }]}
               autoCapitalize="words"
             />
           </View>
@@ -207,8 +206,8 @@ export default function AuthScreen() {
           value={email}
           onChangeText={setEmail}
           placeholder="Email"
-          placeholderTextColor="#52525b"
-          style={styles.input}
+          placeholderTextColor={c.fgFaint}
+          style={[styles.input, { backgroundColor: c.panelMid, borderColor: c.panelHigh, color: c.fg }]}
           keyboardType="email-address"
           autoCapitalize="none"
           autoCorrect={false}
@@ -218,23 +217,23 @@ export default function AuthScreen() {
           value={password}
           onChangeText={setPassword}
           placeholder="Password"
-          placeholderTextColor="#52525b"
-          style={styles.input}
+          placeholderTextColor={c.fgFaint}
+          style={[styles.input, { backgroundColor: c.panelMid, borderColor: c.panelHigh, color: c.fg }]}
           secureTextEntry
         />
 
         <Pressable
-          style={[styles.submitButton, busy && { opacity: 0.5 }]}
+          style={[styles.submitButton, { backgroundColor: c.fg }, busy && { opacity: 0.5 }]}
           onPress={isSignUp ? handleSignUp : handleLogin}
           disabled={busy}
         >
-          <Text style={styles.submitText}>
+          <Text style={[styles.submitText, { color: c.fgInverted }]}>
             {busy ? "Please wait..." : isSignUp ? "Create account" : "Log in"}
           </Text>
         </Pressable>
 
         <Pressable onPress={() => setMode(isSignUp ? "login" : "signup")}>
-          <Text style={styles.switchText}>
+          <Text style={[styles.switchText, { color: c.fgDim }]}>
             {isSignUp ? "Already have an account? Log in" : "Don't have an account? Sign up"}
           </Text>
         </Pressable>
@@ -246,7 +245,6 @@ export default function AuthScreen() {
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    backgroundColor: "#000000",
   },
   closeButton: {
     position: "absolute",
@@ -264,7 +262,6 @@ const styles = StyleSheet.create({
     fontFamily: "Lora",
     fontSize: 32,
     fontWeight: "400",
-    color: "#f5f5f7",
     marginBottom: 12,
   },
   taglineRow: {
@@ -275,16 +272,12 @@ const styles = StyleSheet.create({
   taglineText: {
     fontSize: 16,
     fontFamily: F.regular,
-    color: "#f5f5f7",
   },
   cursor: {
-    color: "#71717a",
     fontWeight: "300",
   },
 
-  // Bottom sheet (landing)
   bottomSheet: {
-    backgroundColor: "#1c1c1e",
     borderTopLeftRadius: 24,
     borderTopRightRadius: 24,
     paddingHorizontal: 20,
@@ -296,7 +289,6 @@ const styles = StyleSheet.create({
     flexDirection: "row",
     alignItems: "center",
     justifyContent: "center",
-    backgroundColor: "#f5f5f7",
     borderRadius: 14,
     height: 56,
     gap: 8,
@@ -304,23 +296,19 @@ const styles = StyleSheet.create({
   appleText: {
     fontSize: 17,
     fontFamily: F.semibold,
-    color: "#000000",
   },
   darkButton: {
     flexDirection: "row",
     alignItems: "center",
     justifyContent: "center",
-    backgroundColor: "#2c2c2e",
     borderRadius: 14,
     height: 56,
     borderWidth: 1,
-    borderColor: "#3a3a3c",
     gap: 8,
   },
   darkButtonText: {
     fontSize: 17,
     fontFamily: F.semibold,
-    color: "#f5f5f7",
   },
   loginButton: {
     flexDirection: "row",
@@ -332,10 +320,8 @@ const styles = StyleSheet.create({
   googleG: {
     fontSize: 18,
     fontFamily: F.bold,
-    color: "#f5f5f7",
   },
 
-  // Form screen
   formCenter: {
     flex: 1,
     justifyContent: "center",
@@ -344,7 +330,6 @@ const styles = StyleSheet.create({
   formTitle: {
     fontSize: 28,
     fontFamily: F.bold,
-    color: "#f5f5f7",
     marginBottom: 28,
   },
   nameRow: {
@@ -352,19 +337,15 @@ const styles = StyleSheet.create({
     gap: 12,
   },
   input: {
-    backgroundColor: "#1c1c1e",
     borderRadius: 12,
     paddingHorizontal: 16,
     paddingVertical: 16,
-    color: "#f5f5f7",
     fontSize: 16,
     fontFamily: F.regular,
     marginBottom: 14,
     borderWidth: 1,
-    borderColor: "#2c2c2e",
   },
   submitButton: {
-    backgroundColor: "#f5f5f7",
     borderRadius: 14,
     height: 56,
     alignItems: "center",
@@ -374,10 +355,8 @@ const styles = StyleSheet.create({
   submitText: {
     fontSize: 17,
     fontFamily: F.semibold,
-    color: "#000000",
   },
   switchText: {
-    color: "#71717a",
     fontSize: 15,
     fontFamily: F.regular,
     textAlign: "center",

@@ -1,6 +1,7 @@
 import { View, Text, Pressable, ScrollView, StyleSheet } from "react-native";
 import { useRouter } from "expo-router";
 import { F } from "@/lib/fonts";
+import { useColors } from "@/lib/theme";
 
 const OPTIONS = [
   {
@@ -23,13 +24,14 @@ const OPTIONS = [
 
 export default function CreateScreen() {
   const router = useRouter();
+  const c = useColors();
 
   return (
-    <ScrollView style={styles.container} contentContainerStyle={styles.scroll}>
+    <ScrollView style={[styles.container, { backgroundColor: c.bgDeep }]} contentContainerStyle={styles.scroll}>
       {OPTIONS.map((opt, i) => (
-        <Pressable key={i} style={styles.card}>
-          <Text style={styles.cardTitle}>{opt.title}</Text>
-          <Text style={styles.cardSubtitle}>{opt.subtitle}</Text>
+        <Pressable key={i} style={[styles.card, { borderColor: c.border }]}>
+          <Text style={[styles.cardTitle, { color: c.fg }]}>{opt.title}</Text>
+          <Text style={[styles.cardSubtitle, { color: c.fgDim }]}>{opt.subtitle}</Text>
         </Pressable>
       ))}
     </ScrollView>
@@ -39,7 +41,6 @@ export default function CreateScreen() {
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    backgroundColor: "#000000",
   },
   scroll: {
     paddingHorizontal: 20,
@@ -48,20 +49,17 @@ const styles = StyleSheet.create({
   },
   card: {
     borderWidth: 1,
-    borderColor: "#27272a",
     borderRadius: 16,
     paddingHorizontal: 20,
     paddingVertical: 22,
     marginBottom: 16,
   },
   cardTitle: {
-    color: "#f5f5f7",
     fontSize: 18,
     fontFamily: F.bold,
     marginBottom: 6,
   },
   cardSubtitle: {
-    color: "#71717a",
     fontSize: 15,
     lineHeight: 20,
     fontFamily: F.regular,

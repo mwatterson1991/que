@@ -3,12 +3,13 @@ import { Ionicons } from "@expo/vector-icons";
 import { Svg, Polyline, Defs, LinearGradient, Stop } from "react-native-svg";
 import { useRouter } from "expo-router";
 import { F } from "@/lib/fonts";
+import { useColors } from "@/lib/theme";
 import { useProfile, useScores, useCategories, useActivity } from "@/lib/useSupabase";
 
 const DAYS = ["M", "T", "W", "T", "F", "S", "S"];
 
-// ─── Mini sparkline chart ─────────────────────────────────
 function WeekChart({ data }: { data: number[] }) {
+  const c = useColors();
   const W = 320;
   const H = 100;
   const padX = 10;
@@ -16,8 +17,8 @@ function WeekChart({ data }: { data: number[] }) {
 
   if (data.length < 2) {
     return (
-      <View style={[styles.chartCard, { height: H + 40, justifyContent: "center", alignItems: "center" }]}>
-        <Text style={{ color: "#52525b", fontFamily: F.regular, fontSize: 14 }}>
+      <View style={[styles.chartCard, { height: H + 40, justifyContent: "center", alignItems: "center", backgroundColor: c.panelMid, borderColor: c.border }]}>
+        <Text style={{ color: c.fgFaint, fontFamily: F.regular, fontSize: 14 }}>
           Not enough data yet
         </Text>
       </View>
@@ -35,18 +36,18 @@ function WeekChart({ data }: { data: number[] }) {
   }).join(" ");
 
   return (
-    <View style={styles.chartCard}>
+    <View style={[styles.chartCard, { backgroundColor: c.panelMid, borderColor: c.border }]}>
       <Svg width={W} height={H} viewBox={`0 0 ${W} ${H}`}>
         <Defs>
           <LinearGradient id="grad" x1="0" y1="0" x2="0" y2="1">
-            <Stop offset="0" stopColor="#22c55e" stopOpacity="0.25" />
-            <Stop offset="1" stopColor="#22c55e" stopOpacity="0" />
+            <Stop offset="0" stopColor={c.success} stopOpacity="0.25" />
+            <Stop offset="1" stopColor={c.success} stopOpacity="0" />
           </LinearGradient>
         </Defs>
         <Polyline
           points={points}
           fill="none"
-          stroke="#22c55e"
+          stroke={c.success}
           strokeWidth="2.5"
           strokeLinejoin="round"
           strokeLinecap="round"
@@ -54,7 +55,7 @@ function WeekChart({ data }: { data: number[] }) {
       </Svg>
       <View style={styles.dayRow}>
         {DAYS.map((d, i) => (
-          <Text key={i} style={styles.dayLabel}>
+          <Text key={i} style={[styles.dayLabel, { color: c.fgDim }]}>
             {d}
           </Text>
         ))}
@@ -63,9 +64,9 @@ function WeekChart({ data }: { data: number[] }) {
   );
 }
 
-// ─── Screen ───────────────────────────────────────────────
 export default function ProfileScreen() {
   const router = useRouter();
+  const c = useColors();
   const { profile, loading: profileLoading } = useProfile();
   const { scores } = useScores();
   const { categories } = useCategories();
@@ -73,8 +74,8 @@ export default function ProfileScreen() {
 
   if (profileLoading) {
     return (
-      <View style={[styles.container, { justifyContent: "center", alignItems: "center" }]}>
-        <ActivityIndicator color="#71717a" />
+      <View style={[styles.container, { backgroundColor: c.bgDeep, justifyContent: "center", alignItems: "center" }]}>
+        <ActivityIndicator color={c.fgDim} />
       </View>
     );
   }
@@ -84,16 +85,13 @@ export default function ProfileScreen() {
   const sessionsCompleted = profile?.sessions_completed ?? 0;
   const totalHours = profile?.total_hours ?? 0;
 
-  // Chart data from scores table
   const chartData = scores.slice(-7).map((s) => s.score);
 
-  // Top 3 categories by progress
   const strengths = [...categories]
     .sort((a, b) => (b.progress ?? 0) - (a.progress ?? 0))
     .slice(0, 3)
     .map((c) => c.name);
 
-  // Format activity dates
   const formatDate = (iso: string) => {
     const d = new Date(iso);
     const now = new Date();
@@ -104,84 +102,81 @@ export default function ProfileScreen() {
   };
 
   return (
-    <ScrollView style={styles.container} contentContainerStyle={styles.scroll}>
+    <ScrollView style={[styles.container, { backgroundColor: c.bgDeep }]} contentContainerStyle={styles.scroll}>
       {/* Header */}
       <View style={styles.header}>
-        <Text style={styles.headerLabel}>YOUR QUE SCORE</Text>
+        <Text style={[styles.headerLabel, { color: c.fgDim }]}>YOUR QUE SCORE</Text>
         <Pressable onPress={() => router.push("/settings" as any)}>
-          <Ionicons name="settings-outline" size={24} color="#71717a" />
+          <Ionicons name="settings-outline" size={24} color={c.fgDim} />
         </Pressable>
       </View>
 
       {/* Score */}
       <View style={styles.scoreRow}>
-        <Text style={styles.scoreValue}>{currentScore}</Text>
+        <Text style={[styles.scoreValue, { color: c.fg }]}>{currentScore}</Text>
         {scores.length > 1 && (
-          <Text style={styles.scoreDelta}>
+          <Text style={[styles.scoreDelta, { color: c.success }]}>
             ↑+{Math.max(0, currentScore - (scores[scores.length - 2]?.score ?? 0))} today
           </Text>
         )}
       </View>
 
-      {/* Chart */}
       <WeekChart data={chartData} />
 
       {/* Stats row */}
-      <View style={styles.statsRow}>
-        <View style={[styles.statBox, styles.statBorder]}>
-          <Text style={styles.statValue}>{dayStreak}</Text>
-          <Text style={styles.statLabel}>DAY STREAK</Text>
+      <View style={[styles.statsRow, { borderColor: c.border }]}>
+        <View style={[styles.statBox, { borderRightWidth: StyleSheet.hairlineWidth, borderRightColor: c.border }]}>
+          <Text style={[styles.statValue, { color: c.fg }]}>{dayStreak}</Text>
+          <Text style={[styles.statLabel, { color: c.fgDim }]}>DAY STREAK</Text>
         </View>
-        <View style={[styles.statBox, styles.statBorder]}>
-          <Text style={styles.statValue}>{sessionsCompleted}</Text>
-          <Text style={styles.statLabel}>SESSIONS</Text>
+        <View style={[styles.statBox, { borderRightWidth: StyleSheet.hairlineWidth, borderRightColor: c.border }]}>
+          <Text style={[styles.statValue, { color: c.fg }]}>{sessionsCompleted}</Text>
+          <Text style={[styles.statLabel, { color: c.fgDim }]}>SESSIONS</Text>
         </View>
         <View style={styles.statBox}>
-          <Text style={styles.statValue}>{Number(totalHours).toFixed(0)}</Text>
-          <Text style={styles.statLabel}>HOURS</Text>
+          <Text style={[styles.statValue, { color: c.fg }]}>{Number(totalHours).toFixed(0)}</Text>
+          <Text style={[styles.statLabel, { color: c.fgDim }]}>HOURS</Text>
         </View>
       </View>
 
-      {/* Separator */}
-      <View style={styles.sectionSep} />
+      <View style={[styles.sectionSep, { backgroundColor: c.border }]} />
 
       {/* Strong In */}
-      <Text style={styles.sectionTitle}>STRONG IN</Text>
+      <Text style={[styles.sectionTitle, { color: c.fgDim }]}>STRONG IN</Text>
       <View style={styles.pillRow}>
         {strengths.length > 0 ? (
           strengths.map((s) => (
-            <View key={s} style={styles.pill}>
-              <Text style={styles.pillText}>{s}</Text>
+            <View key={s} style={[styles.pill, { borderColor: c.borderMid }]}>
+              <Text style={[styles.pillText, { color: c.fg }]}>{s}</Text>
             </View>
           ))
         ) : (
-          <Text style={{ color: "#52525b", fontFamily: F.regular, fontSize: 14 }}>
+          <Text style={{ color: c.fgFaint, fontFamily: F.regular, fontSize: 14 }}>
             Complete sessions to build strengths
           </Text>
         )}
       </View>
 
-      {/* Separator */}
-      <View style={styles.sectionSep} />
+      <View style={[styles.sectionSep, { backgroundColor: c.border }]} />
 
       {/* Recent Activity */}
-      <Text style={styles.sectionTitle}>RECENT ACTIVITY</Text>
+      <Text style={[styles.sectionTitle, { color: c.fgDim }]}>RECENT ACTIVITY</Text>
       {activity.length > 0 ? (
         activity.slice(0, 10).map((item) => (
-          <View key={item.id} style={styles.activityRow}>
-            <Text style={styles.activityTitle}>{item.title}</Text>
-            <Text style={styles.activityDate}>{formatDate(item.completed_at!)}</Text>
+          <View key={item.id} style={[styles.activityRow, { borderBottomColor: c.borderFaint }]}>
+            <Text style={[styles.activityTitle, { color: c.fg }]}>{item.title}</Text>
+            <Text style={[styles.activityDate, { color: c.fgDim }]}>{formatDate(item.completed_at!)}</Text>
           </View>
         ))
       ) : (
-        <Text style={{ color: "#52525b", fontFamily: F.regular, fontSize: 14, paddingVertical: 12 }}>
+        <Text style={{ color: c.fgFaint, fontFamily: F.regular, fontSize: 14, paddingVertical: 12 }}>
           No activity yet
         </Text>
       )}
 
       {/* Share button */}
-      <Pressable style={styles.shareButton}>
-        <Text style={styles.shareText}>SHARE PROGRESS</Text>
+      <Pressable style={[styles.shareButton, { borderColor: c.borderMid }]}>
+        <Text style={[styles.shareText, { color: c.fg }]}>SHARE PROGRESS</Text>
       </Pressable>
     </ScrollView>
   );
@@ -190,7 +185,6 @@ export default function ProfileScreen() {
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    backgroundColor: "#000000",
   },
   scroll: {
     paddingHorizontal: 20,
@@ -198,7 +192,6 @@ const styles = StyleSheet.create({
     paddingBottom: 48,
   },
 
-  // Header
   header: {
     flexDirection: "row",
     justifyContent: "space-between",
@@ -206,13 +199,11 @@ const styles = StyleSheet.create({
     marginBottom: 4,
   },
   headerLabel: {
-    color: "#71717a",
     fontSize: 13,
     fontFamily: F.semibold,
     letterSpacing: 1.5,
   },
 
-  // Score
   scoreRow: {
     flexDirection: "row",
     alignItems: "baseline",
@@ -220,24 +211,19 @@ const styles = StyleSheet.create({
     marginBottom: 20,
   },
   scoreValue: {
-    color: "#f5f5f7",
     fontSize: 72,
     fontFamily: F.bold,
     letterSpacing: -3,
   },
   scoreDelta: {
-    color: "#22c55e",
     fontSize: 16,
     fontFamily: F.medium,
     fontStyle: "italic",
   },
 
-  // Chart
   chartCard: {
-    backgroundColor: "#1c1c1e",
     borderRadius: 16,
     borderWidth: 1,
-    borderColor: "#27272a",
     paddingTop: 16,
     paddingHorizontal: 8,
     paddingBottom: 8,
@@ -252,17 +238,14 @@ const styles = StyleSheet.create({
     marginTop: 8,
   },
   dayLabel: {
-    color: "#71717a",
     fontSize: 13,
     fontFamily: F.medium,
   },
 
-  // Stats
   statsRow: {
     flexDirection: "row",
     borderTopWidth: StyleSheet.hairlineWidth,
     borderBottomWidth: StyleSheet.hairlineWidth,
-    borderColor: "#27272a",
     paddingVertical: 16,
     marginBottom: 4,
   },
@@ -270,38 +253,28 @@ const styles = StyleSheet.create({
     flex: 1,
     alignItems: "center",
   },
-  statBorder: {
-    borderRightWidth: StyleSheet.hairlineWidth,
-    borderRightColor: "#27272a",
-  },
   statValue: {
-    color: "#f5f5f7",
     fontSize: 28,
     fontFamily: F.bold,
   },
   statLabel: {
-    color: "#71717a",
     fontSize: 11,
     fontFamily: F.semibold,
     letterSpacing: 1,
     marginTop: 4,
   },
 
-  // Sections
   sectionSep: {
     height: StyleSheet.hairlineWidth,
-    backgroundColor: "#27272a",
     marginVertical: 20,
   },
   sectionTitle: {
-    color: "#71717a",
     fontSize: 13,
     fontFamily: F.semibold,
     letterSpacing: 1.5,
     marginBottom: 12,
   },
 
-  // Strength pills
   pillRow: {
     flexDirection: "row",
     gap: 10,
@@ -309,50 +282,41 @@ const styles = StyleSheet.create({
   },
   pill: {
     borderWidth: 1,
-    borderColor: "#3f3f46",
     borderRadius: 20,
     paddingHorizontal: 16,
     paddingVertical: 8,
   },
   pillText: {
-    color: "#f5f5f7",
     fontSize: 15,
     fontFamily: F.regular,
   },
 
-  // Activity list
   activityRow: {
     flexDirection: "row",
     justifyContent: "space-between",
     alignItems: "center",
     paddingVertical: 14,
     borderBottomWidth: StyleSheet.hairlineWidth,
-    borderBottomColor: "#1c1c1e",
   },
   activityTitle: {
-    color: "#f5f5f7",
     fontSize: 16,
     fontFamily: F.medium,
     flex: 1,
   },
   activityDate: {
-    color: "#71717a",
     fontSize: 14,
     marginLeft: 12,
     fontFamily: F.regular,
   },
 
-  // Share button
   shareButton: {
     borderWidth: 1,
-    borderColor: "#3f3f46",
     borderRadius: 14,
     paddingVertical: 16,
     alignItems: "center",
     marginTop: 28,
   },
   shareText: {
-    color: "#f5f5f7",
     fontSize: 15,
     fontFamily: F.bold,
     letterSpacing: 1.5,

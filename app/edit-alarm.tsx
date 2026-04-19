@@ -12,10 +12,10 @@ import {
 import { Ionicons } from "@expo/vector-icons";
 import { useLocalSearchParams, useRouter, useFocusEffect, useNavigation } from "expo-router";
 import { useAlarms, useSessions } from "@/lib/useSupabase";
+import { useColors } from "@/lib/theme";
 import { consumePickedSound } from "@/lib/soundPicker";
 import { F } from "@/lib/fonts";
 
-// ─── Scroll-wheel column ──────────────────────────────────
 const ITEM_H = 40;
 const VISIBLE = 5;
 
@@ -30,6 +30,7 @@ function WheelColumn({
   onSelect: (index: number) => void;
   width?: number;
 }) {
+  const c = useColors();
   const listRef = useRef<FlatList<string>>(null);
 
   const handleScrollEnd = useCallback(
@@ -66,7 +67,7 @@ function WheelColumn({
                 style={{
                   fontSize: 20,
                   fontFamily: F.regular,
-                  color: isSelected ? "#f5f5f7" : "#48484a",
+                  color: isSelected ? c.fg : c.fgFaint,
                 }}
               >
                 {item}
@@ -79,7 +80,6 @@ function WheelColumn({
   );
 }
 
-// ─── Data ─────────────────────────────────────────────────
 const HOURS = Array.from({ length: 12 }, (_, i) =>
   String(i + 1).padStart(2, "0")
 );
@@ -92,10 +92,10 @@ export default function EditAlarmScreen() {
   const { id } = useLocalSearchParams<{ id: string }>();
   const router = useRouter();
   const navigation = useNavigation();
+  const c = useColors();
   const { alarms, add, update, remove } = useAlarms();
   const { sessions } = useSessions();
 
-  // Find existing alarm data from Supabase
   const existing = alarms.find((a) => a.id === id);
   const existingDate = existing ? new Date(existing.next_fire_at) : new Date();
   const existingHour12 = existingDate.getHours() % 12 || 12;
@@ -111,7 +111,6 @@ export default function EditAlarmScreen() {
     return s?.title ?? "Choose";
   });
 
-  // Update sound label when sessions load
   useEffect(() => {
     if (sessions.length > 0 && existing?.mantra_id && soundLabel === "Choose") {
       const s = sessions.find((s) => s.id === existing.mantra_id);
@@ -119,7 +118,6 @@ export default function EditAlarmScreen() {
     }
   }, [sessions]);
 
-  // Pick up selected sound when returning from sounds screen
   useFocusEffect(
     useCallback(() => {
       const picked = consumePickedSound();
@@ -164,66 +162,59 @@ export default function EditAlarmScreen() {
     router.back();
   };
 
-  // Set up the header
   useEffect(() => {
     navigation.setOptions({
       title: existing ? "Edit Alarm" : "New Alarm",
       headerRight: () => (
         <Pressable onPress={save}>
-          <Text style={{ color: "#f5f5f7", fontSize: 17, fontFamily: F.medium }}>Save</Text>
+          <Text style={{ color: c.fg, fontSize: 17, fontFamily: F.medium }}>Save</Text>
         </Pressable>
       ),
     });
-  }, [navigation, hourIdx, minIdx, merIdx, label, sessionId]);
+  }, [navigation, hourIdx, minIdx, merIdx, label, sessionId, c.fg]);
 
   return (
-    <View style={styles.container}>
+    <View style={[styles.container, { backgroundColor: c.bg }]}>
       <ScrollView contentContainerStyle={styles.scroll}>
-        {/* Time picker */}
         <View style={styles.pickerContainer}>
-          <View style={styles.pickerHighlight} />
+          <View style={[styles.pickerHighlight, { backgroundColor: c.panelMid }]} />
           <View style={styles.pickerColumns}>
             <WheelColumn data={HOURS} selected={hourIdx} onSelect={setHourIdx} width={48} />
-            <Text style={styles.pickerColon}>:</Text>
+            <Text style={[styles.pickerColon, { color: c.fg }]}>:</Text>
             <WheelColumn data={MINUTES} selected={minIdx} onSelect={setMinIdx} width={48} />
             <WheelColumn data={MERIDIEM} selected={merIdx} onSelect={setMerIdx} width={48} />
           </View>
         </View>
 
-        {/* Settings rows */}
         <View style={styles.settingsSection}>
-          {/* Repeat */}
           <View style={styles.row}>
-            <Text style={styles.rowLabel}>Repeat</Text>
-            <Text style={styles.rowValue}>Never</Text>
+            <Text style={[styles.rowLabel, { color: c.fg }]}>Repeat</Text>
+            <Text style={[styles.rowValue, { color: c.fgDim }]}>Never</Text>
           </View>
-          <View style={styles.rowSep} />
+          <View style={[styles.rowSep, { backgroundColor: c.borderFaint }]} />
 
-          {/* Label */}
           <View style={styles.row}>
-            <Text style={styles.rowLabel}>Label</Text>
+            <Text style={[styles.rowLabel, { color: c.fg }]}>Label</Text>
             <TextInput
               value={label}
               onChangeText={setLabel}
-              style={styles.rowInput}
-              placeholderTextColor="#52525b"
+              style={[styles.rowInput, { color: c.fgDim }]}
+              placeholderTextColor={c.fgFaint}
             />
           </View>
-          <View style={styles.rowSep} />
+          <View style={[styles.rowSep, { backgroundColor: c.borderFaint }]} />
 
-          {/* Sound */}
           <Pressable
             onPress={() => router.push(`/sounds?current=${sessionId}` as any)}
             style={styles.row}
           >
-            <Text style={styles.rowLabel}>Sound</Text>
-            <Text style={styles.rowValue}>{soundLabel}</Text>
+            <Text style={[styles.rowLabel, { color: c.fg }]}>Sound</Text>
+            <Text style={[styles.rowValue, { color: c.fgDim }]}>{soundLabel}</Text>
           </Pressable>
-          <View style={styles.rowSep} />
+          <View style={[styles.rowSep, { backgroundColor: c.borderFaint }]} />
 
-          {/* Delete */}
           <Pressable onPress={deleteAlarm} style={styles.row}>
-            <Text style={styles.deleteText}>Delete Alarm</Text>
+            <Text style={[styles.deleteText, { color: c.danger }]}>Delete Alarm</Text>
           </Pressable>
         </View>
       </ScrollView>
@@ -234,14 +225,12 @@ export default function EditAlarmScreen() {
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    backgroundColor: "#0b0b0f",
   },
   scroll: {
     paddingHorizontal: 20,
     paddingBottom: 48,
   },
 
-  // Picker
   pickerContainer: {
     position: "relative",
     marginBottom: 24,
@@ -253,7 +242,6 @@ const styles = StyleSheet.create({
     left: 0,
     right: 0,
     height: ITEM_H,
-    backgroundColor: "#1c1c1e",
     borderRadius: 8,
   },
   pickerColumns: {
@@ -263,11 +251,9 @@ const styles = StyleSheet.create({
   pickerColon: {
     fontSize: 20,
     fontFamily: F.regular,
-    color: "#f5f5f7",
     marginBottom: 2,
   },
 
-  // Settings
   settingsSection: {
     marginTop: 8,
   },
@@ -279,25 +265,16 @@ const styles = StyleSheet.create({
   },
   rowSep: {
     height: StyleSheet.hairlineWidth,
-    backgroundColor: "#1c1c1e",
   },
   rowLabel: {
-    color: "#f5f5f7",
     fontSize: 16,
     fontFamily: F.medium,
   },
   rowValue: {
-    color: "#71717a",
     fontSize: 16,
     fontFamily: F.regular,
   },
-  rowRight: {
-    flexDirection: "row",
-    alignItems: "center",
-    gap: 6,
-  },
   rowInput: {
-    color: "#71717a",
     fontSize: 16,
     fontFamily: F.regular,
     textAlign: "right",
@@ -305,7 +282,6 @@ const styles = StyleSheet.create({
     marginLeft: 16,
   },
   deleteText: {
-    color: "#ff3b30",
     fontSize: 16,
     fontFamily: F.regular,
   },

@@ -17,6 +17,7 @@ import { parseAlarmUtterance } from "@/lib/parseAlarm";
 import { F } from "@/lib/fonts";
 import { useChatMessages, useAlarms } from "@/lib/useSupabase";
 import { useAuth } from "@/lib/auth";
+import { useColors } from "@/lib/theme";
 import type { Database } from "@/lib/database.types";
 
 type ChatMessage = Database["public"]["Tables"]["chat_messages"]["Row"];
@@ -67,6 +68,7 @@ const SUGGESTIONS = [
 
 export default function ChatScreen() {
   const { user } = useAuth();
+  const c = useColors();
   const { messages, loading, add: addMessage } = useChatMessages();
   const { add: addAlarm } = useAlarms();
   const [draft, setDraft] = useState("");
@@ -80,12 +82,10 @@ export default function ChatScreen() {
       if (!msg) return;
       setDraft("");
 
-      // Save user message to Supabase
       await addMessage("user", msg);
 
       const alarm = parseAlarmUtterance(msg);
       if (alarm) {
-        // Save alarm to Supabase
         const fire = new Date(alarm.nextFireAt);
         await addAlarm({
           label: alarm.label,
@@ -113,13 +113,12 @@ export default function ChatScreen() {
   return (
     <KeyboardAvoidingView
       behavior={Platform.OS === "ios" ? "padding" : undefined}
-      style={styles.container}
+      style={[styles.container, { backgroundColor: c.bg }]}
       keyboardVerticalOffset={80}
     >
-      {/* ---------- MESSAGES or EMPTY STATE ---------- */}
       {loading ? (
         <View style={{ flex: 1, justifyContent: "center", alignItems: "center" }}>
-          <ActivityIndicator color="#71717a" />
+          <ActivityIndicator color={c.fgDim} />
         </View>
       ) : hasMessages ? (
         <FlatList
@@ -131,20 +130,22 @@ export default function ChatScreen() {
             <View
               style={[
                 styles.bubble,
-                item.role === "user" ? styles.userBubble : styles.assistantBubble,
+                item.role === "user"
+                  ? [styles.userBubble, { backgroundColor: c.panelHigh }]
+                  : styles.assistantBubble,
               ]}
             >
               {item.role === "assistant" ? (
                 <TypewriterText
                   text={item.text}
                   id={item.id}
-                  style={[styles.bubbleText, styles.assistantBubbleText]}
+                  style={[styles.bubbleText, { color: c.fg }]}
                   onComplete={() =>
                     setTimeout(() => listRef.current?.scrollToEnd({ animated: true }), 50)
                   }
                 />
               ) : (
-                <Text style={[styles.bubbleText, styles.userBubbleText]}>
+                <Text style={[styles.bubbleText, { color: c.fg }]}>
                   {item.text}
                 </Text>
               )}
@@ -153,12 +154,10 @@ export default function ChatScreen() {
         />
       ) : (
         <View style={styles.emptyState}>
-          {/* Floating mic button — above suggestions */}
           <Pressable style={styles.floatingMic}>
             <Ionicons name="mic" size={26} color="#000" />
           </Pressable>
 
-          {/* Suggestion chips */}
           <View style={styles.suggestionsWrapper}>
             <ScrollView
               horizontal
@@ -169,10 +168,10 @@ export default function ChatScreen() {
                 <Pressable
                   key={i}
                   onPress={() => send(`${s.title} ${s.subtitle}`)}
-                  style={styles.suggestionChip}
+                  style={[styles.suggestionChip, { backgroundColor: c.panel, borderColor: c.border }]}
                 >
-                  <Text style={styles.suggestionTitle}>{s.title}</Text>
-                  <Text style={styles.suggestionSubtitle}>{s.subtitle}</Text>
+                  <Text style={[styles.suggestionTitle, { color: c.fg }]}>{s.title}</Text>
+                  <Text style={[styles.suggestionSubtitle, { color: c.fgDim }]}>{s.subtitle}</Text>
                 </Pressable>
               ))}
             </ScrollView>
@@ -180,36 +179,36 @@ export default function ChatScreen() {
         </View>
       )}
 
-      {/* ---------- INPUT BAR ---------- */}
+      {/* Input bar */}
       <View style={styles.inputContainer}>
         <Pressable
-          style={styles.inputBar}
+          style={[styles.inputBar, { backgroundColor: c.panelMid, borderColor: c.border }]}
           onPress={() => inputRef.current?.focus()}
         >
-          <Pressable style={styles.plusButton}>
-            <Ionicons name="add" size={22} color="#a1a1aa" />
+          <Pressable style={[styles.plusButton, { backgroundColor: c.border }]}>
+            <Ionicons name="add" size={22} color={c.fgMid} />
           </Pressable>
           <TextInput
             ref={inputRef}
             value={draft}
             onChangeText={setDraft}
             placeholder="Ask Morning Q"
-            placeholderTextColor="#52525b"
+            placeholderTextColor={c.fgFaint}
             multiline
-            style={styles.textInput}
+            style={[styles.textInput, { color: c.fg }]}
             onSubmitEditing={() => send()}
             blurOnSubmit={false}
           />
           {draft.trim().length > 0 ? (
-            <Pressable onPress={() => send()} style={styles.sendButton}>
-              <Ionicons name="arrow-up" size={16} color="#000" />
+            <Pressable onPress={() => send()} style={[styles.sendButton, { backgroundColor: c.fg }]}>
+              <Ionicons name="arrow-up" size={16} color={c.fgInverted} />
             </Pressable>
           ) : (
             <Pressable
               onPress={() => inputRef.current?.focus()}
-              style={styles.sendButtonInactive}
+              style={[styles.sendButtonInactive, { backgroundColor: c.border }]}
             >
-              <Ionicons name="arrow-up" size={16} color="#52525b" />
+              <Ionicons name="arrow-up" size={16} color={c.fgFaint} />
             </Pressable>
           )}
         </Pressable>
@@ -221,7 +220,6 @@ export default function ChatScreen() {
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    backgroundColor: "#0b0b0f",
   },
 
   // -- Empty state --
@@ -257,21 +255,17 @@ const styles = StyleSheet.create({
     height: 64,
   },
   suggestionChip: {
-    backgroundColor: "#15151c",
     borderWidth: 1,
-    borderColor: "#27272a",
     borderRadius: 16,
     paddingHorizontal: 14,
     paddingVertical: 10,
   },
   suggestionTitle: {
-    color: "#f5f5f7",
     fontSize: 14,
     fontFamily: F.semibold,
     marginBottom: 2,
   },
   suggestionSubtitle: {
-    color: "#71717a",
     fontSize: 12,
     fontFamily: F.regular,
   },
@@ -290,7 +284,6 @@ const styles = StyleSheet.create({
   },
   userBubble: {
     alignSelf: "flex-end",
-    backgroundColor: "#2c2c2e",
   },
   assistantBubble: {
     alignSelf: "flex-start",
@@ -299,14 +292,6 @@ const styles = StyleSheet.create({
   bubbleText: {
     fontSize: 16,
     lineHeight: 22,
-    fontFamily: F.regular,
-  },
-  userBubbleText: {
-    color: "#f5f5f7",
-    fontFamily: F.regular,
-  },
-  assistantBubbleText: {
-    color: "#e4e4e7",
     fontFamily: F.regular,
   },
 
@@ -319,10 +304,8 @@ const styles = StyleSheet.create({
   inputBar: {
     flexDirection: "row",
     alignItems: "center",
-    backgroundColor: "#1c1c24",
     borderRadius: 14,
     borderWidth: 1,
-    borderColor: "#27272a",
     paddingHorizontal: 10,
     paddingVertical: 10,
     minHeight: 48,
@@ -331,14 +314,12 @@ const styles = StyleSheet.create({
     width: 32,
     height: 32,
     borderRadius: 8,
-    backgroundColor: "#27272a",
     alignItems: "center",
     justifyContent: "center",
     marginRight: 8,
   },
   textInput: {
     flex: 1,
-    color: "#f5f5f7",
     fontSize: 16,
     fontFamily: F.regular,
     maxHeight: 120,
@@ -350,7 +331,6 @@ const styles = StyleSheet.create({
     width: 30,
     height: 30,
     borderRadius: 8,
-    backgroundColor: "#f5f5f7",
     alignItems: "center",
     justifyContent: "center",
     marginLeft: 8,
@@ -359,7 +339,6 @@ const styles = StyleSheet.create({
     width: 30,
     height: 30,
     borderRadius: 8,
-    backgroundColor: "#27272a",
     alignItems: "center",
     justifyContent: "center",
     marginLeft: 8,

@@ -8,10 +8,12 @@ import {
 } from "@react-navigation/drawer";
 import { F } from "@/lib/fonts";
 import { useAuth } from "@/lib/auth";
+import { useColors } from "@/lib/theme";
 
 function CustomDrawerContent(props: DrawerContentComponentProps) {
   const router = useRouter();
   const { user } = useAuth();
+  const c = useColors();
 
   const navigate = (route: string) => {
     props.navigation.closeDrawer();
@@ -19,47 +21,45 @@ function CustomDrawerContent(props: DrawerContentComponentProps) {
   };
 
   return (
-    <View style={styles.drawer}>
-      {/* Nav links */}
+    <View style={[styles.drawer, { backgroundColor: c.bgDeep }]}>
       <DrawerContentScrollView
         {...props}
         contentContainerStyle={styles.scrollContent}
         scrollEnabled={false}
       >
         <Pressable style={styles.navItem} onPress={() => navigate("/")}>
-          <Ionicons name="chatbubble-outline" size={24} color="#f5f5f7" style={styles.navIcon} />
-          <Text style={styles.navText}>Chat</Text>
+          <Ionicons name="chatbubble-outline" size={24} color={c.fg} style={styles.navIcon} />
+          <Text style={[styles.navText, { color: c.fg }]}>Chat</Text>
         </Pressable>
         <Pressable style={styles.navItem} onPress={() => navigate("/alarms")}>
-          <Ionicons name="alarm-outline" size={24} color="#f5f5f7" style={styles.navIcon} />
-          <Text style={styles.navText}>Alarms</Text>
+          <Ionicons name="alarm-outline" size={24} color={c.fg} style={styles.navIcon} />
+          <Text style={[styles.navText, { color: c.fg }]}>Alarms</Text>
         </Pressable>
         <Pressable style={styles.navItem} onPress={() => navigate("/search")}>
-          <Ionicons name="search-outline" size={24} color="#f5f5f7" style={styles.navIcon} />
-          <Text style={styles.navText}>Search</Text>
+          <Ionicons name="search-outline" size={24} color={c.fg} style={styles.navIcon} />
+          <Text style={[styles.navText, { color: c.fg }]}>Search</Text>
         </Pressable>
         <Pressable style={styles.navItem} onPress={() => navigate("/create")}>
-          <Ionicons name="add" size={24} color="#f5f5f7" style={styles.navIcon} />
-          <Text style={styles.navText}>Create</Text>
+          <Ionicons name="add" size={24} color={c.fg} style={styles.navIcon} />
+          <Text style={[styles.navText, { color: c.fg }]}>Create</Text>
         </Pressable>
       </DrawerContentScrollView>
 
-      {/* Bottom section */}
       <View style={styles.bottomSection}>
         {user ? (
-          <Text style={styles.bottomText}>
+          <Text style={[styles.bottomText, { color: c.fgDim }]}>
             Signed in as {user.email}
           </Text>
         ) : (
           <>
-            <Text style={styles.bottomText}>
+            <Text style={[styles.bottomText, { color: c.fgDim }]}>
               Save your alarms, share mantras, and personalize your experience.
             </Text>
             <Pressable
-              style={styles.signUpButton}
+              style={[styles.signUpButton, { backgroundColor: c.fg }]}
               onPress={() => navigate("/auth")}
             >
-              <Text style={styles.signUpText}>Sign up or log in</Text>
+              <Text style={[styles.signUpText, { color: c.fgInverted }]}>Sign up or log in</Text>
             </Pressable>
           </>
         )}
@@ -70,12 +70,13 @@ function CustomDrawerContent(props: DrawerContentComponentProps) {
 
 function AddAlarmButton() {
   const router = useRouter();
+  const c = useColors();
   return (
     <Pressable onPress={() => router.push("/edit-alarm" as any)}>
       <Ionicons
         name="add"
         size={28}
-        color="#f5f5f7"
+        color={c.fg}
         style={{ marginRight: 16 }}
       />
     </Pressable>
@@ -84,12 +85,13 @@ function AddAlarmButton() {
 
 function ProfileButton() {
   const router = useRouter();
+  const c = useColors();
   return (
     <Pressable onPress={() => router.push("/profile-page" as any)}>
       <Ionicons
         name="person-outline"
         size={20}
-        color="#f5f5f7"
+        color={c.fg}
         style={{ marginRight: 16 }}
       />
     </Pressable>
@@ -97,23 +99,25 @@ function ProfileButton() {
 }
 
 export default function DrawerLayout() {
+  const c = useColors();
+
   return (
     <Drawer
       drawerContent={(props) => <CustomDrawerContent {...props} />}
       screenOptions={{
         headerStyle: {
-          backgroundColor: "#0b0b0f",
+          backgroundColor: c.bg,
           elevation: 0,
           shadowOpacity: 0,
           borderBottomWidth: 0,
         },
-        headerTintColor: "#f5f5f7",
+        headerTintColor: c.fg,
         headerTitleStyle: {
           fontFamily: F.semibold,
           fontSize: 17,
         },
-        drawerStyle: { backgroundColor: "#000000", width: 280 },
-        sceneContainerStyle: { flex: 1, backgroundColor: "#0b0b0f" },
+        drawerStyle: { backgroundColor: c.bgDeep, width: 280 },
+        sceneContainerStyle: { flex: 1, backgroundColor: c.bg },
       }}
     >
       <Drawer.Screen
@@ -124,7 +128,7 @@ export default function DrawerLayout() {
             fontFamily: "Lora",
             fontSize: 21,
             fontWeight: "400",
-            color: "#f5f5f7",
+            color: c.fg,
           },
           headerRight: () => <ProfileButton />,
         }}
@@ -146,7 +150,6 @@ export default function DrawerLayout() {
 const styles = StyleSheet.create({
   drawer: {
     flex: 1,
-    backgroundColor: "#000000",
     paddingTop: 60,
   },
   scrollContent: {
@@ -162,7 +165,6 @@ const styles = StyleSheet.create({
     marginRight: 12,
   },
   navText: {
-    color: "#f5f5f7",
     fontSize: 24,
     fontFamily: F.medium,
   },
@@ -171,20 +173,17 @@ const styles = StyleSheet.create({
     paddingBottom: 40,
   },
   bottomText: {
-    color: "#71717a",
     fontSize: 14,
     lineHeight: 20,
     marginBottom: 16,
     fontFamily: F.regular,
   },
   signUpButton: {
-    backgroundColor: "#f5f5f7",
     borderRadius: 26,
     paddingVertical: 16,
     alignItems: "center",
   },
   signUpText: {
-    color: "#000000",
     fontSize: 16,
     fontFamily: F.semibold,
   },

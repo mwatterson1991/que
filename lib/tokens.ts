@@ -80,29 +80,86 @@ export const SPACE = {
 // ─── Colors ──────────────────────────────────────────────────────────────────
 
 /**
- * Semantic color aliases.
+ * Semantic color aliases — dark palette.
  * Raw hex values also live in tailwind.config.js for NativeWind classes.
  */
-export const C = {
-  bg: "#0b0b0f",          // main app background (chat, forms, headers)
-  bgDeep: "#000000",      // content screens (alarms, search, player, auth)
-  panel: "#15151c",       // cards, raised surfaces
-  panelMid: "#1c1c1e",   // input backgrounds, search bars, chart cards
-  panelHigh: "#2c2c2e",  // active bubbles, dark buttons
+export const CDark = {
+  bg: "#0b0b0f",
+  bgDeep: "#000000",
+  panel: "#15151c",
+  panelMid: "#1c1c1e",
+  panelHigh: "#2c2c2e",
 
-  border: "#27272a",      // card borders, separators
-  borderFaint: "#1c1c1e", // hairline separators between list rows
-  borderMid: "#3f3f46",   // pill borders, inactive states
+  border: "#27272a",
+  borderFaint: "#1c1c1e",
+  borderMid: "#3f3f46",
 
-  fg: "#f5f5f7",          // primary text, icons
-  fgMid: "#a1a1aa",       // secondary icons
-  fgDim: "#71717a",       // secondary text, labels, timestamps
-  fgFaint: "#52525b",     // placeholder, disabled text
+  fg: "#f5f5f7",
+  fgMid: "#a1a1aa",
+  fgDim: "#71717a",
+  fgFaint: "#52525b",
 
-  accent: "#a78bfa",      // brand accent (purple)
-  success: "#22c55e",     // score delta, chart line, completion
-  alarm: "#ff9f0a",       // alarm/mic button
-  danger: "#ff3b30",      // destructive actions
+  accent: "#a78bfa",
+  success: "#22c55e",
+  alarm: "#ff9f0a",
+  danger: "#ff3b30",
 
   switchOn: "#4cd964",
+  switchOff: "#39393d",
+  fgInverted: "#000000",
 } as const;
+
+/**
+ * Semantic color aliases — light palette.
+ */
+export const CLight: ColorPalette = {
+  bg: "#ffffff",
+  bgDeep: "#f2f2f7",
+  panel: "#e5e5ea",
+  panelMid: "#e5e5ea",
+  panelHigh: "#d1d1d6",
+
+  border: "#c7c7cc",
+  borderFaint: "#e5e5ea",
+  borderMid: "#aeaeb2",
+
+  fg: "#1c1c1e",
+  fgMid: "#636366",
+  fgDim: "#8e8e93",
+  fgFaint: "#aeaeb2",
+
+  accent: "#7c3aed",
+  success: "#16a34a",
+  alarm: "#ea580c",
+  danger: "#dc2626",
+
+  switchOn: "#34c759",
+  switchOff: "#e5e5ea",
+  fgInverted: "#ffffff",
+} as const;
+
+/** Color palette type for theme hooks. */
+export type ColorPalette = {
+  bg: string;
+  bgDeep: string;
+  panel: string;
+  panelMid: string;
+  panelHigh: string;
+  border: string;
+  borderFaint: string;
+  borderMid: string;
+  fg: string;
+  fgMid: string;
+  fgDim: string;
+  fgFaint: string;
+  accent: string;
+  success: string;
+  alarm: string;
+  danger: string;
+  switchOn: string;
+  switchOff: string;
+  fgInverted: string;
+};
+
+/** Default alias — backward compatibility for unmigrated code. */
+export const C = CDark;

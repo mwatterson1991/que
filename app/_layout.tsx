@@ -6,6 +6,7 @@ import { StatusBar } from "expo-status-bar";
 import { useFonts } from "expo-font";
 import * as SplashScreen from "expo-splash-screen";
 import { AuthProvider, useAuth } from "@/lib/auth";
+import { ThemeProvider, useTheme } from "@/lib/theme";
 
 SplashScreen.preventAutoHideAsync();
 
@@ -33,10 +34,8 @@ function AuthGate() {
     const onAuthScreen = segments[0] === "auth";
 
     if (!session && !onAuthScreen) {
-      // Not logged in and not on auth → send to auth
       router.replace("/auth");
     } else if (session && onAuthScreen) {
-      // Logged in but still on auth → send to app
       router.replace("/");
     }
 
@@ -46,13 +45,116 @@ function AuthGate() {
   return null;
 }
 
-// ─── Shared header config ────────────────────────────────
-const HEADER_BASE = {
-  headerStyle: { backgroundColor: "#0b0b0f" },
-  headerTintColor: "#f5f5f7",
-  headerShadowVisible: false,
-  headerTitleStyle: { fontFamily: "Switzer-Semibold", fontSize: 17 },
-} as const;
+// ─── Themed navigator ────────────────────────────────────
+function ThemedStack() {
+  const { colors, isDark } = useTheme();
+
+  const HEADER_BASE = {
+    headerStyle: { backgroundColor: colors.bg },
+    headerTintColor: colors.fg,
+    headerShadowVisible: false,
+    headerTitleStyle: { fontFamily: "Switzer-Semibold", fontSize: 17 },
+  } as const;
+
+  return (
+    <GestureHandlerRootView
+      style={{ flex: 1, backgroundColor: colors.bgDeep }}
+    >
+      <StatusBar style={isDark ? "light" : "dark"} />
+      <AuthGate />
+      <Stack screenOptions={{ headerShown: false }}>
+        <Stack.Screen
+          name="auth"
+          options={{
+            headerShown: false,
+            animation: "none",
+            contentStyle: { backgroundColor: colors.bgDeep },
+          }}
+        />
+        <Stack.Screen
+          name="(drawer)"
+          options={{ contentStyle: { flex: 1, backgroundColor: colors.bgDeep } }}
+        />
+        <Stack.Screen
+          name="profile-page"
+          options={{
+            animation: "default",
+            headerShown: true,
+            title: "Profile",
+            ...HEADER_BASE,
+            contentStyle: { flex: 1, backgroundColor: colors.bgDeep },
+          }}
+        />
+        <Stack.Screen
+          name="settings"
+          options={{
+            animation: "default",
+            headerShown: true,
+            title: "Settings",
+            headerBackTitle: "",
+            headerBackTitleVisible: false,
+            ...HEADER_BASE,
+            contentStyle: { flex: 1, backgroundColor: colors.bg },
+          }}
+        />
+        <Stack.Screen
+          name="edit-profile"
+          options={{
+            animation: "default",
+            headerShown: true,
+            title: "Edit Profile",
+            headerBackTitle: "",
+            headerBackTitleVisible: false,
+            ...HEADER_BASE,
+            contentStyle: { flex: 1, backgroundColor: colors.bg },
+          }}
+        />
+        <Stack.Screen
+          name="edit-email"
+          options={{
+            animation: "default",
+            headerShown: true,
+            title: "Email",
+            headerBackTitle: "",
+            headerBackTitleVisible: false,
+            ...HEADER_BASE,
+            contentStyle: { flex: 1, backgroundColor: colors.bg },
+          }}
+        />
+        <Stack.Screen
+          name="edit-alarm"
+          options={{
+            animation: "default",
+            headerShown: true,
+            headerBackTitle: "",
+            headerBackTitleVisible: false,
+            ...HEADER_BASE,
+          }}
+        />
+        <Stack.Screen
+          name="sounds"
+          options={{
+            animation: "default",
+            headerShown: true,
+            title: "Sounds",
+            headerBackTitle: "",
+            headerBackTitleVisible: false,
+            ...HEADER_BASE,
+            contentStyle: { flex: 1, backgroundColor: colors.bgDeep },
+          }}
+        />
+        <Stack.Screen
+          name="player"
+          options={{
+            animation: "slide_from_right",
+            headerShown: false,
+            contentStyle: { flex: 1, backgroundColor: colors.bgDeep },
+          }}
+        />
+      </Stack>
+    </GestureHandlerRootView>
+  );
+}
 
 export default function RootLayout() {
   const [fontsLoaded] = useFonts({
@@ -76,103 +178,9 @@ export default function RootLayout() {
 
   return (
     <AuthProvider>
-      <GestureHandlerRootView
-        style={{ flex: 1, backgroundColor: "#000000" }}
-        onLayout={onLayoutReady}
-      >
-        <StatusBar style="light" />
-        <AuthGate />
-        <Stack screenOptions={{ headerShown: false }}>
-          <Stack.Screen
-            name="auth"
-            options={{
-              headerShown: false,
-              animation: "none",
-              contentStyle: { backgroundColor: "#000000" },
-            }}
-          />
-          <Stack.Screen
-            name="(drawer)"
-            options={{ contentStyle: { flex: 1, backgroundColor: "#000000" } }}
-          />
-          <Stack.Screen
-            name="profile-page"
-            options={{
-              animation: "default",
-              headerShown: true,
-              title: "Profile",
-              ...HEADER_BASE,
-              contentStyle: { flex: 1, backgroundColor: "#000000" },
-            }}
-          />
-          <Stack.Screen
-            name="settings"
-            options={{
-              animation: "default",
-              headerShown: true,
-              title: "Settings",
-              headerBackTitle: "",
-              headerBackTitleVisible: false,
-              ...HEADER_BASE,
-              contentStyle: { flex: 1, backgroundColor: "#0b0b0f" },
-            }}
-          />
-          <Stack.Screen
-            name="edit-profile"
-            options={{
-              animation: "default",
-              headerShown: true,
-              title: "Edit Profile",
-              headerBackTitle: "",
-              headerBackTitleVisible: false,
-              ...HEADER_BASE,
-              contentStyle: { flex: 1, backgroundColor: "#0b0b0f" },
-            }}
-          />
-          <Stack.Screen
-            name="edit-email"
-            options={{
-              animation: "default",
-              headerShown: true,
-              title: "Email",
-              headerBackTitle: "",
-              headerBackTitleVisible: false,
-              ...HEADER_BASE,
-              contentStyle: { flex: 1, backgroundColor: "#0b0b0f" },
-            }}
-          />
-          <Stack.Screen
-            name="edit-alarm"
-            options={{
-              animation: "default",
-              headerShown: true,
-              headerBackTitle: "",
-              headerBackTitleVisible: false,
-              ...HEADER_BASE,
-            }}
-          />
-          <Stack.Screen
-            name="sounds"
-            options={{
-              animation: "default",
-              headerShown: true,
-              title: "Sounds",
-              headerBackTitle: "",
-              headerBackTitleVisible: false,
-              ...HEADER_BASE,
-              contentStyle: { flex: 1, backgroundColor: "#000000" },
-            }}
-          />
-          <Stack.Screen
-            name="player"
-            options={{
-              animation: "slide_from_right",
-              headerShown: false,
-              contentStyle: { flex: 1, backgroundColor: "#000000" },
-            }}
-          />
-        </Stack>
-      </GestureHandlerRootView>
+      <ThemeProvider>
+        <ThemedStack />
+      </ThemeProvider>
     </AuthProvider>
   );
 }

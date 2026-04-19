@@ -5,6 +5,7 @@ import { useState, useEffect } from "react";
 import { F } from "@/lib/fonts";
 import { useAuth } from "@/lib/auth";
 import { useProfile, usePreferences } from "@/lib/useSupabase";
+import { useTheme, useColors } from "@/lib/theme";
 
 type SettingsRowProps = {
   icon: keyof typeof Ionicons.glyphMap;
@@ -17,26 +18,27 @@ type SettingsRowProps = {
 };
 
 function SettingsRow({ icon, label, value, hasToggle, toggleValue, onToggle, onPress }: SettingsRowProps) {
+  const c = useColors();
   return (
     <Pressable onPress={onPress} style={styles.row}>
-      <Ionicons name={icon} size={20} color="#a1a1aa" style={styles.rowIcon} />
-      <Text style={styles.rowLabel}>{label}</Text>
+      <Ionicons name={icon} size={20} color={c.fgMid} style={styles.rowIcon} />
+      <Text style={[styles.rowLabel, { color: c.fg }]}>{label}</Text>
       <View style={styles.rowRight}>
         {hasToggle ? (
           <Switch
             value={toggleValue}
             onValueChange={onToggle}
-            trackColor={{ true: "#4cd964", false: "#39393d" }}
+            trackColor={{ true: c.switchOn, false: c.switchOff }}
             thumbColor="#ffffff"
             style={{ transform: [{ scaleX: 0.8 }, { scaleY: 0.8 }] }}
           />
         ) : value ? (
           <>
-            <Text style={styles.rowValue}>{value}</Text>
-            <Ionicons name="chevron-forward" size={16} color="#52525b" />
+            <Text style={[styles.rowValue, { color: c.fgDim }]}>{value}</Text>
+            <Ionicons name="chevron-forward" size={16} color={c.fgFaint} />
           </>
         ) : (
-          <Ionicons name="chevron-forward" size={16} color="#52525b" />
+          <Ionicons name="chevron-forward" size={16} color={c.fgFaint} />
         )}
       </View>
     </Pressable>
@@ -48,16 +50,15 @@ export default function SettingsScreen() {
   const { user, signOut } = useAuth();
   const { profile } = useProfile();
   const { prefs, update: updatePrefs } = usePreferences();
+  const { mode, setMode } = useTheme();
+  const c = useColors();
   const [notifications, setNotifications] = useState(true);
   const [haptics, setHaptics] = useState(true);
-  const [darkMode, setDarkMode] = useState(true);
 
-  // Sync local toggles with Supabase preferences
   useEffect(() => {
     if (prefs) {
       setNotifications(prefs.notifications);
       setHaptics(prefs.haptics);
-      setDarkMode(prefs.dark_mode);
     }
   }, [prefs]);
 
@@ -70,8 +71,7 @@ export default function SettingsScreen() {
     updatePrefs({ haptics: val });
   };
   const toggleDarkMode = (val: boolean) => {
-    setDarkMode(val);
-    updatePrefs({ dark_mode: val });
+    setMode(val ? "dark" : "light");
   };
 
   const displayName = profile?.first_name || user?.email?.split("@")[0] || "User";
@@ -80,31 +80,29 @@ export default function SettingsScreen() {
     : "";
 
   return (
-    <ScrollView style={styles.container} contentContainerStyle={styles.scroll}>
-      {/* Account */}
-      <Text style={styles.sectionTitle}>ACCOUNT</Text>
+    <ScrollView style={[styles.container, { backgroundColor: c.bg }]} contentContainerStyle={styles.scroll}>
+      <Text style={[styles.sectionTitle, { color: c.fgDim }]}>ACCOUNT</Text>
       <SettingsRow
         icon="person-outline"
         label="Profile"
         value={displayName}
         onPress={() => router.push("/edit-profile" as any)}
       />
-      <View style={styles.rowSep} />
+      <View style={[styles.rowSep, { backgroundColor: c.panelHigh }]} />
       <SettingsRow
         icon="mail-outline"
         label="Email"
         value={displayEmail}
         onPress={() => router.push("/edit-email" as any)}
       />
-      <View style={styles.rowSep} />
+      <View style={[styles.rowSep, { backgroundColor: c.panelHigh }]} />
       <SettingsRow
         icon="shield-checkmark-outline"
         label="Privacy"
         onPress={() => Alert.alert("Privacy", "Privacy settings coming soon.")}
       />
 
-      {/* Preferences */}
-      <Text style={styles.sectionTitle}>PREFERENCES</Text>
+      <Text style={[styles.sectionTitle, { color: c.fgDim }]}>PREFERENCES</Text>
       <SettingsRow
         icon="notifications-outline"
         label="Notifications"
@@ -112,7 +110,7 @@ export default function SettingsScreen() {
         toggleValue={notifications}
         onToggle={toggleNotifications}
       />
-      <View style={styles.rowSep} />
+      <View style={[styles.rowSep, { backgroundColor: c.panelHigh }]} />
       <SettingsRow
         icon="phone-portrait-outline"
         label="Haptics"
@@ -120,64 +118,61 @@ export default function SettingsScreen() {
         toggleValue={haptics}
         onToggle={toggleHaptics}
       />
-      <View style={styles.rowSep} />
+      <View style={[styles.rowSep, { backgroundColor: c.panelHigh }]} />
       <SettingsRow
         icon="moon-outline"
         label="Dark Mode"
         hasToggle
-        toggleValue={darkMode}
+        toggleValue={mode === "dark"}
         onToggle={toggleDarkMode}
       />
 
-      {/* App */}
-      <Text style={styles.sectionTitle}>APP</Text>
+      <Text style={[styles.sectionTitle, { color: c.fgDim }]}>APP</Text>
       <SettingsRow
         icon="volume-high-outline"
         label="Default Sound"
         value="Focus"
         onPress={() => router.push("/sounds" as any)}
       />
-      <View style={styles.rowSep} />
+      <View style={[styles.rowSep, { backgroundColor: c.panelHigh }]} />
       <SettingsRow
         icon="time-outline"
         label="Default Duration"
         value="10 min"
         onPress={() => Alert.alert("Duration", "Duration picker coming soon.")}
       />
-      <View style={styles.rowSep} />
+      <View style={[styles.rowSep, { backgroundColor: c.panelHigh }]} />
       <SettingsRow
         icon="cloud-outline"
         label="Data & Storage"
         onPress={() => Alert.alert("Data & Storage", "Storage management coming soon.")}
       />
 
-      {/* Support */}
-      <Text style={styles.sectionTitle}>SUPPORT</Text>
+      <Text style={[styles.sectionTitle, { color: c.fgDim }]}>SUPPORT</Text>
       <SettingsRow
         icon="help-circle-outline"
         label="Help Center"
         onPress={() => Alert.alert("Help Center", "Help center coming soon.")}
       />
-      <View style={styles.rowSep} />
+      <View style={[styles.rowSep, { backgroundColor: c.panelHigh }]} />
       <SettingsRow
         icon="chatbox-outline"
         label="Send Feedback"
         onPress={() => Alert.alert("Feedback", "Feedback form coming soon.")}
       />
-      <View style={styles.rowSep} />
+      <View style={[styles.rowSep, { backgroundColor: c.panelHigh }]} />
       <SettingsRow
         icon="document-text-outline"
         label="Terms of Service"
         onPress={() => Alert.alert("Terms", "Terms of service coming soon.")}
       />
-      <View style={styles.rowSep} />
+      <View style={[styles.rowSep, { backgroundColor: c.panelHigh }]} />
       <SettingsRow
         icon="lock-closed-outline"
         label="Privacy Policy"
         onPress={() => Alert.alert("Privacy", "Privacy policy coming soon.")}
       />
 
-      {/* Sign out */}
       <Pressable
         style={styles.signOutButton}
         onPress={() => Alert.alert("Sign Out", "Are you sure?", [
@@ -188,10 +183,10 @@ export default function SettingsScreen() {
           }},
         ])}
       >
-        <Text style={styles.signOutText}>Sign Out</Text>
+        <Text style={[styles.signOutText, { color: c.danger }]}>Sign Out</Text>
       </Pressable>
 
-      <Text style={styles.version}>Morning Q v1.0.0</Text>
+      <Text style={[styles.version, { color: c.fgFaint }]}>Morning Q v1.0.0</Text>
     </ScrollView>
   );
 }
@@ -199,7 +194,6 @@ export default function SettingsScreen() {
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    backgroundColor: "#0b0b0f",
   },
   scroll: {
     paddingHorizontal: 20,
@@ -207,9 +201,7 @@ const styles = StyleSheet.create({
     paddingBottom: 48,
   },
 
-  // Sections
   sectionTitle: {
-    color: "#71717a",
     fontSize: 13,
     fontFamily: F.semibold,
     letterSpacing: 1.5,
@@ -217,7 +209,6 @@ const styles = StyleSheet.create({
     marginTop: 28,
   },
 
-  // Rows
   row: {
     flexDirection: "row",
     alignItems: "center",
@@ -228,7 +219,6 @@ const styles = StyleSheet.create({
     marginRight: 12,
   },
   rowLabel: {
-    color: "#f5f5f7",
     fontSize: 16,
     fontFamily: F.regular,
     flex: 1,
@@ -239,31 +229,25 @@ const styles = StyleSheet.create({
     gap: 6,
   },
   rowValue: {
-    color: "#71717a",
     fontSize: 15,
     fontFamily: F.regular,
   },
   rowSep: {
     height: StyleSheet.hairlineWidth,
-    backgroundColor: "#2c2c2e",
     marginLeft: 32,
   },
 
-  // Sign out
   signOutButton: {
     marginTop: 36,
     paddingVertical: 16,
     alignItems: "center",
   },
   signOutText: {
-    color: "#ff3b30",
     fontSize: 16,
     fontFamily: F.medium,
   },
 
-  // Version
   version: {
-    color: "#52525b",
     fontSize: 13,
     fontFamily: F.regular,
     textAlign: "center",

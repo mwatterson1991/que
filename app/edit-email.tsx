@@ -2,12 +2,14 @@ import { useState, useEffect } from "react";
 import { View, Text, TextInput, Pressable, ScrollView, Alert, StyleSheet } from "react-native";
 import { useRouter, useNavigation } from "expo-router";
 import { F } from "@/lib/fonts";
+import { useColors } from "@/lib/theme";
 import { useAuth } from "@/lib/auth";
 import { supabase } from "@/lib/supabase";
 
 export default function EditEmailScreen() {
   const router = useRouter();
   const navigation = useNavigation();
+  const c = useColors();
   const { user } = useAuth();
 
   const [email, setEmail] = useState(user?.email || "");
@@ -31,44 +33,44 @@ export default function EditEmailScreen() {
     navigation.setOptions({
       headerRight: () => (
         <Pressable onPress={save}>
-          <Text style={{ color: "#f5f5f7", fontSize: 17, fontFamily: F.medium }}>Save</Text>
+          <Text style={{ color: c.fg, fontSize: 17, fontFamily: F.medium }}>Save</Text>
         </Pressable>
       ),
     });
-  }, [navigation, email, confirmEmail]);
+  }, [navigation, email, confirmEmail, c.fg]);
 
   return (
-    <ScrollView style={styles.container} contentContainerStyle={styles.scroll}>
+    <ScrollView style={[styles.container, { backgroundColor: c.bg }]} contentContainerStyle={styles.scroll}>
       <View style={styles.field}>
-        <Text style={styles.label}>Email</Text>
+        <Text style={[styles.label, { color: c.fgDim }]}>Email</Text>
         <TextInput
           value={email}
           onChangeText={setEmail}
-          style={styles.input}
-          placeholderTextColor="#52525b"
+          style={[styles.input, { color: c.fg }]}
+          placeholderTextColor={c.fgFaint}
           keyboardType="email-address"
           autoCapitalize="none"
           autoCorrect={false}
         />
       </View>
-      <View style={styles.sep} />
+      <View style={[styles.sep, { backgroundColor: c.panelHigh }]} />
 
       <View style={styles.field}>
-        <Text style={styles.label}>Confirm</Text>
+        <Text style={[styles.label, { color: c.fgDim }]}>Confirm</Text>
         <TextInput
           value={confirmEmail}
           onChangeText={setConfirmEmail}
-          style={styles.input}
-          placeholderTextColor="#52525b"
+          style={[styles.input, { color: c.fg }]}
+          placeholderTextColor={c.fgFaint}
           placeholder="Re-enter email"
           keyboardType="email-address"
           autoCapitalize="none"
           autoCorrect={false}
         />
       </View>
-      <View style={styles.sep} />
+      <View style={[styles.sep, { backgroundColor: c.panelHigh }]} />
 
-      <Text style={styles.hint}>
+      <Text style={[styles.hint, { color: c.fgFaint }]}>
         We'll send a verification link to your new email address.
       </Text>
     </ScrollView>
@@ -78,7 +80,6 @@ export default function EditEmailScreen() {
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    backgroundColor: "#0b0b0f",
   },
   scroll: {
     paddingHorizontal: 20,
@@ -91,24 +92,20 @@ const styles = StyleSheet.create({
     paddingVertical: 14,
   },
   label: {
-    color: "#71717a",
     fontSize: 15,
     fontFamily: F.regular,
     width: 110,
   },
   input: {
     flex: 1,
-    color: "#f5f5f7",
     fontSize: 16,
     fontFamily: F.regular,
     textAlign: "right",
   },
   sep: {
     height: StyleSheet.hairlineWidth,
-    backgroundColor: "#2c2c2e",
   },
   hint: {
-    color: "#52525b",
     fontSize: 14,
     fontFamily: F.regular,
     marginTop: 16,
