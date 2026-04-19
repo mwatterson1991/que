@@ -4,7 +4,7 @@
 >
 > Legend: `[ ]` not started · `[~]` in progress (auto-branch exists) · `[✴]` PR open, awaiting review · `[x]` merged / complete · `[🚫]` blocked (see QUE-BLOCKERS.md)
 
-Last agent run: *none yet*
+Last agent run: 2026-04-18 22:30
 
 ## Checklist state
 
@@ -29,7 +29,7 @@ Last agent run: *none yet*
 ### Phase 03 — App Store Content
 - [ ] Final app name locked — Cue / Que / Quake / Arma
 - [ ] App Store subtitle (30 chars max)
-- [ ] Full App Store description (4000 chars)
+- [✴] Full App Store description (4000 chars) — [PR #9](https://github.com/mwatterson1991/que/pull/9)
 - [ ] Keywords field (100 chars max, comma-separated)
 - [ ] Promotional text (170 chars — updatable without resubmit)
 - [ ] Screenshots — 6.9" iPhone, 6.5" iPhone, 12.9" iPad (if supported)
@@ -60,11 +60,19 @@ Last agent run: *none yet*
 
 ## Open auto-branches
 
-*(None yet. Agent will list branches and PR links here after its first run.)*
+- `auto/agent-20260418-2130-accessibility` — PR #8
+- `auto/agent-20260418-2230-appstore-description` — PR #9
 
 ## Run journal
 
 *(Most recent at top. Agent appends one entry per run.)*
+
+## 2026-04-18 22:30
+- **Task:** Full App Store description (4000 chars)
+- **Branch:** `auto/agent-20260418-2230-appstore-description`
+- **PR:** #9 — https://github.com/mwatterson1991/que/pull/9
+- **Summary:** Wrote the complete App Store description (2,828 chars) covering product pitch, program library, free/premium tiers, and pricing — all in Que's voice.
+- **Next:** Remaining Phase 03 copy items: subtitle, keywords, promotional text.
 
 ---
 
