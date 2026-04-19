@@ -14,7 +14,8 @@
         "NSMicrophoneUsageDescription": "Mantra Alarm uses your microphone so you can set alarms with your voice.",
         "NSSpeechRecognitionUsageDescription": "Mantra Alarm transcribes what you say to create alarms and mantras.",
         "UIBackgroundModes": [
-          "audio"
+          "audio",
+          "remote-notification"
         ]
       }
     },
@@ -24,13 +25,23 @@
         "RECORD_AUDIO",
         "SCHEDULE_EXACT_ALARM",
         "POST_NOTIFICATIONS",
-        "WAKE_LOCK"
+        "WAKE_LOCK",
+        "RECEIVE_BOOT_COMPLETED",
+        "FOREGROUND_SERVICE",
+        "FOREGROUND_SERVICE_MEDIA_PLAYBACK"
       ]
     },
     "plugins": [
       "expo-router",
       "expo-av",
-      "expo-notifications",
+      [
+        "expo-notifications",
+        {
+          "color": "#0b0b0f",
+          "defaultChannel": "alarms",
+          "enableBackgroundRemoteNotifications": true
+        }
+      ],
       "expo-speech-recognition",
       "expo-font"
     ],
