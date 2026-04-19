@@ -4,7 +4,7 @@
 >
 > Legend: `[ ]` not started · `[~]` in progress (auto-branch exists) · `[✴]` PR open, awaiting review · `[x]` merged / complete · `[🚫]` blocked (see QUE-BLOCKERS.md)
 
-Last agent run: *none yet*
+Last agent run: 2026-04-19 16:00 PT
 
 ## Checklist state
 
@@ -37,7 +37,7 @@ Last agent run: *none yet*
 - [ ] App icon — 1024×1024px, no alpha channel
 - [ ] Privacy policy URL — hosted online
 - [ ] Support URL — even a simple landing page works
-- [ ] Category selected — Health & Fitness or Productivity
+- [✴] Category selected — Health & Fitness or Productivity — [PR #18](https://github.com/mwatterson1991/que/pull/18)
 - [🚫] Age rating questionnaire completed *(human-only)*
 
 ### Phase 04 — Apple Developer
@@ -60,11 +60,18 @@ Last agent run: *none yet*
 
 ## Open auto-branches
 
-*(None yet. Agent will list branches and PR links here after its first run.)*
+- `auto/agent-20260419-1600-category-eas-config` — [PR #18](https://github.com/mwatterson1991/que/pull/18) — Category selected + EAS config
 
 ## Run journal
 
 *(Most recent at top. Agent appends one entry per run.)*
+
+## 2026-04-19 16:00 PT
+- **Task:** Category selected — Health & Fitness or Productivity
+- **Branch:** `auto/agent-20260419-1600-category-eas-config`
+- **PR:** #18 — https://github.com/mwatterson1991/que/pull/18
+- **Summary:** Selected Health & Fitness (primary) and Productivity (secondary) as App Store categories; created eas.json with build/submit profiles and appstore/metadata.json with structured store metadata; added export compliance flag to app.json.
+- **Next:** Once Apple Developer enrollment (blocker #1) is resolved, fill in the eas.json submit placeholders with real Apple credentials.
 
 ---
 
