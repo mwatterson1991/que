@@ -53,7 +53,7 @@ function CustomDrawerContent(props: DrawerContentComponentProps) {
         ) : (
           <>
             <Text style={styles.bottomText}>
-              Save your alarms, share mantras, and personalize your experience.
+              Save your alarms, explore programs, and personalize your experience.
             </Text>
             <Pressable
               style={styles.signUpButton}

@@ -102,7 +102,7 @@ export default function ChatScreen() {
       } else {
         await addMessage(
           "assistant",
-          'I couldn\'t pick out a time. Try "wake me at 7am with a calm mantra".'
+          'I couldn\'t pick out a time. Try "wake me at 7am with a calm session".'
         );
       }
       setTimeout(() => listRef.current?.scrollToEnd({ animated: true }), 50);

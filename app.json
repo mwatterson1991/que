@@ -1,25 +1,25 @@
 {
   "expo": {
-    "name": "Mantra Alarm",
-    "slug": "mantra-alarm",
+    "name": "Que",
+    "slug": "que",
     "version": "0.1.0",
     "orientation": "portrait",
-    "scheme": "mantraalarm",
+    "scheme": "que",
     "userInterfaceStyle": "automatic",
     "newArchEnabled": true,
     "ios": {
       "supportsTablet": true,
-      "bundleIdentifier": "com.michaelwatterson.mantraalarm",
+      "bundleIdentifier": "com.michaelwatterson.que",
       "infoPlist": {
-        "NSMicrophoneUsageDescription": "Mantra Alarm uses your microphone so you can set alarms with your voice.",
-        "NSSpeechRecognitionUsageDescription": "Mantra Alarm transcribes what you say to create alarms and mantras.",
+        "NSMicrophoneUsageDescription": "Que uses your microphone so you can set alarms with your voice.",
+        "NSSpeechRecognitionUsageDescription": "Que uses speech recognition to understand your alarm requests.",
         "UIBackgroundModes": [
           "audio"
         ]
       }
     },
     "android": {
-      "package": "com.michaelwatterson.mantraalarm",
+      "package": "com.michaelwatterson.que",
       "permissions": [
         "RECORD_AUDIO",
         "SCHEDULE_EXACT_ALARM",
