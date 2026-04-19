@@ -12,6 +12,7 @@ import {
 } from "react-native";
 import { Ionicons } from "@expo/vector-icons";
 import { F } from "@/lib/fonts";
+import EmptyState from "@/lib/EmptyState";
 import { useSessions } from "@/lib/useSupabase";
 import type { Session } from "@/lib/types";
 
@@ -119,7 +120,19 @@ export default function SearchScreen() {
           showsVerticalScrollIndicator={false}
           nestedScrollEnabled={true}
           ListEmptyComponent={
-            <Text style={styles.emptyText}>No sessions match your search.</Text>
+            query || activeCategory !== "All" ? (
+              <EmptyState
+                icon="search-outline"
+                title="No results"
+                subtitle="Try a different search term or category."
+              />
+            ) : (
+              <EmptyState
+                icon="musical-notes-outline"
+                title="No sessions yet"
+                subtitle="Sessions will appear here once your library is set up."
+              />
+            )
           }
         />
       )}

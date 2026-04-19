@@ -2,6 +2,7 @@ import { View, Text, FlatList, Switch, Pressable, StyleSheet, ActivityIndicator 
 import { useRouter } from "expo-router";
 import { useAlarms, useSessions } from "@/lib/useSupabase";
 import { F } from "@/lib/fonts";
+import EmptyState from "@/lib/EmptyState";
 import type { Database } from "@/lib/database.types";
 
 type Alarm = Database["public"]["Tables"]["alarms"]["Row"];
@@ -69,11 +70,11 @@ export default function AlarmsScreen() {
             <ActivityIndicator color="#71717a" />
           </View>
         ) : alarms.length === 0 ? (
-          <View style={styles.emptyState}>
-            <Text style={styles.emptyText}>
-              No alarms yet. Use the chat or tap + to create one.
-            </Text>
-          </View>
+          <EmptyState
+            icon="alarm-outline"
+            title="No alarms set"
+            subtitle="Tap + above to create your first alarm and wake up with intention."
+          />
         ) : (
           <FlatList
             data={alarms}

@@ -3,6 +3,7 @@ import { Ionicons } from "@expo/vector-icons";
 import { Svg, Polyline, Defs, LinearGradient, Stop } from "react-native-svg";
 import { useRouter } from "expo-router";
 import { F } from "@/lib/fonts";
+import EmptyState from "@/lib/EmptyState";
 import { useProfile, useScores, useCategories, useActivity } from "@/lib/useSupabase";
 
 const DAYS = ["M", "T", "W", "T", "F", "S", "S"];
@@ -17,8 +18,9 @@ function WeekChart({ data }: { data: number[] }) {
   if (data.length < 2) {
     return (
       <View style={[styles.chartCard, { height: H + 40, justifyContent: "center", alignItems: "center" }]}>
+        <Ionicons name="stats-chart-outline" size={28} color="#3f3f46" style={{ marginBottom: 8 }} />
         <Text style={{ color: "#52525b", fontFamily: F.regular, fontSize: 14 }}>
-          Not enough data yet
+          Complete a few sessions to see your trend
         </Text>
       </View>
     );
@@ -155,9 +157,12 @@ export default function ProfileScreen() {
             </View>
           ))
         ) : (
-          <Text style={{ color: "#52525b", fontFamily: F.regular, fontSize: 14 }}>
-            Complete sessions to build strengths
-          </Text>
+          <View style={styles.inlineEmpty}>
+            <Ionicons name="sparkles-outline" size={18} color="#3f3f46" style={{ marginRight: 8 }} />
+            <Text style={styles.inlineEmptyText}>
+              Complete sessions to build strengths
+            </Text>
+          </View>
         )}
       </View>
 
@@ -174,9 +179,11 @@ export default function ProfileScreen() {
           </View>
         ))
       ) : (
-        <Text style={{ color: "#52525b", fontFamily: F.regular, fontSize: 14, paddingVertical: 12 }}>
-          No activity yet
-        </Text>
+        <EmptyState
+          icon="time-outline"
+          title="No activity yet"
+          subtitle="Your completed sessions will show up here."
+        />
       )}
 
       {/* Share button */}
@@ -340,6 +347,18 @@ const styles = StyleSheet.create({
     fontSize: 14,
     marginLeft: 12,
     fontFamily: F.regular,
+  },
+
+  // Inline empty state (used inside sections like "Strong In")
+  inlineEmpty: {
+    flexDirection: "row",
+    alignItems: "center",
+    paddingVertical: 8,
+  },
+  inlineEmptyText: {
+    color: "#52525b",
+    fontFamily: F.regular,
+    fontSize: 14,
   },
 
   // Share button
