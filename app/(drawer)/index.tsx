@@ -154,7 +154,7 @@ export default function ChatScreen() {
       ) : (
         <View style={styles.emptyState}>
           {/* Floating mic button — above suggestions */}
-          <Pressable style={styles.floatingMic}>
+          <Pressable style={styles.floatingMic} accessibilityRole="button" accessibilityLabel="Record voice message">
             <Ionicons name="mic" size={26} color="#000" />
           </Pressable>
 
@@ -170,6 +170,8 @@ export default function ChatScreen() {
                   key={i}
                   onPress={() => send(`${s.title} ${s.subtitle}`)}
                   style={styles.suggestionChip}
+                  accessibilityRole="button"
+                  accessibilityLabel={`${s.title}, ${s.subtitle}`}
                 >
                   <Text style={styles.suggestionTitle}>{s.title}</Text>
                   <Text style={styles.suggestionSubtitle}>{s.subtitle}</Text>
@@ -186,7 +188,7 @@ export default function ChatScreen() {
           style={styles.inputBar}
           onPress={() => inputRef.current?.focus()}
         >
-          <Pressable style={styles.plusButton}>
+          <Pressable style={styles.plusButton} accessibilityRole="button" accessibilityLabel="Attach">
             <Ionicons name="add" size={22} color="#a1a1aa" />
           </Pressable>
           <TextInput
@@ -201,13 +203,15 @@ export default function ChatScreen() {
             blurOnSubmit={false}
           />
           {draft.trim().length > 0 ? (
-            <Pressable onPress={() => send()} style={styles.sendButton}>
+            <Pressable onPress={() => send()} style={styles.sendButton} accessibilityRole="button" accessibilityLabel="Send message">
               <Ionicons name="arrow-up" size={16} color="#000" />
             </Pressable>
           ) : (
             <Pressable
               onPress={() => inputRef.current?.focus()}
               style={styles.sendButtonInactive}
+              accessibilityElementsHidden={true}
+              importantForAccessibility="no-hide-descendants"
             >
               <Ionicons name="arrow-up" size={16} color="#52525b" />
             </Pressable>
@@ -325,7 +329,7 @@ const styles = StyleSheet.create({
     borderColor: "#27272a",
     paddingHorizontal: 10,
     paddingVertical: 10,
-    minHeight: 48,
+    minHeight: 52,
   },
   plusButton: {
     width: 32,

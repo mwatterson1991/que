@@ -107,15 +107,15 @@ export default function ProfileScreen() {
     <ScrollView style={styles.container} contentContainerStyle={styles.scroll}>
       {/* Header */}
       <View style={styles.header}>
-        <Text style={styles.headerLabel}>YOUR QUE SCORE</Text>
-        <Pressable onPress={() => router.push("/settings" as any)}>
+        <Text style={styles.headerLabel} accessibilityRole="header">YOUR QUE SCORE</Text>
+        <Pressable onPress={() => router.push("/settings" as any)} accessibilityRole="button" accessibilityLabel="Settings">
           <Ionicons name="settings-outline" size={24} color="#71717a" />
         </Pressable>
       </View>
 
       {/* Score */}
       <View style={styles.scoreRow}>
-        <Text style={styles.scoreValue}>{currentScore}</Text>
+        <Text style={styles.scoreValue} maxFontSizeMultiplier={1.2}>{currentScore}</Text>
         {scores.length > 1 && (
           <Text style={styles.scoreDelta}>
             ↑+{Math.max(0, currentScore - (scores[scores.length - 2]?.score ?? 0))} today
@@ -146,7 +146,7 @@ export default function ProfileScreen() {
       <View style={styles.sectionSep} />
 
       {/* Strong In */}
-      <Text style={styles.sectionTitle}>STRONG IN</Text>
+      <Text style={styles.sectionTitle} accessibilityRole="header">STRONG IN</Text>
       <View style={styles.pillRow}>
         {strengths.length > 0 ? (
           strengths.map((s) => (
@@ -165,7 +165,7 @@ export default function ProfileScreen() {
       <View style={styles.sectionSep} />
 
       {/* Recent Activity */}
-      <Text style={styles.sectionTitle}>RECENT ACTIVITY</Text>
+      <Text style={styles.sectionTitle} accessibilityRole="header">RECENT ACTIVITY</Text>
       {activity.length > 0 ? (
         activity.slice(0, 10).map((item) => (
           <View key={item.id} style={styles.activityRow}>
@@ -180,7 +180,7 @@ export default function ProfileScreen() {
       )}
 
       {/* Share button */}
-      <Pressable style={styles.shareButton}>
+      <Pressable style={styles.shareButton} accessibilityRole="button">
         <Text style={styles.shareText}>SHARE PROGRESS</Text>
       </Pressable>
     </ScrollView>

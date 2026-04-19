@@ -33,6 +33,8 @@ function SessionRow({ session }: { session: Session }) {
     <Pressable
       onPress={() => router.push(`/player?id=${session.id}` as any)}
       style={styles.sessionRow}
+      accessibilityRole="button"
+      accessibilityLabel={`${session.title}, ${session.narrator}, ${formatDuration(session.duration_sec)}`}
     >
       <Text style={styles.sessionTitle}>{session.title}</Text>
       <Text style={styles.sessionDescription}>{session.description}</Text>
@@ -91,6 +93,9 @@ export default function SearchScreen() {
               key={cat}
               onPress={() => setActiveCategory(cat)}
               style={[styles.categoryPill, active && styles.categoryPillActive]}
+              accessibilityRole="button"
+              accessibilityState={{ selected: active }}
+              accessibilityLabel={cat}
             >
               <Text
                 style={[
@@ -143,7 +148,8 @@ const styles = StyleSheet.create({
     marginTop: 12,
     marginBottom: 16,
     paddingHorizontal: 14,
-    height: 44,
+    minHeight: 44,
+    paddingVertical: 8,
   },
   searchInput: {
     flex: 1,
@@ -170,7 +176,7 @@ const styles = StyleSheet.create({
     borderRadius: 20,
     paddingHorizontal: 16,
     paddingVertical: 8,
-    height: 36,
+    minHeight: 36,
     justifyContent: "center",
   },
   categoryPillActive: {

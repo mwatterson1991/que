@@ -27,7 +27,7 @@ export default function CreateScreen() {
   return (
     <ScrollView style={styles.container} contentContainerStyle={styles.scroll}>
       {OPTIONS.map((opt, i) => (
-        <Pressable key={i} style={styles.card}>
+        <Pressable key={i} style={styles.card} accessibilityRole="button" accessibilityLabel={`${opt.title}, ${opt.subtitle}`}>
           <Text style={styles.cardTitle}>{opt.title}</Text>
           <Text style={styles.cardSubtitle}>{opt.subtitle}</Text>
         </Pressable>

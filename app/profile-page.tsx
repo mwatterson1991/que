@@ -175,6 +175,9 @@ function ScoreChart() {
             key={r}
             onPress={() => setRange(r)}
             style={[styles.rangePill, r === range && styles.rangePillActive]}
+            accessibilityRole="button"
+            accessibilityState={{ selected: r === range }}
+            accessibilityLabel={r}
           >
             <Text
               style={[
@@ -199,16 +202,16 @@ export default function ProfileScreen() {
   useEffect(() => {
     navigation.setOptions({
       headerLeft: () => (
-        <Pressable onPress={() => router.back()} style={{ marginLeft: 4 }}>
+        <Pressable onPress={() => router.back()} style={{ marginLeft: 4 }} accessibilityRole="button" accessibilityLabel="Back to chat">
           <Ionicons name="chatbubble-outline" size={22} color="#f5f5f7" />
         </Pressable>
       ),
       headerRight: () => (
         <View style={{ flexDirection: "row", alignItems: "center", gap: 16, marginRight: 4 }}>
-          <Pressable>
+          <Pressable accessibilityRole="button" accessibilityLabel="Share profile">
             <Ionicons name="share-outline" size={22} color="#f5f5f7" />
           </Pressable>
-          <Pressable onPress={() => router.push("/settings" as any)}>
+          <Pressable onPress={() => router.push("/settings" as any)} accessibilityRole="button" accessibilityLabel="Settings">
             <Ionicons name="settings-outline" size={22} color="#f5f5f7" />
           </Pressable>
         </View>
@@ -227,7 +230,7 @@ export default function ProfileScreen() {
     >
       {/* Score */}
       <View style={styles.scoreRow}>
-        <Text style={styles.scoreValue}>{SCORE}</Text>
+        <Text style={styles.scoreValue} maxFontSizeMultiplier={1.2}>{SCORE}</Text>
         <Text style={styles.scoreDelta}>+{SCORE_DELTA}</Text>
       </View>
 
@@ -248,7 +251,7 @@ export default function ProfileScreen() {
       <View style={styles.sectionSep} />
 
       {/* Categories */}
-      <Text style={styles.sectionTitle}>CATEGORIES</Text>
+      <Text style={styles.sectionTitle} accessibilityRole="header">CATEGORIES</Text>
       {CATEGORIES.map((cat, i) => (
         <View key={i} style={styles.catRow}>
           <View style={styles.catHeader}>
@@ -265,7 +268,7 @@ export default function ProfileScreen() {
       <View style={styles.sectionSep} />
 
       {/* Recent Activity */}
-      <Text style={styles.sectionTitle}>RECENT ACTIVITY</Text>
+      <Text style={styles.sectionTitle} accessibilityRole="header">RECENT ACTIVITY</Text>
       {RECENT.map((item, i) => (
         <View key={i} style={styles.activityRow}>
           <Text style={styles.activityTitle}>{item.title}</Text>
@@ -274,7 +277,7 @@ export default function ProfileScreen() {
       ))}
 
       {/* Share button */}
-      <Pressable style={styles.shareButton}>
+      <Pressable style={styles.shareButton} accessibilityRole="button">
         <Text style={styles.shareText}>SHARE PROGRESS</Text>
       </Pressable>
     </ScrollView>

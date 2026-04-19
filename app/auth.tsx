@@ -135,31 +135,31 @@ export default function AuthScreen() {
   if (mode === "landing") {
     return (
       <View style={styles.container}>
-        <Pressable onPress={() => router.replace("/")} style={styles.closeButton} hitSlop={16}>
+        <Pressable onPress={() => router.replace("/")} style={styles.closeButton} hitSlop={16} accessibilityRole="button" accessibilityLabel="Close">
           <Ionicons name="close" size={24} color="#f5f5f7" />
         </Pressable>
 
         <View style={styles.center}>
-          <Text style={styles.logoText}>Morning Q</Text>
+          <Text style={styles.logoText} accessibilityRole="header">Morning Q</Text>
           <CyclingTagline />
         </View>
 
         <View style={styles.bottomSheet}>
-          <Pressable style={styles.appleButton}>
+          <Pressable style={styles.appleButton} accessibilityRole="button">
             <Ionicons name="logo-apple" size={20} color="#000" />
             <Text style={styles.appleText}>Continue with Apple</Text>
           </Pressable>
 
-          <Pressable style={styles.darkButton}>
+          <Pressable style={styles.darkButton} accessibilityRole="button">
             <Text style={styles.googleG}>G</Text>
             <Text style={styles.darkButtonText}>Continue with Google</Text>
           </Pressable>
 
-          <Pressable style={styles.darkButton} onPress={() => setMode("signup")}>
+          <Pressable style={styles.darkButton} onPress={() => setMode("signup")} accessibilityRole="button">
             <Text style={styles.darkButtonText}>Sign up</Text>
           </Pressable>
 
-          <Pressable style={styles.loginButton} onPress={() => setMode("login")}>
+          <Pressable style={styles.loginButton} onPress={() => setMode("login")} accessibilityRole="button">
             <Text style={styles.darkButtonText}>Log in</Text>
           </Pressable>
         </View>
@@ -175,12 +175,12 @@ export default function AuthScreen() {
       behavior={Platform.OS === "ios" ? "padding" : undefined}
       style={styles.container}
     >
-      <Pressable onPress={() => setMode("landing")} style={styles.closeButton} hitSlop={16}>
+      <Pressable onPress={() => setMode("landing")} style={styles.closeButton} hitSlop={16} accessibilityRole="button" accessibilityLabel="Back">
         <Ionicons name="arrow-back" size={24} color="#f5f5f7" />
       </Pressable>
 
       <View style={styles.formCenter}>
-        <Text style={styles.formTitle}>{isSignUp ? "Create account" : "Welcome back"}</Text>
+        <Text style={styles.formTitle} accessibilityRole="header">{isSignUp ? "Create account" : "Welcome back"}</Text>
 
         {isSignUp && (
           <View style={styles.nameRow}>
@@ -227,13 +227,15 @@ export default function AuthScreen() {
           style={[styles.submitButton, busy && { opacity: 0.5 }]}
           onPress={isSignUp ? handleSignUp : handleLogin}
           disabled={busy}
+          accessibilityRole="button"
+          accessibilityState={{ disabled: busy }}
         >
           <Text style={styles.submitText}>
             {busy ? "Please wait..." : isSignUp ? "Create account" : "Log in"}
           </Text>
         </Pressable>
 
-        <Pressable onPress={() => setMode(isSignUp ? "login" : "signup")}>
+        <Pressable onPress={() => setMode(isSignUp ? "login" : "signup")} accessibilityRole="button">
           <Text style={styles.switchText}>
             {isSignUp ? "Already have an account? Log in" : "Don't have an account? Sign up"}
           </Text>
@@ -298,7 +300,8 @@ const styles = StyleSheet.create({
     justifyContent: "center",
     backgroundColor: "#f5f5f7",
     borderRadius: 14,
-    height: 56,
+    minHeight: 56,
+    paddingVertical: 14,
     gap: 8,
   },
   appleText: {
@@ -312,7 +315,8 @@ const styles = StyleSheet.create({
     justifyContent: "center",
     backgroundColor: "#2c2c2e",
     borderRadius: 14,
-    height: 56,
+    minHeight: 56,
+    paddingVertical: 14,
     borderWidth: 1,
     borderColor: "#3a3a3c",
     gap: 8,
@@ -326,7 +330,8 @@ const styles = StyleSheet.create({
     flexDirection: "row",
     alignItems: "center",
     justifyContent: "center",
-    height: 56,
+    minHeight: 56,
+    paddingVertical: 14,
     borderRadius: 14,
   },
   googleG: {
@@ -366,7 +371,8 @@ const styles = StyleSheet.create({
   submitButton: {
     backgroundColor: "#f5f5f7",
     borderRadius: 14,
-    height: 56,
+    minHeight: 56,
+    paddingVertical: 14,
     alignItems: "center",
     justifyContent: "center",
     marginTop: 8,

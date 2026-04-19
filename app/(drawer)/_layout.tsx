@@ -26,19 +26,19 @@ function CustomDrawerContent(props: DrawerContentComponentProps) {
         contentContainerStyle={styles.scrollContent}
         scrollEnabled={false}
       >
-        <Pressable style={styles.navItem} onPress={() => navigate("/")}>
+        <Pressable style={styles.navItem} onPress={() => navigate("/")} accessibilityRole="button" accessibilityLabel="Chat">
           <Ionicons name="chatbubble-outline" size={24} color="#f5f5f7" style={styles.navIcon} />
           <Text style={styles.navText}>Chat</Text>
         </Pressable>
-        <Pressable style={styles.navItem} onPress={() => navigate("/alarms")}>
+        <Pressable style={styles.navItem} onPress={() => navigate("/alarms")} accessibilityRole="button" accessibilityLabel="Alarms">
           <Ionicons name="alarm-outline" size={24} color="#f5f5f7" style={styles.navIcon} />
           <Text style={styles.navText}>Alarms</Text>
         </Pressable>
-        <Pressable style={styles.navItem} onPress={() => navigate("/search")}>
+        <Pressable style={styles.navItem} onPress={() => navigate("/search")} accessibilityRole="button" accessibilityLabel="Search">
           <Ionicons name="search-outline" size={24} color="#f5f5f7" style={styles.navIcon} />
           <Text style={styles.navText}>Search</Text>
         </Pressable>
-        <Pressable style={styles.navItem} onPress={() => navigate("/create")}>
+        <Pressable style={styles.navItem} onPress={() => navigate("/create")} accessibilityRole="button" accessibilityLabel="Create">
           <Ionicons name="add" size={24} color="#f5f5f7" style={styles.navIcon} />
           <Text style={styles.navText}>Create</Text>
         </Pressable>
@@ -58,6 +58,7 @@ function CustomDrawerContent(props: DrawerContentComponentProps) {
             <Pressable
               style={styles.signUpButton}
               onPress={() => navigate("/auth")}
+              accessibilityRole="button"
             >
               <Text style={styles.signUpText}>Sign up or log in</Text>
             </Pressable>
@@ -71,7 +72,7 @@ function CustomDrawerContent(props: DrawerContentComponentProps) {
 function AddAlarmButton() {
   const router = useRouter();
   return (
-    <Pressable onPress={() => router.push("/edit-alarm" as any)}>
+    <Pressable onPress={() => router.push("/edit-alarm" as any)} accessibilityRole="button" accessibilityLabel="Add alarm">
       <Ionicons
         name="add"
         size={28}
@@ -85,7 +86,7 @@ function AddAlarmButton() {
 function ProfileButton() {
   const router = useRouter();
   return (
-    <Pressable onPress={() => router.push("/profile-page" as any)}>
+    <Pressable onPress={() => router.push("/profile-page" as any)} accessibilityRole="button" accessibilityLabel="Profile">
       <Ionicons
         name="person-outline"
         size={20}

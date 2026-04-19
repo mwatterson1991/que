@@ -215,6 +215,8 @@ export default function EditAlarmScreen() {
           <Pressable
             onPress={() => router.push(`/sounds?current=${sessionId}` as any)}
             style={styles.row}
+            accessibilityRole="button"
+            accessibilityLabel={`Sound, ${soundLabel}`}
           >
             <Text style={styles.rowLabel}>Sound</Text>
             <Text style={styles.rowValue}>{soundLabel}</Text>
@@ -222,7 +224,7 @@ export default function EditAlarmScreen() {
           <View style={styles.rowSep} />
 
           {/* Delete */}
-          <Pressable onPress={deleteAlarm} style={styles.row}>
+          <Pressable onPress={deleteAlarm} style={styles.row} accessibilityRole="button">
             <Text style={styles.deleteText}>Delete Alarm</Text>
           </Pressable>
         </View>

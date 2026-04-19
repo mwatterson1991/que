@@ -18,7 +18,12 @@ type SettingsRowProps = {
 
 function SettingsRow({ icon, label, value, hasToggle, toggleValue, onToggle, onPress }: SettingsRowProps) {
   return (
-    <Pressable onPress={onPress} style={styles.row}>
+    <Pressable
+      onPress={onPress}
+      style={styles.row}
+      accessibilityRole={hasToggle ? "none" : "button"}
+      accessibilityLabel={hasToggle ? undefined : value ? `${label}, ${value}` : label}
+    >
       <Ionicons name={icon} size={20} color="#a1a1aa" style={styles.rowIcon} />
       <Text style={styles.rowLabel}>{label}</Text>
       <View style={styles.rowRight}>
@@ -29,6 +34,8 @@ function SettingsRow({ icon, label, value, hasToggle, toggleValue, onToggle, onP
             trackColor={{ true: "#4cd964", false: "#39393d" }}
             thumbColor="#ffffff"
             style={{ transform: [{ scaleX: 0.8 }, { scaleY: 0.8 }] }}
+            accessibilityLabel={label}
+            accessibilityRole="switch"
           />
         ) : value ? (
           <>
@@ -82,7 +89,7 @@ export default function SettingsScreen() {
   return (
     <ScrollView style={styles.container} contentContainerStyle={styles.scroll}>
       {/* Account */}
-      <Text style={styles.sectionTitle}>ACCOUNT</Text>
+      <Text style={styles.sectionTitle} accessibilityRole="header">ACCOUNT</Text>
       <SettingsRow
         icon="person-outline"
         label="Profile"
@@ -104,7 +111,7 @@ export default function SettingsScreen() {
       />
 
       {/* Preferences */}
-      <Text style={styles.sectionTitle}>PREFERENCES</Text>
+      <Text style={styles.sectionTitle} accessibilityRole="header">PREFERENCES</Text>
       <SettingsRow
         icon="notifications-outline"
         label="Notifications"
@@ -130,7 +137,7 @@ export default function SettingsScreen() {
       />
 
       {/* App */}
-      <Text style={styles.sectionTitle}>APP</Text>
+      <Text style={styles.sectionTitle} accessibilityRole="header">APP</Text>
       <SettingsRow
         icon="volume-high-outline"
         label="Default Sound"
@@ -152,7 +159,7 @@ export default function SettingsScreen() {
       />
 
       {/* Support */}
-      <Text style={styles.sectionTitle}>SUPPORT</Text>
+      <Text style={styles.sectionTitle} accessibilityRole="header">SUPPORT</Text>
       <SettingsRow
         icon="help-circle-outline"
         label="Help Center"
@@ -187,6 +194,7 @@ export default function SettingsScreen() {
             router.replace("/auth");
           }},
         ])}
+        accessibilityRole="button"
       >
         <Text style={styles.signOutText}>Sign Out</Text>
       </Pressable>
@@ -222,7 +230,7 @@ const styles = StyleSheet.create({
     flexDirection: "row",
     alignItems: "center",
     paddingVertical: 18,
-    minHeight: 52,
+    minHeight: 56,
   },
   rowIcon: {
     marginRight: 12,

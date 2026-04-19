@@ -364,7 +364,7 @@ export default function PlayerScreen() {
     <View style={styles.container}>
       {/* Nav bar */}
       <View style={[styles.navBar, { paddingTop: insets.top }]}>
-        <Pressable style={styles.backButton} onPress={() => router.back()} hitSlop={12}>
+        <Pressable style={styles.backButton} onPress={() => router.back()} hitSlop={12} accessibilityRole="button" accessibilityLabel="Go back">
           <Ionicons name="chevron-back" size={28} color="#f5f5f7" />
         </Pressable>
       </View>
@@ -386,6 +386,8 @@ export default function PlayerScreen() {
             style={styles.menuButton}
             hitSlop={12}
             onPress={() => Alert.alert(session?.title ?? "", session?.description ?? "")}
+            accessibilityRole="button"
+            accessibilityLabel="Session details"
           >
             <Ionicons name="ellipsis-horizontal" size={22} color="#71717a" />
           </Pressable>
@@ -393,7 +395,20 @@ export default function PlayerScreen() {
         <Text style={styles.narrator}>{session?.narrator}</Text>
 
         {/* Progress bar — no thumb */}
-        <View style={styles.progressContainer}>
+        <View
+          style={styles.progressContainer}
+          accessible={true}
+          accessibilityRole="adjustable"
+          accessibilityLabel={`Playback position, ${formatTime(displayElapsed)} of ${formatTime(duration)}`}
+          accessibilityActions={[
+            { name: "increment", label: "Skip forward" },
+            { name: "decrement", label: "Skip back" },
+          ]}
+          onAccessibilityAction={(event) => {
+            if (event.nativeEvent.actionName === "increment") skip(10);
+            else if (event.nativeEvent.actionName === "decrement") skip(-10);
+          }}
+        >
           <View
             ref={trackRef}
             onLayout={() => {
@@ -413,9 +428,9 @@ export default function PlayerScreen() {
         </View>
 
         {/* Controls */}
-        <View style={styles.controls}>
+        <View style={styles.controls} accessibilityRole="toolbar">
           {/* Skip back 10s */}
-          <Pressable style={styles.controlBtn} onPress={() => skip(-10)} hitSlop={8}>
+          <Pressable style={styles.controlBtn} onPress={() => skip(-10)} hitSlop={8} accessibilityRole="button" accessibilityLabel="Skip back 10 seconds">
             <Ionicons
               name="refresh"
               size={22}
@@ -426,7 +441,7 @@ export default function PlayerScreen() {
           </Pressable>
 
           {/* Play / pause */}
-          <Pressable style={styles.controlBtn} onPress={togglePlay}>
+          <Pressable style={styles.controlBtn} onPress={togglePlay} accessibilityRole="button" accessibilityLabel={playing ? "Pause" : "Play"}>
             <Ionicons
               name={playing ? "pause" : "play"}
               size={26}
@@ -436,7 +451,7 @@ export default function PlayerScreen() {
           </Pressable>
 
           {/* Skip forward 10s */}
-          <Pressable style={styles.controlBtn} onPress={() => skip(10)} hitSlop={8}>
+          <Pressable style={styles.controlBtn} onPress={() => skip(10)} hitSlop={8} accessibilityRole="button" accessibilityLabel="Skip forward 10 seconds">
             <Ionicons name="refresh" size={22} color="#f5f5f7" />
             <Text style={styles.skipLabel}>10</Text>
           </Pressable>
@@ -449,7 +464,7 @@ export default function PlayerScreen() {
             <Text style={styles.completedText}>SESSION COMPLETE</Text>
           </View>
         ) : (
-          <Pressable style={styles.alarmButton} onPress={handleSetAsAlarm}>
+          <Pressable style={styles.alarmButton} onPress={handleSetAsAlarm} accessibilityRole="button" accessibilityLabel="Set as alarm">
             <Text style={styles.alarmButtonText}>SET AS ALARM</Text>
             <Ionicons name="arrow-forward" size={18} color="#f5f5f7" style={{ marginLeft: 8 }} />
           </Pressable>
