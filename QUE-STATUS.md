@@ -4,7 +4,7 @@
 >
 > Legend: `[ ]` not started · `[~]` in progress (auto-branch exists) · `[✴]` PR open, awaiting review · `[x]` merged / complete · `[🚫]` blocked (see QUE-BLOCKERS.md)
 
-Last agent run: *none yet*
+Last agent run: 2026-04-19 17:00
 
 ## Checklist state
 
@@ -34,7 +34,7 @@ Last agent run: *none yet*
 - [ ] Promotional text (170 chars — updatable without resubmit)
 - [ ] Screenshots — 6.9" iPhone, 6.5" iPhone, 12.9" iPad (if supported)
 - [ ] App preview video (optional — 15–30 sec)
-- [ ] App icon — 1024×1024px, no alpha channel
+- [✴] App icon — 1024×1024px, no alpha channel → [PR #19](https://github.com/mwatterson1991/que/pull/19)
 - [ ] Privacy policy URL — hosted online
 - [ ] Support URL — even a simple landing page works
 - [ ] Category selected — Health & Fitness or Productivity
@@ -60,11 +60,16 @@ Last agent run: *none yet*
 
 ## Open auto-branches
 
-*(None yet. Agent will list branches and PR links here after its first run.)*
+- `auto/agent-20260419-1700-app-icon` → [PR #19](https://github.com/mwatterson1991/que/pull/19) — App icon
 
 ## Run journal
 
-*(Most recent at top. Agent appends one entry per run.)*
+## 2026-04-19 17:00 local time
+- **Task:** App icon — 1024×1024px, no alpha channel
+- **Branch:** `auto/agent-20260419-1700-app-icon`
+- **PR:** #19 — https://github.com/mwatterson1991/que/pull/19
+- **Summary:** Generated a geometric Q letterform icon in the brand accent purple on dark background using Swift/Core Graphics, plus Android adaptive icon foreground; wired both into app.json.
+- **Next:** None — icon is complete pending review. If Michael wants a different design direction, the Swift scripts in `scripts/` can be tweaked and re-run.
 
 ---
 
