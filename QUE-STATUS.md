@@ -4,7 +4,7 @@
 >
 > Legend: `[ ]` not started · `[~]` in progress (auto-branch exists) · `[✴]` PR open, awaiting review · `[x]` merged / complete · `[🚫]` blocked (see QUE-BLOCKERS.md)
 
-Last agent run: *none yet*
+Last agent run: 2026-04-18 20:30
 
 ## Checklist state
 
@@ -23,7 +23,7 @@ Last agent run: *none yet*
 - [ ] Push notification permissions requested gracefully
 - [ ] Empty states designed (no alarms set, etc.)
 - [🚫] Crash-free on iPhone and iPad — tested on real devices *(human-only)*
-- [ ] Dark mode support
+- [✴] Dark mode support — [PR #7](https://github.com/mwatterson1991/que/pull/7)
 - [ ] Accessibility pass — Dynamic Type, VoiceOver basics
 
 ### Phase 03 — App Store Content
@@ -60,11 +60,24 @@ Last agent run: *none yet*
 
 ## Open auto-branches
 
-*(None yet. Agent will list branches and PR links here after its first run.)*
+- `auto/agent-20260418-1500-onboarding-flow` — PR #1
+- `auto/agent-20260418-1530-notification-permissions` — PR #2
+- `auto/agent-20260418-1630-alarm-scheduling` — PR #3
+- `auto/agent-20260418-1730-background-audio` — PR #4
+- `auto/agent-20260418-1830-edge-cases` — PR #5
+- `auto/agent-20260418-1930-empty-states` — PR #6
+- `auto/agent-20260418-2030-dark-mode` — PR #7
 
 ## Run journal
 
 *(Most recent at top. Agent appends one entry per run.)*
+
+## 2026-04-18 20:30
+- **Task:** Dark mode support
+- **Branch:** `auto/agent-20260418-2030-dark-mode`
+- **PR:** #7 — https://github.com/mwatterson1991/que/pull/7
+- **Summary:** Added ThemeProvider with dark/light palettes, migrated all 13 screens from hardcoded hex to theme-aware useColors() hook. TypeScript clean, 0 new lint warnings.
+- **Next:** Add a dark/light toggle to the Settings screen so users can switch in-app without a DB change.
 
 ---
 
