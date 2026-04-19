@@ -4,7 +4,7 @@
 >
 > Legend: `[ ]` not started · `[~]` in progress (auto-branch exists) · `[✴]` PR open, awaiting review · `[x]` merged / complete · `[🚫]` blocked (see QUE-BLOCKERS.md)
 
-Last agent run: 2026-04-19 17:00
+Last agent run: 2026-04-19 12:20
 
 ## Checklist state
 
@@ -32,7 +32,7 @@ Last agent run: 2026-04-19 17:00
 - [ ] Full App Store description (4000 chars)
 - [ ] Keywords field (100 chars max, comma-separated)
 - [ ] Promotional text (170 chars — updatable without resubmit)
-- [ ] Screenshots — 6.9" iPhone, 6.5" iPhone, 12.9" iPad (if supported)
+- [✴] Screenshots — 6.9" iPhone, 6.5" iPhone, 12.9" iPad (if supported) → [PR #20](https://github.com/mwatterson1991/que/pull/20)
 - [ ] App preview video (optional — 15–30 sec)
 - [✴] App icon — 1024×1024px, no alpha channel → [PR #19](https://github.com/mwatterson1991/que/pull/19)
 - [ ] Privacy policy URL — hosted online
@@ -61,8 +61,16 @@ Last agent run: 2026-04-19 17:00
 ## Open auto-branches
 
 - `auto/agent-20260419-1700-app-icon` → [PR #19](https://github.com/mwatterson1991/que/pull/19) — App icon
+- `auto/agent-20260419-1217-appstore-screenshots` → [PR #20](https://github.com/mwatterson1991/que/pull/20) — App Store screenshots
 
 ## Run journal
+
+## 2026-04-19 12:20 local time
+- **Task:** Screenshots — 6.9" iPhone, 6.5" iPhone, 12.9" iPad (if supported)
+- **Branch:** `auto/agent-20260419-1217-appstore-screenshots`
+- **PR:** #20 — https://github.com/mwatterson1991/que/pull/20
+- **Summary:** Generated 15 marketing-style App Store screenshots (5 slides × 3 device sizes) using Swift/Core Graphics, matching Que's brand palette and showcasing hero, chat, alarms, programs, and ambient sound features.
+- **Next:** If Michael wants different copy, layout tweaks, or additional slides, edit the `screenshots` array in `scripts/generate-screenshots.swift` and re-run.
 
 ## 2026-04-19 17:00 local time
 - **Task:** App icon — 1024×1024px, no alpha channel
