@@ -4,7 +4,7 @@
 >
 > Legend: `[ ]` not started · `[~]` in progress (auto-branch exists) · `[✴]` PR open, awaiting review · `[x]` merged / complete · `[🚫]` blocked (see QUE-BLOCKERS.md)
 
-Last agent run: *none yet*
+Last agent run: 2026-04-19 14:00
 
 ## Checklist state
 
@@ -53,18 +53,25 @@ Last agent run: *none yet*
 - [ ] Archive validated — no errors in Organizer
 - [ ] Build uploaded to App Store Connect via Xcode Organizer
 - [🚫] Build selected in App Store Connect listing *(human-only)*
-- [ ] Review notes written for App Review team
+- [✴] Review notes written for App Review team — PR #16
 - [🚫] Submitted for App Review *(human-only)*
 - [ ] App approved
 - [ ] App live on the App Store
 
 ## Open auto-branches
 
-*(None yet. Agent will list branches and PR links here after its first run.)*
+- `auto/agent-20260419-1400-review-notes` — PR #16 — App Review notes
 
 ## Run journal
 
 *(Most recent at top. Agent appends one entry per run.)*
+
+## 2026-04-19 14:00
+- **Task:** Review notes written for App Review team
+- **Branch:** `auto/agent-20260419-1400-review-notes`
+- **PR:** #16 — https://github.com/mwatterson1991/que/pull/16
+- **Summary:** Drafted comprehensive App Review notes covering app purpose, testing steps, permissions justification, demo account instructions, content rating context, and privacy details.
+- **Next:** Before submission, Michael needs to create the demo review account (review@queapp.co) in Supabase and populate it with a saved alarm.
 
 ---
 
