@@ -4,6 +4,7 @@
     "slug": "mantra-alarm",
     "version": "0.1.0",
     "orientation": "portrait",
+    "icon": "./assets/icon.png",
     "scheme": "mantraalarm",
     "userInterfaceStyle": "automatic",
     "newArchEnabled": true,
@@ -19,6 +20,10 @@
       }
     },
     "android": {
+      "adaptiveIcon": {
+        "foregroundImage": "./assets/adaptive-icon.png",
+        "backgroundColor": "#0b0b0f"
+      },
       "package": "com.michaelwatterson.mantraalarm",
       "permissions": [
         "RECORD_AUDIO",
