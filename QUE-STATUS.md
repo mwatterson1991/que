@@ -31,7 +31,7 @@ Last agent run: 2026-04-19 10:00
 - [ ] App Store subtitle (30 chars max)
 - [ ] Full App Store description (4000 chars)
 - [ ] Keywords field (100 chars max, comma-separated)
-- [✴] Promotional text (170 chars — updatable without resubmit) — PR #TBD
+- [✴] Promotional text (170 chars — updatable without resubmit) — PR #12
 - [ ] Screenshots — 6.9" iPhone, 6.5" iPhone, 12.9" iPad (if supported)
 - [ ] App preview video (optional — 15–30 sec)
 - [ ] App icon — 1024×1024px, no alpha channel
@@ -69,7 +69,7 @@ Last agent run: 2026-04-19 10:00
 ## 2026-04-19 10:00
 - **Task:** Promotional text (170 chars — updatable without resubmit)
 - **Branch:** `auto/agent-20260419-1000-promo-text`
-- **PR:** #TBD
+- **PR:** #12 — https://github.com/mwatterson1991/que/pull/12
 - **Summary:** Wrote 141-char promotional text using alarm-as-antagonist contrast, plain-language theta-state intro, and benefit-focused close.
 - **Next:** Remaining Phase 03 copy: support page, category selection, app icon spec.
 
