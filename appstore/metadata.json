@@ -1,0 +1,40 @@
+{
+  "appName": "Que",
+  "ios": {
+    "primaryCategory": "HEALTH_AND_FITNESS",
+    "secondaryCategory": "PRODUCTIVITY",
+    "bundleId": "com.michaelwatterson.mantraalarm",
+    "minimumOSVersion": "16.0",
+    "requiredDeviceCapabilities": ["arm64"],
+    "supportedInterfaceOrientations": ["portrait"],
+    "supportsTablet": true,
+    "contentRights": {
+      "containsThirdPartyContent": false,
+      "hasRightsToAllContent": true
+    },
+    "ageRating": {
+      "kidsCategory": false,
+      "madeForKids": false
+    }
+  },
+  "android": {
+    "primaryCategory": "HEALTH_AND_FITNESS",
+    "contentRating": "everyone",
+    "packageName": "com.michaelwatterson.mantraalarm"
+  },
+  "pricing": {
+    "model": "freemium",
+    "monthlyPrice": 7.99,
+    "annualPrice": 49.99,
+    "currency": "USD",
+    "freeTierPrograms": [
+      "General Morning Mindset",
+      "High Performer Daily Activation",
+      "Calm & Centered Start"
+    ]
+  },
+  "localization": {
+    "defaultLanguage": "en-US",
+    "availableLanguages": ["en-US"]
+  }
+}

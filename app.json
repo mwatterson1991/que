@@ -10,12 +10,16 @@
     "ios": {
       "supportsTablet": true,
       "bundleIdentifier": "com.michaelwatterson.mantraalarm",
+      "config": {
+        "usesNonExemptEncryption": false
+      },
       "infoPlist": {
         "NSMicrophoneUsageDescription": "Mantra Alarm uses your microphone so you can set alarms with your voice.",
         "NSSpeechRecognitionUsageDescription": "Mantra Alarm transcribes what you say to create alarms and mantras.",
         "UIBackgroundModes": [
           "audio"
-        ]
+        ],
+        "ITSAppUsesNonExemptEncryption": false
       }
     },
     "android": {
