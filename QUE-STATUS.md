@@ -4,7 +4,7 @@
 >
 > Legend: `[ ]` not started · `[~]` in progress (auto-branch exists) · `[✴]` PR open, awaiting review · `[x]` merged / complete · `[🚫]` blocked (see QUE-BLOCKERS.md)
 
-Last agent run: *none yet*
+Last agent run: 2026-04-19 13:00
 
 ## Checklist state
 
@@ -35,8 +35,8 @@ Last agent run: *none yet*
 - [ ] Screenshots — 6.9" iPhone, 6.5" iPhone, 12.9" iPad (if supported)
 - [ ] App preview video (optional — 15–30 sec)
 - [ ] App icon — 1024×1024px, no alpha channel
-- [ ] Privacy policy URL — hosted online
-- [ ] Support URL — even a simple landing page works
+- [✴] Privacy policy URL — hosted online — PR #15 (copy drafted; hosting blocked per QUE-BLOCKERS #3)
+- [✴] Support URL — even a simple landing page works — PR #15
 - [ ] Category selected — Health & Fitness or Productivity
 - [🚫] Age rating questionnaire completed *(human-only)*
 
@@ -60,11 +60,18 @@ Last agent run: *none yet*
 
 ## Open auto-branches
 
-*(None yet. Agent will list branches and PR links here after its first run.)*
+- `auto/agent-20260419-1300-support-page` — PR #15 — support page + privacy policy + landing page
 
 ## Run journal
 
 *(Most recent at top. Agent appends one entry per run.)*
+
+## 2026-04-19 13:00
+- **Task:** Support URL — even a simple landing page works
+- **Branch:** `auto/agent-20260419-1300-support-page`
+- **PR:** #15 — https://github.com/mwatterson1991/que/pull/15
+- **Summary:** Created static HTML support page, privacy policy, and landing page in docs/ — ready for GitHub Pages deployment.
+- **Next:** Michael should confirm the contact email (support@queapp.co), enable GitHub Pages on the repo, and resolve blocker #3 (privacy policy hosting URL). Remaining unblocked items: App Review notes, category selection, or Phase 01 core audio work once API keys are available.
 
 ---
 
