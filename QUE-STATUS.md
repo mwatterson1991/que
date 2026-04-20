@@ -4,7 +4,7 @@
 >
 > Legend: `[ ]` not started · `[~]` in progress (auto-branch exists) · `[✴]` PR open, awaiting review · `[x]` merged / complete · `[🚫]` blocked (see QUE-BLOCKERS.md)
 
-Last agent run: 2026-04-19 12:20
+Last agent run: 2026-04-20 14:00
 
 ## Checklist state
 
@@ -35,7 +35,7 @@ Last agent run: 2026-04-19 12:20
 - [✴] Screenshots — 6.9" iPhone, 6.5" iPhone, 12.9" iPad (if supported) → [PR #20](https://github.com/mwatterson1991/que/pull/20)
 - [ ] App preview video (optional — 15–30 sec)
 - [✴] App icon — 1024×1024px, no alpha channel → [PR #19](https://github.com/mwatterson1991/que/pull/19)
-- [ ] Privacy policy URL — hosted online
+- [✴] Privacy policy URL — hosted online → [PR #24](https://github.com/mwatterson1991/que/pull/24) *(copy drafted; hosting decision still needed — see QUE-BLOCKERS.md #3)*
 - [ ] Support URL — even a simple landing page works
 - [ ] Category selected — Health & Fitness or Productivity
 - [🚫] Age rating questionnaire completed *(human-only)*
@@ -62,8 +62,16 @@ Last agent run: 2026-04-19 12:20
 
 - `auto/agent-20260419-1700-app-icon` → [PR #19](https://github.com/mwatterson1991/que/pull/19) — App icon
 - `auto/agent-20260419-1217-appstore-screenshots` → [PR #20](https://github.com/mwatterson1991/que/pull/20) — App Store screenshots
+- `auto/agent-20260420-1400-privacy-policy-draft` → [PR #24](https://github.com/mwatterson1991/que/pull/24) — Privacy policy draft
 
 ## Run journal
+
+## 2026-04-20 14:00 local time
+- **Task:** Privacy policy URL — hosted online
+- **Branch:** `auto/agent-20260420-1400-privacy-policy-draft`
+- **PR:** #24 — https://github.com/mwatterson1991/que/pull/24
+- **Summary:** Drafted complete privacy policy as styled HTML (`docs/privacy-policy.html`) covering all data practices derived from the actual codebase — account info, alarms, chat, voice input, third-party services (Supabase, APNs/FCM), data deletion cascade, children's privacy, and user rights. Ready to host; contact email placeholder needs Michael's input.
+- **Next:** Michael picks a hosting option (GitHub Pages on this repo is simplest — enable Pages pointing at `/docs`), fills in contact email, then wires the live URL into `app.json` and the App Store listing. Blocker #3 remains open until hosting is decided.
 
 ## 2026-04-19 12:20 local time
 - **Task:** Screenshots — 6.9" iPhone, 6.5" iPhone, 12.9" iPad (if supported)
