@@ -1,0 +1,148 @@
+{
+  "version": 1,
+  "description": "v1 launch scripts — one per program category. Each script is a complete theta-state morning hypnotherapy session ready for ElevenLabs TTS. Use {{name}} as the personalization token (replaced with the user's first name at generation time).",
+  "voice_profile": {
+    "style": "Calm, measured, warm but authoritative. Guided meditation crossed with a confident coach. Not robotic. Not over-performed. Present. Slow enough to meet someone still half-asleep.",
+    "pace_wpm": 130,
+    "mix": "80% voice / 20% ambient background"
+  },
+  "scripts": [
+    {
+      "id": "general-morning-mindset",
+      "file": "general-morning-mindset.txt",
+      "title": "General Morning Mindset",
+      "category": "General",
+      "tier": "free",
+      "estimated_duration_sec": 420,
+      "word_count": 548,
+      "description": "A gentle, all-purpose morning session that builds presence and intention for the day."
+    },
+    {
+      "id": "high-performer-daily-activation",
+      "file": "high-performer-daily-activation.txt",
+      "title": "High Performer Daily Activation",
+      "category": "General",
+      "tier": "free",
+      "estimated_duration_sec": 420,
+      "word_count": 555,
+      "description": "For ambitious users who want to start the day locked in and operating at peak."
+    },
+    {
+      "id": "calm-and-centered-start",
+      "file": "calm-and-centered-start.txt",
+      "title": "Calm & Centered Start",
+      "category": "General",
+      "tier": "free",
+      "estimated_duration_sec": 390,
+      "word_count": 510,
+      "description": "A peaceful, grounding session for users who tend to wake up with a busy mind."
+    },
+    {
+      "id": "deep-focus-flow-state",
+      "file": "deep-focus-flow-state.txt",
+      "title": "Deep Focus & Flow State",
+      "category": "Focus & Productivity",
+      "tier": "premium",
+      "estimated_duration_sec": 420,
+      "word_count": 558,
+      "description": "Primes the brain for deep work by setting a clear focus target and rehearsing distraction-free flow."
+    },
+    {
+      "id": "quit-vaping-nicotine",
+      "file": "quit-vaping-nicotine.txt",
+      "title": "Quit Vaping / Nicotine",
+      "category": "Health & Habits",
+      "tier": "premium",
+      "estimated_duration_sec": 420,
+      "word_count": 561,
+      "description": "Reinforces nicotine cessation through craving awareness, breathing techniques, and identity reframing."
+    },
+    {
+      "id": "reduce-anxiety",
+      "file": "reduce-anxiety.txt",
+      "title": "Reduce Anxiety",
+      "category": "Mental & Emotional",
+      "tier": "premium",
+      "estimated_duration_sec": 450,
+      "word_count": 582,
+      "description": "Calms the nervous system and teaches the user to observe anxious thoughts without following them."
+    },
+    {
+      "id": "build-confidence",
+      "file": "build-confidence.txt",
+      "title": "Build Confidence",
+      "category": "Mental & Emotional",
+      "tier": "premium",
+      "estimated_duration_sec": 420,
+      "word_count": 557,
+      "description": "Rewires self-doubt by anchoring the user in evidence of their own capability."
+    },
+    {
+      "id": "morning-prayer",
+      "file": "morning-prayer.txt",
+      "title": "Morning Prayer (Lord's Prayer)",
+      "category": "Spiritual / Purpose-driven",
+      "tier": "premium",
+      "estimated_duration_sec": 420,
+      "word_count": 543,
+      "description": "Guided Christian morning prayer incorporating the Lord's Prayer and personal reflection."
+    },
+    {
+      "id": "gratitude-abundance-mindset",
+      "file": "gratitude-abundance-mindset.txt",
+      "title": "Gratitude & Abundance Mindset",
+      "category": "Spiritual / Purpose-driven",
+      "tier": "premium",
+      "estimated_duration_sec": 420,
+      "word_count": 560,
+      "description": "Shifts the brain from scarcity to abundance through specific gratitude practice and reframing."
+    },
+    {
+      "id": "reduce-alcohol-sobriety",
+      "file": "reduce-alcohol-sobriety.txt",
+      "title": "Reduce Alcohol / Support Sobriety",
+      "category": "Health & Habits",
+      "tier": "premium",
+      "estimated_duration_sec": 420,
+      "word_count": 555,
+      "description": "Sobriety reinforcement through play-the-tape-forward visualization and identity-based habit change."
+    },
+    {
+      "id": "improve-sleep-quality",
+      "file": "improve-sleep-quality.txt",
+      "title": "Improve Sleep Quality",
+      "category": "Mental & Emotional",
+      "tier": "premium",
+      "estimated_duration_sec": 400,
+      "word_count": 530,
+      "description": "Morning session that programs better sleep habits by setting circadian rhythm intentions for the day."
+    },
+    {
+      "id": "build-exercise-habit",
+      "file": "build-exercise-habit.txt",
+      "title": "Build a Consistent Exercise Habit",
+      "category": "Health & Habits",
+      "tier": "premium",
+      "estimated_duration_sec": 420,
+      "word_count": 554,
+      "description": "Lowers the bar for daily movement and builds identity as someone who exercises consistently."
+    },
+    {
+      "id": "aa-recovery-mantra",
+      "file": "aa-recovery-mantra.txt",
+      "title": "AA / Recovery Mantra",
+      "category": "Spiritual / Purpose-driven",
+      "tier": "premium",
+      "estimated_duration_sec": 420,
+      "word_count": 558,
+      "description": "Recovery-focused session with the Serenity Prayer, sobriety affirmations, and one-day-at-a-time framing."
+    }
+  ],
+  "future_scripts_needed": [
+    "Stop Wasting Time on Social Media",
+    "Beat Procrastination",
+    "Stop Eating Sugary Sweets",
+    "Quit Smoking",
+    "Reduce Social Anxiety"
+  ]
+}
