@@ -4,7 +4,7 @@
 >
 > Legend: `[ ]` not started · `[~]` in progress (auto-branch exists) · `[✴]` PR open, awaiting review · `[x]` merged / complete · `[🚫]` blocked (see QUE-BLOCKERS.md)
 
-Last agent run: 2026-04-19 12:20
+Last agent run: 2026-04-20 19:00
 
 ## Checklist state
 
@@ -12,7 +12,7 @@ Last agent run: 2026-04-19 12:20
 - [x] App built and functional
 - [x] Supabase backend configured
 - [x] Dummy data populated
-- [ ] ElevenLabs integration — generate motivational audio files via Claude
+- [✴] ElevenLabs integration — generate motivational audio files via Claude → [PR #25](https://github.com/mwatterson1991/que/pull/25) (scripts) + [PR #26](https://github.com/mwatterson1991/que/pull/26) (TTS pipeline)
 - [ ] Replace dummy data with real generated audio content
 - [ ] Alarm trigger plays correct audio reliably
 - [ ] Background audio works when app is closed (iOS background modes)
@@ -61,9 +61,17 @@ Last agent run: 2026-04-19 12:20
 ## Open auto-branches
 
 - `auto/agent-20260419-1700-app-icon` → [PR #19](https://github.com/mwatterson1991/que/pull/19) — App icon
+- `auto/agent-20260420-1900-elevenlabs-pipeline` → [PR #26](https://github.com/mwatterson1991/que/pull/26) — ElevenLabs TTS pipeline
 - `auto/agent-20260419-1217-appstore-screenshots` → [PR #20](https://github.com/mwatterson1991/que/pull/20) — App Store screenshots
 
 ## Run journal
+
+## 2026-04-20 19:00 local time
+- **Task:** ElevenLabs integration — generate motivational audio files via Claude
+- **Branch:** `auto/agent-20260420-1900-elevenlabs-pipeline`
+- **PR:** #26 — https://github.com/mwatterson1991/que/pull/26
+- **Summary:** Built the ElevenLabs TTS client module and batch audio generation pipeline that converts PR #25's hypnotherapy scripts into audio files and uploads them to Supabase. Zero new dependencies.
+- **Next:** Once Michael adds API keys to `.env` and merges PRs #25 + #26, run `node scripts/generate-audio.mjs` to populate the audio library. Then the "Replace dummy data" item can be closed.
 
 ## 2026-04-19 12:20 local time
 - **Task:** Screenshots — 6.9" iPhone, 6.5" iPhone, 12.9" iPad (if supported)
