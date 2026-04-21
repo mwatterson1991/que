@@ -101,7 +101,7 @@ Last agent run: 2026-04-21 15:30
 ## 2026-04-21 15:30 local time
 - **Task:** Full status sync — update QUE-STATUS.md to reflect all 27 open PRs
 - **Branch:** `auto/agent-20260421-1530-status-sync-full`
-- **PR:** pending
+- **PR:** #28 — https://github.com/mwatterson1991/que/pull/28
 - **Summary:** Comprehensive status sync. Every non-blocked checklist item now has a PR open. The bottleneck is PR review — 27 PRs await Michael's review and merge. Suggested merge order included.
 - **Next:** Michael should begin reviewing and merging PRs, starting with foundation (PRs #1-5). Once API keys are provided (blocker #4), the agent can run the audio generation pipeline.
 
