@@ -4,7 +4,7 @@
 >
 > Legend: `[ ]` not started · `[~]` in progress (auto-branch exists) · `[✴]` PR open, awaiting review · `[x]` merged / complete · `[🚫]` blocked (see QUE-BLOCKERS.md)
 
-Last agent run: 2026-04-19 12:20
+Last agent run: 2026-04-21 09:00
 
 ## Checklist state
 
@@ -60,10 +60,18 @@ Last agent run: 2026-04-19 12:20
 
 ## Open auto-branches
 
+- `auto/agent-20260421-0900-ambient-audio` → PR #27 (pending) — Ambient background audio system
 - `auto/agent-20260419-1700-app-icon` → [PR #19](https://github.com/mwatterson1991/que/pull/19) — App icon
 - `auto/agent-20260419-1217-appstore-screenshots` → [PR #20](https://github.com/mwatterson1991/que/pull/20) — App Store screenshots
 
 ## Run journal
+
+## 2026-04-21 09:00 local time
+- **Task:** Ambient background audio — dual-track mixing (voice + ambient at 80/20)
+- **Branch:** `auto/agent-20260421-0900-ambient-audio`
+- **PR:** #27 — (pending)
+- **Summary:** Built the ambient background audio system: two real generated audio files (binaural theta tone, pink noise), a mixing engine that layers ambient under voice at 20% volume, a picker screen with live preview, and integration into the player and settings.
+- **Next:** Source additional ambient sounds (ocean waves, morning birds, singing bowl) from royalty-free libraries. Add `ambient_sound TEXT DEFAULT 'silence'` column to the `preferences` table in Supabase.
 
 ## 2026-04-19 12:20 local time
 - **Task:** Screenshots — 6.9" iPhone, 6.5" iPhone, 12.9" iPad (if supported)
