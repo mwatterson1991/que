@@ -60,7 +60,7 @@ Last agent run: 2026-04-21 09:00
 
 ## Open auto-branches
 
-- `auto/agent-20260421-0900-ambient-audio` → PR #27 (pending) — Ambient background audio system
+- `auto/agent-20260421-0900-ambient-audio` → [PR #27](https://github.com/mwatterson1991/que/pull/27) — Ambient background audio system
 - `auto/agent-20260419-1700-app-icon` → [PR #19](https://github.com/mwatterson1991/que/pull/19) — App icon
 - `auto/agent-20260419-1217-appstore-screenshots` → [PR #20](https://github.com/mwatterson1991/que/pull/20) — App Store screenshots
 
