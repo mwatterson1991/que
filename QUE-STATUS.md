@@ -4,7 +4,7 @@
 >
 > Legend: `[ ]` not started · `[~]` in progress (auto-branch exists) · `[✴]` PR open, awaiting review · `[x]` merged / complete · `[🚫]` blocked (see QUE-BLOCKERS.md)
 
-Last agent run: 2026-04-19 12:20
+Last agent run: 2026-04-21 16:00
 
 ## Checklist state
 
@@ -14,7 +14,7 @@ Last agent run: 2026-04-19 12:20
 - [x] Dummy data populated
 - [ ] ElevenLabs integration — generate motivational audio files via Claude
 - [ ] Replace dummy data with real generated audio content
-- [ ] Alarm trigger plays correct audio reliably
+- [✴] Alarm trigger plays correct audio reliably → [PR #29](https://github.com/mwatterson1991/que/pull/29)
 - [ ] Background audio works when app is closed (iOS background modes)
 - [ ] Edge cases handled — no alarm, late permissions, silent mode
 
@@ -62,8 +62,16 @@ Last agent run: 2026-04-19 12:20
 
 - `auto/agent-20260419-1700-app-icon` → [PR #19](https://github.com/mwatterson1991/que/pull/19) — App icon
 - `auto/agent-20260419-1217-appstore-screenshots` → [PR #20](https://github.com/mwatterson1991/que/pull/20) — App Store screenshots
+- `auto/agent-20260421-1600-alarm-audio-reliability` → [PR #29](https://github.com/mwatterson1991/que/pull/29) — Alarm audio reliability
 
 ## Run journal
+
+## 2026-04-21 16:00 local time
+- **Task:** Alarm trigger plays correct audio reliably
+- **Branch:** `auto/agent-20260421-1600-alarm-audio-reliability`
+- **PR:** #29 — https://github.com/mwatterson1991/que/pull/29
+- **Summary:** Built dedicated alarm audio engine (lib/alarmAudio.ts) with 30-second gentle volume fade-in, audio preloading, and automatic fallback to a bundled session if the primary source fails; wired player screen to use alarm mode via ?alarm=1 param.
+- **Next:** PR #3 (alarm scheduling) should route to `/player?id={sessionId}&alarm=1` and call `preloadAlarmAudio()` ~60s before fire time.
 
 ## 2026-04-19 12:20 local time
 - **Task:** Screenshots — 6.9" iPhone, 6.5" iPhone, 12.9" iPad (if supported)
