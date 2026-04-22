@@ -36,6 +36,11 @@ import {
   seekSession,
   stopSession,
 } from "@/lib/audio";
+import {
+  playAlarmSession,
+  stopAlarmSession,
+  skipFadeIn,
+} from "@/lib/alarmAudio";
 
 const { width: SCREEN_W } = Dimensions.get("window");
 const ORB_RADIUS = 38;
@@ -243,7 +248,8 @@ function MantraTeleprompter({
 
 // ─── Screen ──────────────────────────────────────────────
 export default function PlayerScreen() {
-  const { id } = useLocalSearchParams<{ id: string }>();
+  const { id, alarm } = useLocalSearchParams<{ id: string; alarm?: string }>();
+  const isAlarmMode = alarm === "1";
   const router = useRouter();
   const insets = useSafeAreaInsets();
   const { sessions } = useSessions();
@@ -268,21 +274,35 @@ export default function PlayerScreen() {
     if (!session || startedRef.current) return;
     startedRef.current = true;
 
-    const source = resolveSource(session.audio_url, session.audio_asset);
-    if (!source) return;
-
     setDuration(session.duration_sec);
-    playSession(source, (status: AVPlaybackStatus) => {
+
+    const onStatus = (status: AVPlaybackStatus) => {
       if (!status.isLoaded) return;
       if (!scrubbing) setElapsed(Math.floor(status.positionMillis / 1000));
       setPlaying(status.isPlaying);
       if (status.durationMillis) setDuration(Math.floor(status.durationMillis / 1000));
       if (status.didJustFinish) { setPlaying(false); setCompleted(true); }
-    });
+    };
+
+    if (isAlarmMode) {
+      // Alarm mode: gentle 30-second volume fade-in with error fallback
+      playAlarmSession(session.audio_url, session.audio_asset, onStatus);
+    } else {
+      // Normal mode: instant full-volume playback
+      const source = resolveSource(session.audio_url, session.audio_asset);
+      if (!source) return;
+      playSession(source, onStatus);
+    }
 
     setPlaying(true);
-    return () => { stopSession(); };
-  }, [session]);
+    return () => {
+      if (isAlarmMode) {
+        stopAlarmSession();
+      } else {
+        stopSession();
+      }
+    };
+  }, [session, isAlarmMode]);
 
   useEffect(() => {
     if (!playing || !session?.mantras?.length) return;
@@ -341,8 +361,13 @@ export default function PlayerScreen() {
   ).current;
 
   const togglePlay = async () => {
-    if (playing) await pauseSession();
-    else await resumeSession();
+    if (playing) {
+      await pauseSession();
+      // User is awake — skip remaining fade-in on next resume
+      if (isAlarmMode) await skipFadeIn();
+    } else {
+      await resumeSession();
+    }
   };
 
   const skip = async (delta: number) => {
