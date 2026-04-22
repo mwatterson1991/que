@@ -113,7 +113,7 @@ Last agent run: 2026-04-22 10:00
 ## 2026-04-22 10:00 local time
 - **Task:** Comprehensive status sync — map all 29 open PRs to checklist items
 - **Branch:** `auto/agent-20260422-1000-status-sync`
-- **PR:** pending
+- **PR:** #30 — https://github.com/mwatterson1991/que/pull/30
 - **Summary:** Updated QUE-STATUS.md to accurately reflect all 29 open PRs across 26 checklist items; added "what's left" summary for Michael; supersedes prior status sync PRs #22/#23/#28.
 - **Next:** All non-blocked checklist items have open PRs. Michael needs to start reviewing and merging (recommend in PR number order). Once API keys are in `.env`, agent will generate real audio content.
 
