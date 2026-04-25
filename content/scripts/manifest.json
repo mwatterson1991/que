@@ -136,13 +136,56 @@
       "estimated_duration_sec": 420,
       "word_count": 558,
       "description": "Recovery-focused session with the Serenity Prayer, sobriety affirmations, and one-day-at-a-time framing."
+    },
+    {
+      "id": "stop-social-media",
+      "file": "stop-social-media.txt",
+      "title": "Stop Wasting Time on Social Media",
+      "category": "Focus & Productivity",
+      "tier": "premium",
+      "estimated_duration_sec": 420,
+      "word_count": 523,
+      "description": "Breaks the scroll reflex by building awareness of the attention gap and reclaiming screen-free presence."
+    },
+    {
+      "id": "beat-procrastination",
+      "file": "beat-procrastination.txt",
+      "title": "Beat Procrastination",
+      "category": "Focus & Productivity",
+      "tier": "premium",
+      "estimated_duration_sec": 420,
+      "word_count": 521,
+      "description": "Reframes procrastination as a comfort reflex and teaches the five-minute start technique to break the seal."
+    },
+    {
+      "id": "stop-eating-sweets",
+      "file": "stop-eating-sweets.txt",
+      "title": "Stop Eating Sugary Sweets",
+      "category": "Health & Habits",
+      "tier": "premium",
+      "estimated_duration_sec": 420,
+      "word_count": 530,
+      "description": "Rewires the sugar craving cycle by teaching pause-and-replace and visualizing stable, clean energy."
+    },
+    {
+      "id": "quit-smoking",
+      "file": "quit-smoking.txt",
+      "title": "Quit Smoking",
+      "category": "Health & Habits",
+      "tier": "premium",
+      "estimated_duration_sec": 420,
+      "word_count": 537,
+      "description": "Reinforces smoking cessation through identity shift, craving surfing, and body-healing awareness."
+    },
+    {
+      "id": "reduce-social-anxiety",
+      "file": "reduce-social-anxiety.txt",
+      "title": "Reduce Social Anxiety",
+      "category": "Mental & Emotional",
+      "tier": "premium",
+      "estimated_duration_sec": 420,
+      "word_count": 579,
+      "description": "Dismantles the imagined spotlight effect and builds confidence through small, intentional social engagement."
     }
-  ],
-  "future_scripts_needed": [
-    "Stop Wasting Time on Social Media",
-    "Beat Procrastination",
-    "Stop Eating Sugary Sweets",
-    "Quit Smoking",
-    "Reduce Social Anxiety"
   ]
 }
