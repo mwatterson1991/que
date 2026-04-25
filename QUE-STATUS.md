@@ -4,7 +4,7 @@
 >
 > Legend: `[ ]` not started · `[~]` in progress (auto-branch exists) · `[✴]` PR open, awaiting review · `[x]` merged / complete · `[🚫]` blocked (see QUE-BLOCKERS.md)
 
-Last agent run: 2026-04-25 09:00
+Last agent run: 2026-04-25 10:30
 
 ## Checklist state
 
@@ -64,6 +64,13 @@ Last agent run: 2026-04-25 09:00
 - `auto/agent-20260419-1217-appstore-screenshots` → [PR #20](https://github.com/mwatterson1991/que/pull/20) — App Store screenshots
 
 ## Run journal
+
+## 2026-04-25 10:30 local time
+- **Task:** ElevenLabs integration — generate motivational audio files via Claude (script completion)
+- **Branch:** `auto/agent-20260420-1630-hypnotherapy-scripts` (updated existing branch)
+- **PR:** #25 — https://github.com/mwatterson1991/que/pull/25 (added commit)
+- **Summary:** Wrote the 5 remaining hypnotherapy scripts (Social Media, Procrastination, Sugary Sweets, Quit Smoking, Social Anxiety) to complete the full v1 library of 18 sessions matching all program categories in QUE-MASTER-CONTEXT.md.
+- **Next:** All scripts are ready for ElevenLabs TTS generation once Michael adds API keys (blocker #4). Michael should review the 31 open PRs — start with foundation PRs: #1 (onboarding), #3 (alarm scheduling), #4 (background audio).
 
 ## 2026-04-25 09:00 local time
 - **Task:** N/A — NO-OP
