@@ -69,6 +69,7 @@ function WheelColumn({
                   fontFamily: F.regular,
                   color: isSelected ? "#f5f5f7" : "#48484a",
                 }}
+                maxFontSizeMultiplier={1.4}
               >
                 {item}
               </Text>
@@ -193,7 +194,7 @@ export default function EditAlarmScreen() {
     navigation.setOptions({
       title: existing ? "Edit Alarm" : "New Alarm",
       headerRight: () => (
-        <Pressable onPress={save}>
+        <Pressable onPress={save} accessibilityRole="button" accessibilityLabel="Save alarm">
           <Text style={{ color: "#f5f5f7", fontSize: 17, fontFamily: F.medium }}>Save</Text>
         </Pressable>
       ),
@@ -239,6 +240,8 @@ export default function EditAlarmScreen() {
           <Pressable
             onPress={() => router.push(`/sounds?current=${sessionId}` as any)}
             style={styles.row}
+            accessibilityRole="button"
+            accessibilityLabel={`Sound, ${soundLabel}`}
           >
             <Text style={styles.rowLabel}>Sound</Text>
             <Text style={styles.rowValue}>{soundLabel}</Text>
@@ -246,7 +249,12 @@ export default function EditAlarmScreen() {
           <View style={styles.rowSep} />
 
           {/* Delete */}
-          <Pressable onPress={deleteAlarm} style={styles.row}>
+          <Pressable
+            onPress={deleteAlarm}
+            style={styles.row}
+            accessibilityRole="button"
+            accessibilityLabel="Delete alarm"
+          >
             <Text style={styles.deleteText}>Delete Alarm</Text>
           </Pressable>
         </View>

@@ -407,10 +407,18 @@ export default function PlayerScreen() {
           style={styles.navIconBtn}
           onPress={() => navigation.dispatch(DrawerActions.openDrawer())}
           hitSlop={12}
+          accessibilityRole="button"
+          accessibilityLabel="Open menu"
         >
           <Ionicons name="menu-outline" size={26} color="#f5f5f7" />
         </Pressable>
-        <Pressable style={styles.navIconBtn} onPress={() => router.back()} hitSlop={12}>
+        <Pressable
+          style={styles.navIconBtn}
+          onPress={() => router.back()}
+          hitSlop={12}
+          accessibilityRole="button"
+          accessibilityLabel="Go back"
+        >
           <Ionicons name="chevron-back" size={28} color="#f5f5f7" />
         </Pressable>
       </View>
@@ -432,6 +440,8 @@ export default function PlayerScreen() {
             style={styles.menuButton}
             hitSlop={12}
             onPress={() => Alert.alert(session?.title ?? "", session?.description ?? "")}
+            accessibilityRole="button"
+            accessibilityLabel="Session details"
           >
             <Ionicons name="ellipsis-horizontal" size={22} color="#71717a" />
           </Pressable>
@@ -447,21 +457,31 @@ export default function PlayerScreen() {
             }}
             style={styles.progressTrackOuter}
             {...panResponder.panHandlers}
+            accessible={true}
+            accessibilityRole="adjustable"
+            accessibilityLabel="Playback position"
+            accessibilityValue={{ text: `${formatTime(displayElapsed)} of ${formatTime(duration)}` }}
           >
             <View style={styles.progressTrack}>
               <View style={[styles.progressFill, { width: `${progress * 100}%` }]} />
             </View>
           </View>
           <View style={styles.timeRow}>
-            <Text style={styles.timeText}>{formatTime(displayElapsed)}</Text>
-            <Text style={styles.timeText}>{formatTime(duration)}</Text>
+            <Text style={styles.timeText} maxFontSizeMultiplier={1.4}>{formatTime(displayElapsed)}</Text>
+            <Text style={styles.timeText} maxFontSizeMultiplier={1.4}>{formatTime(duration)}</Text>
           </View>
         </View>
 
         {/* Controls */}
         <View style={styles.controls}>
           {/* Skip back 10s */}
-          <Pressable style={styles.controlBtn} onPress={() => skip(-10)} hitSlop={8}>
+          <Pressable
+            style={styles.controlBtn}
+            onPress={() => skip(-10)}
+            hitSlop={8}
+            accessibilityRole="button"
+            accessibilityLabel="Skip back 10 seconds"
+          >
             <Ionicons
               name="refresh"
               size={22}
@@ -472,7 +492,12 @@ export default function PlayerScreen() {
           </Pressable>
 
           {/* Play / pause */}
-          <Pressable style={styles.controlBtn} onPress={togglePlay}>
+          <Pressable
+            style={styles.controlBtn}
+            onPress={togglePlay}
+            accessibilityRole="button"
+            accessibilityLabel={playing ? "Pause session" : "Play session"}
+          >
             <Ionicons
               name={playing ? "pause" : "play"}
               size={26}
@@ -482,7 +507,13 @@ export default function PlayerScreen() {
           </Pressable>
 
           {/* Skip forward 10s */}
-          <Pressable style={styles.controlBtn} onPress={() => skip(10)} hitSlop={8}>
+          <Pressable
+            style={styles.controlBtn}
+            onPress={() => skip(10)}
+            hitSlop={8}
+            accessibilityRole="button"
+            accessibilityLabel="Skip forward 10 seconds"
+          >
             <Ionicons name="refresh" size={22} color="#f5f5f7" />
             <Text style={styles.skipLabel}>10</Text>
           </Pressable>
@@ -495,7 +526,12 @@ export default function PlayerScreen() {
             <Text style={styles.completedText}>SESSION COMPLETE</Text>
           </View>
         ) : (
-          <Pressable style={styles.alarmButton} onPress={handleSetAsAlarm}>
+          <Pressable
+            style={styles.alarmButton}
+            onPress={handleSetAsAlarm}
+            accessibilityRole="button"
+            accessibilityLabel="Set as alarm"
+          >
             <Text style={styles.alarmButtonText}>SET AS ALARM</Text>
             <Ionicons name="arrow-forward" size={18} color="#f5f5f7" style={{ marginLeft: 8 }} />
           </Pressable>

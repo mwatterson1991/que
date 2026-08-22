@@ -20,7 +20,12 @@ type SettingsRowProps = {
 
 function SettingsRow({ icon, label, value, hasToggle, toggleValue, onToggle, onPress }: SettingsRowProps) {
   return (
-    <Pressable onPress={onPress} style={styles.row}>
+    <Pressable
+      onPress={onPress}
+      style={styles.row}
+      accessibilityRole={hasToggle ? undefined : "button"}
+      accessibilityLabel={hasToggle ? undefined : value ? `${label}, ${value}` : label}
+    >
       <Ionicons name={icon} size={20} color="#a1a1aa" style={styles.rowIcon} />
       <Text style={styles.rowLabel}>{label}</Text>
       <View style={styles.rowRight}>
@@ -31,6 +36,9 @@ function SettingsRow({ icon, label, value, hasToggle, toggleValue, onToggle, onP
             trackColor={{ true: "#4cd964", false: "#39393d" }}
             thumbColor="#ffffff"
             style={{ transform: [{ scaleX: 0.8 }, { scaleY: 0.8 }] }}
+            accessibilityRole="switch"
+            accessibilityState={{ checked: toggleValue }}
+            accessibilityLabel={label}
           />
         ) : value ? (
           <>
@@ -229,6 +237,7 @@ export default function SettingsScreen() {
       {/* Sign out */}
       <Pressable
         style={styles.signOutButton}
+        accessibilityRole="button"
         onPress={() => Alert.alert("Sign Out", "Are you sure?", [
           { text: "Cancel", style: "cancel" },
           { text: "Sign Out", style: "destructive", onPress: async () => {

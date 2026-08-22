@@ -87,7 +87,12 @@ export default function AmbientPickerScreen() {
     <View style={[styles.container, { paddingTop: insets.top }]}>
       {/* Header */}
       <View style={styles.header}>
-        <Pressable onPress={() => { stopPreview(); router.back(); }} hitSlop={12}>
+        <Pressable
+          onPress={() => { stopPreview(); router.back(); }}
+          hitSlop={12}
+          accessibilityRole="button"
+          accessibilityLabel="Go back"
+        >
           <Ionicons name="chevron-back" size={28} color="#f5f5f7" />
         </Pressable>
         <Text style={styles.headerTitle}>Ambient Sound</Text>
@@ -131,7 +136,13 @@ function AmbientRow({
   onSelect: () => void;
 }) {
   return (
-    <Pressable style={styles.row} onPress={onSelect}>
+    <Pressable
+      style={styles.row}
+      onPress={onSelect}
+      accessibilityRole="button"
+      accessibilityLabel={`${entry.label}, ${entry.description}`}
+      accessibilityState={{ selected: isSelected }}
+    >
       <View style={styles.rowLeft}>
         <View style={[styles.iconCircle, isSelected && styles.iconCircleActive]}>
           <Ionicons
@@ -150,7 +161,13 @@ function AmbientRow({
 
       <View style={styles.rowRight}>
         {entry.id !== "silence" && (
-          <Pressable style={styles.previewBtn} onPress={onPreview} hitSlop={8}>
+          <Pressable
+            style={styles.previewBtn}
+            onPress={onPreview}
+            hitSlop={8}
+            accessibilityRole="button"
+            accessibilityLabel={isPreviewing ? `Stop preview of ${entry.label}` : `Preview ${entry.label}`}
+          >
             <Ionicons
               name={isPreviewing ? "stop" : "play"}
               size={16}

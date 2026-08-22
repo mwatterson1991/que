@@ -29,12 +29,19 @@ function AlarmRow({ item, onToggle, sessionMap }: { item: Alarm; onToggle: (id: 
   const soundName = session?.title || "Default";
   const duration = session ? `${Math.round(session.duration_sec / 60)} min` : "10 min";
 
+  const alarmLabel = `${item.label || "Alarm"}, ${hour} ${ampm}, ${soundName}, ${duration}`;
+
   return (
-    <Pressable onPress={() => router.push(`/edit-alarm?id=${item.id}` as any)} style={styles.row}>
+    <Pressable
+      onPress={() => router.push(`/edit-alarm?id=${item.id}` as any)}
+      style={styles.row}
+      accessibilityRole="button"
+      accessibilityLabel={`Edit ${alarmLabel}`}
+    >
       <View style={styles.rowLeft}>
         <View style={styles.timeRow}>
-          <Text style={[styles.time, { color }]}>{hour}</Text>
-          <Text style={[styles.ampm, { color }]}>{ampm}</Text>
+          <Text style={[styles.time, { color }]} maxFontSizeMultiplier={1.4}>{hour}</Text>
+          <Text style={[styles.ampm, { color }]} maxFontSizeMultiplier={1.4}>{ampm}</Text>
         </View>
         <Text style={[styles.label, { color: dimColor }]}>
           {item.label || "Alarm"}
@@ -48,6 +55,9 @@ function AlarmRow({ item, onToggle, sessionMap }: { item: Alarm; onToggle: (id: 
         onValueChange={(val) => onToggle(item.id, val)}
         trackColor={{ true: "#4cd964", false: "#39393d" }}
         thumbColor="#ffffff"
+        accessibilityRole="switch"
+        accessibilityState={{ checked: item.enabled }}
+        accessibilityLabel={`${item.label || "Alarm"} at ${hour} ${ampm}`}
       />
     </Pressable>
   );

@@ -87,6 +87,7 @@ function WheelColumn({
                   fontFamily: isSel ? F.medium : F.regular,
                   color: isSel ? "#f5f5f7" : "#48484a",
                 }}
+                maxFontSizeMultiplier={1.4}
               >
                 {item}
               </Text>
@@ -167,6 +168,9 @@ function StepGoal({
             key={g.id}
             onPress={() => onSelect(g.id)}
             style={[styles.goalCard, selected === g.id && styles.goalCardSelected]}
+            accessibilityRole="button"
+            accessibilityLabel={`${g.label}, ${g.description}`}
+            accessibilityState={{ selected: selected === g.id }}
           >
             <Text style={styles.goalIcon}>{g.icon}</Text>
             <Text style={[styles.goalLabel, selected === g.id && styles.goalLabelSelected]}>
@@ -254,7 +258,7 @@ function StepPermission({
           <Text style={styles.grantedText}>✓ Notifications enabled</Text>
         </View>
       ) : (
-        <Pressable style={styles.grantButton} onPress={onGrant}>
+        <Pressable style={styles.grantButton} onPress={onGrant} accessibilityRole="button">
           <Text style={styles.grantButtonText}>Grant Access</Text>
         </Pressable>
       )}
@@ -434,7 +438,13 @@ export default function OnboardingScreen() {
       {/* Header */}
       <View style={styles.header}>
         {step > 0 ? (
-          <Pressable onPress={handleBack} style={styles.backBtn} hitSlop={12}>
+          <Pressable
+            onPress={handleBack}
+            style={styles.backBtn}
+            hitSlop={12}
+            accessibilityRole="button"
+            accessibilityLabel="Go back"
+          >
             <Text style={styles.backText}>←</Text>
           </Pressable>
         ) : (
@@ -480,6 +490,8 @@ export default function OnboardingScreen() {
           style={[styles.ctaButton, ctaDisabled && styles.ctaDisabled]}
           onPress={handleContinue}
           disabled={ctaDisabled}
+          accessibilityRole="button"
+          accessibilityState={{ disabled: ctaDisabled }}
         >
           <Text style={styles.ctaText}>{ctaLabel()}</Text>
         </Pressable>
