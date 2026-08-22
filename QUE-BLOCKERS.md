@@ -1,34 +1,34 @@
-# QUE — Blockers
+# MORNING QUE — Blockers
 
-> Items that require Michael's physical action. The agent will not touch anything in this list. When Michael resolves a blocker, he removes it from this file.
+> Items that require Michael's action. Updated 2026-08-22. All are phone-doable except device testing.
 
 ## Active blockers
 
-### 1. Apple Developer Program enrollment
-- **Blocks:** Bundle ID registration, App Store Connect setup, Distribution certificate, Archive validation, Submission.
-- **What you need to do:** Go to https://developer.apple.com/programs/ and enroll as an individual (~$99/year). Have your Apple ID, photo ID, and a credit card ready. Enrollment review can take 24–48 hours.
-- **Once done:** Remove this entry. Agent will then start working Phase 04 items.
+### 1. Apple Developer Program enrollment — THE critical path
+- **Blocks:** Everything in Phase 04/05 — bundle ID, App Store Connect, production builds, TestFlight, submission.
+- **Do:** https://developer.apple.com/programs/ — enroll as individual (~$99/yr). Approval takes 24–48h, so start now.
+- **Then:** Put your Apple Team ID and (once the app record exists) ASC App ID into `eas.json` → `submit.production.ios`.
 
-### 2. Google Play Console enrollment (for Android launch)
-- **Blocks:** Any Android-store submission work.
-- **What you need to do:** Go to https://play.google.com/console/signup and enroll (~$25 one-time). Create developer profile, verify identity.
-- **Once done:** Remove this entry.
+### 2. ElevenLabs plan upgrade (was: API keys)
+- **Status:** Key is in `.env` and works — but the plan's 10,000 credits/mo ran out after 3 of 18 sessions. ~50k more credits needed (each script ≈ 3.3k).
+- **Do:** Upgrade at https://elevenlabs.io (Creator tier or above; paid plan also required for commercial use).
+- **Then:** The agent reruns `node scripts/generate-audio.mjs --local-only` — already-generated files are cached and cost nothing.
 
-### 3. Privacy policy hosting
-- **Blocks:** `Privacy policy URL — hosted online` checklist item. The agent will draft the copy, but needs a URL to reference.
-- **What you need to do:** Decide where the policy will live. Cheap options: GitHub Pages on this repo (free), a subpage on your personal site, or a Notion public page. Once you pick, share the URL here and the agent will wire it into the app + App Store listing.
+### 3. Privacy policy hosting decision
+- **Status:** Pages are written, rebranded to Morning Que, and committed in `~/morningque-site` — publishing needs your call because the `que` repo is PRIVATE (GitHub Pages won't serve from it on the free plan).
+- **Options:** (a) let the agent create a small PUBLIC repo `morningque-site` with just these pages → GitHub Pages URL, (b) add /privacy + /support to the existing morningque.netlify.app site, (c) make the que repo public.
+- **Then:** URL goes into the App Store listing + app settings.
 
-### 4. ElevenLabs + Claude API keys in .env
-- **Blocks:** ElevenLabs integration, real audio generation.
-- **What you need to do:** Add the following to `.env` (do NOT commit):
-  - `ELEVENLABS_API_KEY=...` — get from https://elevenlabs.io (requires paid plan for commercial use)
-  - `ANTHROPIC_API_KEY=...` — get from https://console.anthropic.com
-- **Once done:** Remove this entry. The agent will see the vars in `.env.example` and proceed.
+### 4. SUPABASE_SERVICE_ROLE_KEY in .env
+- **Blocks:** Uploading generated audio to Supabase storage + upserting session records.
+- **Do:** Supabase dashboard → Project Settings → API → copy `service_role` key → add `SUPABASE_SERVICE_ROLE_KEY=...` to `.env` (never commit).
+- **Also:** Run `supabase/migrations/2026-08-22-add-ambient-sound.sql` in the SQL editor after merging PR #33.
 
 ### 5. Physical device testing
-- **Blocks:** `Crash-free on iPhone and iPad — tested on real devices` and final QA before submission.
-- **What you need to do:** When the agent flags a build as ready for device testing, install via Expo Go / TestFlight and run through the flows.
+- **Blocks:** Final QA — alarms/background audio only prove themselves on a real iPhone.
+- **Do:** After Apple enrollment: TestFlight build → set an alarm → lock phone → confirm it wakes you.
 
-## Resolved blockers
+## Resolved
 
-*(Move entries here once resolved, with the date.)*
+- **2026-08-22 — Google Play enrollment:** deferred, iOS-first launch.
+- **2026-08-22 — API keys partially:** ElevenLabs + Supabase public keys present and working (see #2/#4 for what remains).

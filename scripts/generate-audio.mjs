@@ -18,7 +18,7 @@
  *   node scripts/generate-audio.mjs --only deep-focus-flow-state  # single script
  */
 
-import { readFileSync, existsSync } from "node:fs";
+import { readFileSync, writeFileSync, existsSync, mkdirSync } from "node:fs";
 import { resolve, dirname } from "node:path";
 import { fileURLToPath } from "node:url";
 
@@ -49,12 +49,19 @@ function loadEnv() {
 loadEnv();
 
 // ─── Validate required env vars ────────────────────────────
-const ELEVENLABS_API_KEY = process.env.ELEVENLABS_API_KEY;
-const ELEVENLABS_VOICE_ID = process.env.ELEVENLABS_VOICE_ID;
+const ELEVENLABS_API_KEY =
+  process.env.ELEVENLABS_API_KEY || process.env.EXPO_PUBLIC_ELEVENLABS_API_KEY;
+// Default: "Rachel" — matches DEFAULT_VOICE_ID in lib/elevenlabs.ts
+const ELEVENLABS_VOICE_ID = process.env.ELEVENLABS_VOICE_ID || "21m00Tcm4TlvDq8ikWAM";
 const SUPABASE_URL = process.env.SUPABASE_URL || process.env.EXPO_PUBLIC_SUPABASE_URL;
 const SUPABASE_SERVICE_KEY = process.env.SUPABASE_SERVICE_ROLE_KEY;
 
 const DRY_RUN = process.argv.includes("--dry-run");
+// --local-only: generate + cache MP3s without uploading to Supabase
+// (no SUPABASE_SERVICE_ROLE_KEY needed). Re-running the full pipeline
+// later reuses the cache, so no TTS credits are spent twice.
+const LOCAL_ONLY = process.argv.includes("--local-only");
+const CACHE_DIR = resolve(ROOT, "generated-audio");
 const ONLY_ID = (() => {
   const idx = process.argv.indexOf("--only");
   return idx !== -1 ? process.argv[idx + 1] : null;
@@ -63,12 +70,16 @@ const ONLY_ID = (() => {
 if (!DRY_RUN) {
   const missing = [];
   if (!ELEVENLABS_API_KEY) missing.push("ELEVENLABS_API_KEY");
-  if (!ELEVENLABS_VOICE_ID) missing.push("ELEVENLABS_VOICE_ID");
-  if (!SUPABASE_URL) missing.push("SUPABASE_URL (or EXPO_PUBLIC_SUPABASE_URL)");
-  if (!SUPABASE_SERVICE_KEY) missing.push("SUPABASE_SERVICE_ROLE_KEY");
+  if (!LOCAL_ONLY) {
+    if (!SUPABASE_URL) missing.push("SUPABASE_URL (or EXPO_PUBLIC_SUPABASE_URL)");
+    if (!SUPABASE_SERVICE_KEY) missing.push("SUPABASE_SERVICE_ROLE_KEY");
+  }
   if (missing.length > 0) {
     console.error(`ERROR: Missing env vars: ${missing.join(", ")}`);
     console.error("Add them to .env — see .env.example for the full list.");
+    if (!LOCAL_ONLY && !SUPABASE_SERVICE_KEY) {
+      console.error("Tip: run with --local-only to generate audio without uploading.");
+    }
     process.exit(1);
   }
 }
@@ -203,12 +214,26 @@ async function main() {
       continue;
     }
 
-    // Generate audio via ElevenLabs
+    // Generate audio via ElevenLabs (or reuse local cache)
     try {
-      console.log(`${label}   Generating audio (${scriptText.length} chars)...`);
-      const audioBuffer = await textToSpeech(scriptText);
-      const sizeMB = (audioBuffer.length / 1024 / 1024).toFixed(1);
-      console.log(`${label}   Audio generated: ${sizeMB} MB`);
+      const cachePath = resolve(CACHE_DIR, `${entry.id}.mp3`);
+      let audioBuffer;
+      if (existsSync(cachePath)) {
+        audioBuffer = readFileSync(cachePath);
+        console.log(`${label}   Using cached audio (${(audioBuffer.length / 1024 / 1024).toFixed(1)} MB)`);
+      } else {
+        console.log(`${label}   Generating audio (${scriptText.length} chars)...`);
+        audioBuffer = await textToSpeech(scriptText);
+        mkdirSync(CACHE_DIR, { recursive: true });
+        writeFileSync(cachePath, audioBuffer);
+        console.log(`${label}   Audio generated: ${(audioBuffer.length / 1024 / 1024).toFixed(1)} MB (cached)`);
+      }
+
+      if (LOCAL_ONLY) {
+        console.log(`${label}   Done (local only).\n`);
+        success++;
+        continue;
+      }
 
       // Upload to Supabase storage
       const storagePath = `sessions/${entry.id}.mp3`;
