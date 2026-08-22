@@ -35,8 +35,8 @@ All 31 April PRs are closed with notes explaining where their work went.
 - [✴] Subtitle, description, keywords, promo text — `appstore/` in PR #33
 - [✴] Screenshots (3 device sizes) + preview video — PR #33
 - [✴] App icon 1024×1024 — PR #33
-- [🚫] Privacy policy URL — pages written + rebranded, awaiting hosting decision (blocker #3)
-- [🚫] Support URL — same as above
+- [x] Privacy policy URL — https://mwatterson1991.github.io/morningque-site/privacy.html
+- [x] Support URL — https://mwatterson1991.github.io/morningque-site/support.html
 - [x] Category selected — Health & Fitness (appstore/metadata.json)
 - [🚫] Age rating questionnaire *(human-only)*
 

@@ -14,11 +14,6 @@
 - **Do:** Upgrade at https://elevenlabs.io (Creator tier or above; paid plan also required for commercial use).
 - **Then:** The agent reruns `node scripts/generate-audio.mjs --local-only` — already-generated files are cached and cost nothing.
 
-### 3. Privacy policy hosting decision
-- **Status:** Pages are written, rebranded to Morning Que, and committed in `~/morningque-site` — publishing needs your call because the `que` repo is PRIVATE (GitHub Pages won't serve from it on the free plan).
-- **Options:** (a) let the agent create a small PUBLIC repo `morningque-site` with just these pages → GitHub Pages URL, (b) add /privacy + /support to the existing morningque.netlify.app site, (c) make the que repo public.
-- **Then:** URL goes into the App Store listing + app settings.
-
 ### 4. SUPABASE_SERVICE_ROLE_KEY in .env
 - **Blocks:** Uploading generated audio to Supabase storage + upserting session records.
 - **Do:** Supabase dashboard → Project Settings → API → copy `service_role` key → add `SUPABASE_SERVICE_ROLE_KEY=...` to `.env` (never commit).
@@ -30,5 +25,6 @@
 
 ## Resolved
 
+- **2026-08-22 — Privacy policy + support hosting:** live at https://mwatterson1991.github.io/morningque-site/privacy.html and …/support.html (public repo mwatterson1991/morningque-site, approved by Michael). URLs wired into appstore/metadata.json.
 - **2026-08-22 — Google Play enrollment:** deferred, iOS-first launch.
 - **2026-08-22 — API keys partially:** ElevenLabs + Supabase public keys present and working (see #2/#4 for what remains).
