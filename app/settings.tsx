@@ -6,6 +6,7 @@ import { F } from "@/lib/fonts";
 import { useAuth } from "@/lib/auth";
 import { useProfile, usePreferences } from "@/lib/useSupabase";
 import { supabase } from "@/lib/supabase";
+import { AMBIENT_SOUNDS, AmbientSoundId } from "@/lib/ambient";
 
 type SettingsRowProps = {
   icon: keyof typeof Ionicons.glyphMap;
@@ -137,6 +138,21 @@ export default function SettingsScreen() {
         label="Default Sound"
         value="Focus"
         onPress={() => router.push("/sounds" as any)}
+      />
+      <View style={styles.rowSep} />
+      <SettingsRow
+        icon="water-outline"
+        label="Ambient Sound"
+        value={
+          AMBIENT_SOUNDS.find(
+            (s) => s.id === (prefs?.ambient_sound as AmbientSoundId),
+          )?.label ?? "Silence"
+        }
+        onPress={() =>
+          router.push(
+            `/ambient-picker?current=${prefs?.ambient_sound ?? "silence"}` as any,
+          )
+        }
       />
       <View style={styles.rowSep} />
       <SettingsRow

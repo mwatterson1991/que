@@ -8,8 +8,14 @@ import * as SplashScreen from "expo-splash-screen";
 import * as Notifications from "expo-notifications";
 import { AuthProvider, useAuth } from "@/lib/auth";
 import { requestAlarmPermissions, ensureAndroidChannel } from "@/lib/alarmScheduler";
+import { initBackgroundAudio } from "@/lib/backgroundAudio";
 
 SplashScreen.preventAutoHideAsync();
+
+// Initialize background audio as early as possible so iOS allocates the
+// correct audio session category before any playback begins. Module scope
+// so it runs once on cold start, before the React tree mounts.
+initBackgroundAudio().catch(() => {});
 
 // ─── Notification handler (module-level, before any render) ──
 // This controls how notifications behave when the app is FOREGROUNDED.
@@ -63,7 +69,7 @@ function NotificationGate() {
             {
               text: "Start Session",
               onPress: () => {
-                if (sessionId) router.push(`/player?id=${sessionId}` as any);
+                if (sessionId) router.push(`/player?id=${sessionId}&alarm=1` as any);
               },
             },
           ]
@@ -79,7 +85,7 @@ function NotificationGate() {
         const sessionId = data?.sessionId as string | undefined;
         if (sessionId) {
           // Small delay to let the navigator mount after cold start
-          setTimeout(() => router.push(`/player?id=${sessionId}` as any), 300);
+          setTimeout(() => router.push(`/player?id=${sessionId}&alarm=1` as any), 300);
         }
       }
     );

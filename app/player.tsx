@@ -27,7 +27,7 @@ import Animated, {
 } from "react-native-reanimated";
 import { AVPlaybackStatus } from "expo-av";
 import { F } from "@/lib/fonts";
-import { useSessions, useActivity, useProfile, useCategories } from "@/lib/useSupabase";
+import { useSessions, useActivity, useProfile, useCategories, usePreferences } from "@/lib/useSupabase";
 import { setPickedSound } from "@/lib/soundPicker";
 import {
   resolveSource,
@@ -37,6 +37,18 @@ import {
   seekSession,
   stopSession,
 } from "@/lib/audio";
+import {
+  playAlarmSession,
+  stopAlarmSession,
+  skipFadeIn,
+} from "@/lib/alarmAudio";
+import {
+  startAmbient,
+  pauseAmbient,
+  resumeAmbient,
+  stopAmbient,
+  AmbientSoundId,
+} from "@/lib/ambient";
 
 const { width: SCREEN_W } = Dimensions.get("window");
 const ORB_RADIUS = 38;
@@ -244,7 +256,8 @@ function MantraTeleprompter({
 
 // ─── Screen ──────────────────────────────────────────────
 export default function PlayerScreen() {
-  const { id } = useLocalSearchParams<{ id: string }>();
+  const { id, alarm } = useLocalSearchParams<{ id: string; alarm?: string }>();
+  const isAlarmMode = alarm === "1";
   const router = useRouter();
   const navigation = useNavigation();
   const insets = useSafeAreaInsets();
@@ -252,6 +265,7 @@ export default function PlayerScreen() {
   const { add: logActivity } = useActivity();
   const { profile, update: updateProfile } = useProfile();
   const { categories, updateProgress } = useCategories();
+  const { prefs } = usePreferences();
 
   const session = sessions.find((s) => s.id === id) ?? null;
 
@@ -270,21 +284,37 @@ export default function PlayerScreen() {
     if (!session || startedRef.current) return;
     startedRef.current = true;
 
-    const source = resolveSource(session.audio_url, session.audio_asset);
-    if (!source) return;
-
     setDuration(session.duration_sec);
-    playSession(source, (status: AVPlaybackStatus) => {
+
+    const onStatus = (status: AVPlaybackStatus) => {
       if (!status.isLoaded) return;
       if (!scrubbing) setElapsed(Math.floor(status.positionMillis / 1000));
       setPlaying(status.isPlaying);
       if (status.durationMillis) setDuration(Math.floor(status.durationMillis / 1000));
-      if (status.didJustFinish) { setPlaying(false); setCompleted(true); }
-    });
+      if (status.didJustFinish) { setPlaying(false); setCompleted(true); stopAmbient(); }
+    };
+
+    if (isAlarmMode) {
+      // Alarm mode: gentle 30-second volume fade-in with error fallback
+      playAlarmSession(session.audio_url, session.audio_asset, onStatus);
+    } else {
+      // Normal mode: instant full-volume playback
+      const source = resolveSource(session.audio_url, session.audio_asset);
+      if (!source) return;
+      playSession(source, onStatus);
+    }
+
+    // Start ambient layer based on user preference
+    const ambientId = (prefs?.ambient_sound as AmbientSoundId) ?? "silence";
+    startAmbient(ambientId);
 
     setPlaying(true);
-    return () => { stopSession(); };
-  }, [session]);
+    return () => {
+      if (isAlarmMode) stopAlarmSession();
+      else stopSession();
+      stopAmbient();
+    };
+  }, [session, isAlarmMode]);
 
   useEffect(() => {
     if (!playing || !session?.mantras?.length) return;
@@ -343,8 +373,15 @@ export default function PlayerScreen() {
   ).current;
 
   const togglePlay = async () => {
-    if (playing) await pauseSession();
-    else await resumeSession();
+    if (playing) {
+      await pauseSession();
+      await pauseAmbient();
+      // User is awake — skip remaining fade-in on next resume
+      if (isAlarmMode) await skipFadeIn();
+    } else {
+      await resumeSession();
+      await resumeAmbient();
+    }
   };
 
   const skip = async (delta: number) => {

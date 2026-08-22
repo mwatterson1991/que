@@ -292,6 +292,7 @@ export interface Database {
           dark_mode: boolean;
           default_sound: string;
           default_duration_min: number;
+          ambient_sound: string;
           updated_at: string;
         };
         Insert: {
@@ -301,6 +302,7 @@ export interface Database {
           dark_mode?: boolean;
           default_sound?: string;
           default_duration_min?: number;
+          ambient_sound?: string;
         };
         Update: {
           notifications?: boolean;
@@ -308,6 +310,7 @@ export interface Database {
           dark_mode?: boolean;
           default_sound?: string;
           default_duration_min?: number;
+          ambient_sound?: string;
         };
         Relationships: [];
       };

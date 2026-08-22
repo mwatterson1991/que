@@ -2,7 +2,7 @@ import { Audio, AVPlaybackStatus } from "expo-av";
 
 // ─── Bundled audio assets ───────────────────────────────
 // Maps audio_asset keys (from the sessions table) to local require() sources.
-const BUNDLED_ASSETS: Record<string, any> = {
+export const BUNDLED_ASSETS: Record<string, any> = {
   "deep-sleep": require("../assets/audio/deep-sleep.aiff"),
   "morning-confidence": require("../assets/audio/tts_2026-05-20T10-06-22-531Z.mp3"),
   "quit-vaping": require("../assets/audio/quit-vaping.aiff"),
@@ -75,6 +75,21 @@ export async function playSession(
   }
 
   return sound;
+}
+
+/**
+ * Adopt an externally-created Sound as the current session so that
+ * pauseSession/resumeSession/seekSession/stopSession operate on it.
+ * Used by alarmAudio, which manages its own loading/fade but should
+ * still respond to the player's transport controls.
+ */
+export function adoptSession(
+  sound: Audio.Sound,
+  statusCallback?: (status: AVPlaybackStatus) => void,
+) {
+  currentSound = sound;
+  onStatusUpdate = statusCallback ?? null;
+  if (onStatusUpdate) sound.setOnPlaybackStatusUpdate(onStatusUpdate);
 }
 
 /** Pause current playback */
