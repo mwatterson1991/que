@@ -4,7 +4,7 @@
 >
 > Legend: `[ ]` not started · `[~]` in progress (auto-branch exists) · `[✴]` PR open, awaiting review · `[x]` merged / complete · `[🚫]` blocked (see QUE-BLOCKERS.md)
 
-Last agent run: 2026-04-25 14:00
+Last agent run: 2026-05-07 (run 93)
 
 ## Checklist state
 
@@ -64,6 +64,637 @@ Last agent run: 2026-04-25 14:00
 - `auto/agent-20260419-1217-appstore-screenshots` → [PR #20](https://github.com/mwatterson1991/que/pull/20) — App Store screenshots
 
 ## Run journal
+
+## 2026-05-07 (run 93)
+- **Task:** N/A — NO-OP
+- **Summary:** All 31 PRs still open. No merges since 2026-04-25. Waiting on Michael.
+- **Next:** Merge PRs (#1→#2→#3→#4→#5), push main to origin, add API keys (blocker #4).
+
+## 2026-05-07 (run 92)
+- **Task:** N/A — NO-OP
+- **Summary:** All 31 PRs still open. No merges since 2026-04-25. Waiting on Michael.
+- **Next:** Merge PRs (#1→#2→#3→#4→#5), push main to origin, add API keys (blocker #4).
+
+## 2026-05-07 (run 91)
+- **Task:** N/A — NO-OP
+- **Summary:** All 31 PRs still open. No merges since 2026-04-25. Waiting on Michael.
+- **Next:** Merge PRs (#1→#2→#3→#4→#5), push main to origin, add API keys (blocker #4).
+
+## 2026-05-07 (run 90)
+- **Task:** N/A — NO-OP
+- **Summary:** All 31 PRs still open. No merges since 2026-04-25. Waiting on Michael.
+- **Next:** Merge PRs (#1→#2→#3→#4→#5), push main to origin, add API keys (blocker #4).
+
+## 2026-05-07 (run 89)
+- **Task:** N/A — NO-OP
+- **Summary:** All 31 PRs still open. No merges since 2026-04-25. Waiting on Michael.
+- **Next:** Merge PRs (#1→#2→#3→#4→#5), push main to origin, add API keys (blocker #4).
+
+## 2026-05-07 (run 88)
+- **Task:** N/A — NO-OP
+- **Summary:** All 31 PRs still open. No merges since 2026-04-25. Waiting on Michael.
+- **Next:** Merge PRs (#1→#2→#3→#4→#5), push main to origin, add API keys (blocker #4).
+
+## 2026-05-06 (run 87)
+- **Task:** N/A — NO-OP
+- **Summary:** All 31 PRs still open. No merges since 2026-04-25. Waiting on Michael.
+- **Next:** Merge PRs (#1→#2→#3→#4→#5), push main to origin, add API keys (blocker #4).
+
+## 2026-05-06 (run 86)
+- **Task:** N/A — NO-OP
+- **Summary:** All 31 PRs still open. No merges since 2026-04-25. Waiting on Michael.
+- **Next:** Merge PRs (#1→#2→#3→#4→#5), push main to origin, add API keys (blocker #4).
+
+## 2026-05-06 (run 85)
+- **Task:** N/A — NO-OP
+- **Summary:** All 31 PRs still open. No merges since 2026-04-25. Waiting on Michael.
+- **Next:** Merge PRs (#1→#2→#3→#4→#5), push main to origin, add API keys (blocker #4).
+
+## 2026-05-06 (run 84)
+- **Task:** N/A — NO-OP
+- **Summary:** All 31 PRs still open. No merges since 2026-04-25. Waiting on Michael.
+- **Next:** Merge PRs (#1→#2→#3→#4→#5), push main to origin, add API keys (blocker #4).
+
+## 2026-05-06 (run 83)
+- **Task:** N/A — NO-OP
+- **Summary:** All 31 PRs still open. No merges since 2026-04-25. Waiting on Michael.
+- **Next:** Merge PRs (#1→#2→#3→#4→#5), push main to origin, add API keys (blocker #4).
+
+## 2026-05-06 (run 82)
+- **Task:** N/A — NO-OP
+- **Summary:** All 31 PRs still open. No merges since 2026-04-25. Waiting on Michael.
+- **Next:** Merge PRs (#1→#2→#3→#4→#5), push main to origin, add API keys (blocker #4).
+
+## 2026-05-06 (run 81)
+- **Task:** N/A — NO-OP
+- **Summary:** All 31 PRs still open. No merges since 2026-04-25. Waiting on Michael.
+- **Next:** Merge PRs (#1→#2→#3→#4→#5), push main to origin, add API keys (blocker #4).
+
+## 2026-05-06 (run 80)
+- **Task:** N/A — NO-OP
+- **Summary:** All 31 PRs still open. No merges since 2026-04-25. Waiting on Michael.
+- **Next:** Merge PRs (#1→#2→#3→#4→#5), push main to origin, add API keys (blocker #4).
+
+## 2026-05-06 (run 79)
+- **Task:** N/A — NO-OP
+- **Summary:** All 31 PRs still open. No merges since 2026-04-25. Waiting on Michael.
+- **Next:** Merge PRs (#1→#2→#3→#4→#5), push main to origin, add API keys (blocker #4).
+
+## 2026-05-06 (run 78)
+- **Task:** N/A — NO-OP
+- **Summary:** All 31 PRs still open. No merges since 2026-04-25. Waiting on Michael.
+- **Next:** Merge PRs (#1→#2→#3→#4→#5), push main to origin, add API keys (blocker #4).
+
+## 2026-05-06 (run 77)
+- **Task:** N/A — NO-OP
+- **Summary:** All 31 PRs still open. No merges since 2026-04-25. Waiting on Michael.
+- **Next:** Merge PRs (#1→#2→#3→#4→#5), push main to origin, add API keys (blocker #4).
+
+## 2026-05-06 (run 76)
+- **Task:** N/A — NO-OP
+- **Summary:** All 31 PRs still open. No merges since 2026-04-25. Waiting on Michael.
+- **Next:** Merge PRs (#1→#2→#3→#4→#5), push main to origin, add API keys (blocker #4).
+
+## 2026-05-06 (run 75)
+- **Task:** N/A — NO-OP
+- **Summary:** All 31 PRs still open. No merges since 2026-04-25. Waiting on Michael.
+- **Next:** Merge PRs (#1→#2→#3→#4→#5), push main to origin, add API keys (blocker #4).
+
+## 2026-05-06 (run 74)
+- **Task:** N/A — NO-OP
+- **Summary:** All 31 PRs still open. No merges since 2026-04-25. Waiting on Michael.
+- **Next:** Merge PRs (#1→#2→#3→#4→#5), push main to origin, add API keys (blocker #4).
+
+## 2026-05-06 (run 73)
+- **Task:** N/A — NO-OP
+- **Summary:** All 31 PRs still open. No merges since 2026-04-25. Waiting on Michael.
+- **Next:** Merge PRs (#1→#2→#3→#4→#5), push main to origin, add API keys (blocker #4).
+
+## 2026-05-06 (run 72)
+- **Task:** N/A — NO-OP
+- **Summary:** All 31 PRs still open. No merges since 2026-04-25. Waiting on Michael.
+- **Next:** Merge PRs (#1→#2→#3→#4→#5), push main to origin, add API keys (blocker #4).
+
+## 2026-05-06 (run 71)
+- **Task:** N/A — NO-OP
+- **Summary:** All 31 PRs still open. No merges since 2026-04-25. Waiting on Michael.
+- **Next:** Merge PRs (#1→#2→#3→#4→#5), push main to origin, add API keys (blocker #4).
+
+## 2026-05-06 (run 70)
+- **Task:** N/A — NO-OP
+- **Summary:** All 31 PRs still open. No merges since 2026-04-25. Waiting on Michael.
+- **Next:** Merge PRs (#1→#2→#3→#4→#5), push main to origin, add API keys (blocker #4).
+
+## 2026-05-06 (run 69)
+- **Task:** N/A — NO-OP
+- **Summary:** All 31 PRs still open. No merges since 2026-04-25. Waiting on Michael.
+- **Next:** Merge PRs (#1→#2→#3→#4→#5), push main to origin, add API keys (blocker #4).
+
+## 2026-05-06 (run 68)
+- **Task:** N/A — NO-OP
+- **Summary:** All 31 PRs still open. No merges since 2026-04-25. Waiting on Michael.
+- **Next:** Merge PRs (#1→#2→#3→#4→#5), push main to origin, add API keys (blocker #4).
+
+## 2026-05-06 (run 67)
+- **Task:** N/A — NO-OP
+- **Summary:** All 31 PRs still open. No merges since 2026-04-25. Waiting on Michael.
+- **Next:** Merge PRs (#1→#2→#3→#4→#5), push main to origin, add API keys (blocker #4).
+
+## 2026-05-05 (run 66)
+- **Task:** N/A — NO-OP
+- **Summary:** All 31 PRs still open. No merges since 2026-04-25. Waiting on Michael.
+- **Next:** Merge PRs (#1→#2→#3→#4→#5), push main to origin, add API keys (blocker #4).
+
+## 2026-05-05 (run 65)
+- **Task:** N/A — NO-OP
+- **Summary:** All 31 PRs still open. No merges since 2026-04-25. Waiting on Michael.
+- **Next:** Merge PRs (#1→#2→#3→#4→#5), push main to origin, add API keys (blocker #4).
+
+## 2026-05-05 (run 64)
+- **Task:** N/A — NO-OP
+- **Summary:** All 31 PRs still open. No merges since 2026-04-25. Waiting on Michael.
+- **Next:** Merge PRs (#1→#2→#3→#4→#5), push main to origin, add API keys (blocker #4).
+
+## 2026-05-05 (run 63)
+- **Task:** N/A — NO-OP
+- **Summary:** All 31 PRs still open. No merges since 2026-04-25. Waiting on Michael.
+- **Next:** Merge PRs (#1→#2→#3→#4→#5), push main to origin, add API keys (blocker #4).
+
+## 2026-05-05 (run 62)
+- **Task:** N/A — NO-OP
+- **Summary:** All 31 PRs still open. No merges since 2026-04-25. Waiting on Michael.
+- **Next:** Merge PRs (#1→#2→#3→#4→#5), push main to origin, add API keys (blocker #4).
+
+## 2026-05-05 (run 61)
+- **Task:** N/A — NO-OP
+- **Summary:** All 31 PRs still open. No merges since 2026-04-25. Waiting on Michael.
+- **Next:** Merge PRs (#1→#2→#3→#4→#5), push main to origin, add API keys (blocker #4).
+
+## 2026-05-05 (run 60)
+- **Task:** N/A — NO-OP
+- **Summary:** All 31 PRs still open. No merges since 2026-04-25. Waiting on Michael.
+- **Next:** Merge PRs (#1→#2→#3→#4→#5), push main to origin, add API keys (blocker #4).
+
+## 2026-05-05 (run 59)
+- **Task:** N/A — NO-OP
+- **Summary:** All 31 PRs still open. No merges since 2026-04-25. Waiting on Michael.
+- **Next:** Merge PRs (#1→#2→#3→#4→#5), push main to origin, add API keys (blocker #4).
+
+## 2026-05-05 (run 58)
+- **Task:** N/A — NO-OP
+- **Summary:** All 31 PRs still open. No merges since 2026-04-25. Waiting on Michael.
+- **Next:** Merge PRs (#1→#2→#3→#4→#5), push main to origin, add API keys (blocker #4).
+
+## 2026-05-05 (run 57)
+- **Task:** N/A — NO-OP
+- **Summary:** All 31 PRs still open. No merges since 2026-04-25. Waiting on Michael.
+- **Next:** Merge PRs (#1→#2→#3→#4→#5), push main to origin, add API keys (blocker #4).
+
+## 2026-05-05 (run 56)
+- **Task:** N/A — NO-OP
+- **Summary:** All 31 PRs still open. No merges since 2026-04-25. Waiting on Michael.
+- **Next:** Merge PRs (#1→#2→#3→#4→#5), push main to origin, add API keys (blocker #4).
+
+## 2026-05-05 (run 55)
+- **Task:** N/A — NO-OP
+- **Summary:** All 31 PRs still open. No merges since 2026-04-25. Waiting on Michael.
+- **Next:** Merge PRs (#1→#2→#3→#4→#5), push main to origin, add API keys (blocker #4).
+
+## 2026-05-05 (run 54)
+- **Task:** N/A — NO-OP
+- **Summary:** All 31 PRs still open. No merges since 2026-04-25. Waiting on Michael.
+- **Next:** Merge PRs (#1→#2→#3→#4→#5), push main to origin, add API keys (blocker #4).
+
+## 2026-05-05 (run 53)
+- **Task:** N/A — NO-OP
+- **Summary:** All 31 PRs still open. No merges since 2026-04-25. Waiting on Michael.
+- **Next:** Merge PRs (#1→#2→#3→#4→#5), push main to origin, add API keys (blocker #4).
+
+## 2026-05-05 (run 52)
+- **Task:** N/A — NO-OP
+- **Summary:** All 31 PRs still open. No merges since 2026-04-25. Waiting on Michael.
+- **Next:** Merge PRs (#1→#2→#3→#4→#5), push main to origin, add API keys (blocker #4).
+
+## 2026-05-05 (run 51)
+- **Task:** N/A — NO-OP
+- **Summary:** All 31 PRs still open. No merges since 2026-04-25. Waiting on Michael.
+- **Next:** Merge PRs (#1→#2→#3→#4→#5), push main to origin, add API keys (blocker #4).
+
+## 2026-05-05 (run 50)
+- **Task:** N/A — NO-OP
+- **Summary:** All 31 PRs still open. No merges since 2026-04-25. Waiting on Michael.
+- **Next:** Merge PRs (#1→#2→#3→#4→#5), push main to origin, add API keys (blocker #4).
+
+## 2026-05-05 (run 49)
+- **Task:** N/A — NO-OP
+- **Summary:** All 31 PRs still open. No merges since 2026-04-25. Waiting on Michael.
+- **Next:** Merge PRs (#1→#2→#3→#4→#5), push main to origin, add API keys (blocker #4).
+
+## 2026-05-05 (run 48)
+- **Task:** N/A — NO-OP
+- **Summary:** All 31 PRs still open. No merges since 2026-04-25. Waiting on Michael.
+- **Next:** Merge PRs (#1→#2→#3→#4→#5), push main to origin, add API keys (blocker #4).
+
+## 2026-05-05 (run 47)
+- **Task:** N/A — NO-OP
+- **Summary:** All 31 PRs still open. No merges since 2026-04-25. Waiting on Michael.
+- **Next:** Merge PRs (#1→#2→#3→#4→#5), push main to origin, add API keys (blocker #4).
+
+## 2026-05-04 (run 46)
+- **Task:** N/A — NO-OP
+- **Summary:** All 31 PRs still open. No merges since 2026-04-25. Waiting on Michael.
+- **Next:** Merge PRs (#1→#2→#3→#4→#5), push main to origin, add API keys (blocker #4).
+
+## 2026-05-04 (run 45)
+- **Task:** N/A — NO-OP
+- **Summary:** All 31 PRs still open. No merges since 2026-04-25. Waiting on Michael.
+- **Next:** Merge PRs (#1→#2→#3→#4→#5), push main to origin, add API keys (blocker #4).
+
+## 2026-05-04 (run 44)
+- **Task:** N/A — NO-OP
+- **Summary:** All 31 PRs still open. No merges since 2026-04-25. Waiting on Michael.
+- **Next:** Merge PRs (#1→#2→#3→#4→#5), push main to origin, add API keys (blocker #4).
+
+## 2026-05-04 (run 43)
+- **Task:** N/A — NO-OP
+- **Summary:** All 31 PRs still open. No merges since 2026-04-25. Waiting on Michael.
+- **Next:** Merge PRs (#1→#2→#3→#4→#5), push main to origin, add API keys (blocker #4).
+
+## 2026-05-04 (run 42)
+- **Task:** N/A — NO-OP
+- **Summary:** All 31 PRs still open. No merges since 2026-04-25. Waiting on Michael.
+- **Next:** Merge PRs (#1→#2→#3→#4→#5), push main to origin, add API keys (blocker #4).
+
+## 2026-05-04 (run 41)
+- **Task:** N/A — NO-OP
+- **Summary:** All 31 PRs still open. No merges since 2026-04-25. Waiting on Michael.
+- **Next:** Merge PRs (#1→#2→#3→#4→#5), push main to origin, add API keys (blocker #4).
+
+## 2026-05-04 (run 40)
+- **Task:** N/A — NO-OP
+- **Summary:** All 31 PRs still open. No merges since 2026-04-25. Waiting on Michael.
+- **Next:** Merge PRs (#1→#2→#3→#4→#5), push main to origin, add API keys (blocker #4).
+
+## 2026-05-04 (run 39)
+- **Task:** N/A — NO-OP
+- **Summary:** All 31 PRs still open. No merges since 2026-04-25. Waiting on Michael.
+- **Next:** Merge PRs (#1→#2→#3→#4→#5), push main to origin, add API keys (blocker #4).
+
+## 2026-05-04 (run 38)
+- **Task:** N/A — NO-OP
+- **Summary:** All 31 PRs still open. No merges since 2026-04-25. Waiting on Michael.
+- **Next:** Merge PRs (#1→#2→#3→#4→#5), push main to origin, add API keys (blocker #4).
+
+## 2026-05-04 (run 37)
+- **Task:** N/A — NO-OP
+- **Summary:** All 31 PRs still open. No merges since 2026-04-25. Waiting on Michael.
+- **Next:** Merge PRs (#1→#2→#3→#4→#5), push main to origin, add API keys (blocker #4).
+
+## 2026-05-04 (run 36)
+- **Task:** N/A — NO-OP
+- **Summary:** All 31 PRs still open. No merges since 2026-04-25. Waiting on Michael.
+- **Next:** Merge PRs (#1→#2→#3→#4→#5), push main to origin, add API keys (blocker #4).
+
+## 2026-05-04 (run 35)
+- **Task:** N/A — NO-OP
+- **Summary:** All 31 PRs still open. No merges since 2026-04-25. Waiting on Michael.
+- **Next:** Merge PRs (#1→#2→#3→#4→#5), push main to origin, add API keys (blocker #4).
+
+## 2026-05-03 (run 34)
+- **Task:** N/A — NO-OP
+- **Summary:** All 31 PRs still open. No merges since 2026-04-25. Waiting on Michael.
+- **Next:** Merge PRs (#1→#2→#3→#4→#5), push main to origin, add API keys (blocker #4).
+
+## 2026-05-03 (run 33)
+- **Task:** N/A — NO-OP
+- **Summary:** All 31 PRs still open. No merges since 2026-04-25. Waiting on Michael.
+- **Next:** Merge PRs (#1→#2→#3→#4→#5), push main to origin, add API keys (blocker #4).
+
+## 2026-05-02 (run 32)
+- **Task:** N/A — NO-OP
+- **Summary:** All 31 PRs still open. No merges since 2026-04-25. Waiting on Michael.
+- **Next:** Merge PRs (#1→#2→#3→#4→#5), push main to origin, add API keys (blocker #4).
+
+## 2026-05-02 (run 31)
+- **Task:** N/A — NO-OP
+- **Summary:** All 31 PRs still open. No merges since 2026-04-25. Waiting on Michael.
+- **Next:** Merge PRs (#1→#2→#3→#4→#5), push main to origin, add API keys (blocker #4).
+
+## 2026-04-28 (run 30)
+- **Task:** N/A — NO-OP
+- **Summary:** All 31 PRs still open. No merges. Waiting on Michael.
+- **Next:** Merge PRs (#1→#2→#3→#4→#5), push main to origin, add API keys (blocker #4).
+
+## 2026-04-28 (run 29)
+- **Task:** N/A — NO-OP
+- **Summary:** All 31 PRs still open. No merges. Waiting on Michael.
+- **Next:** Merge PRs (#1→#2→#3→#4→#5), push main to origin, add API keys (blocker #4).
+
+## 2026-04-28 (run 28)
+- **Task:** N/A — NO-OP
+- **Summary:** All 31 PRs still open. No merges. Waiting on Michael.
+- **Next:** Merge PRs (#1→#2→#3→#4→#5), push main to origin, add API keys (blocker #4).
+
+## 2026-04-28 (run 27)
+- **Task:** N/A — NO-OP
+- **Summary:** All 31 PRs still open. No merges. Waiting on Michael.
+- **Next:** Merge PRs (#1→#2→#3→#4→#5), push main to origin, add API keys (blocker #4).
+
+## 2026-04-28 (run 26)
+- **Task:** N/A — NO-OP
+- **Summary:** All 31 PRs still open. No merges. Waiting on Michael.
+- **Next:** Merge PRs (#1→#2→#3→#4→#5), push main to origin, add API keys (blocker #4).
+
+## 2026-04-28 (run 25)
+- **Task:** N/A — NO-OP
+- **Summary:** All 31 PRs still open. No merges. Waiting on Michael.
+- **Next:** Merge PRs (#1→#2→#3→#4→#5), push main to origin, add API keys (blocker #4).
+
+## 2026-04-28 (run 24)
+- **Task:** N/A — NO-OP
+- **Summary:** All 31 PRs still open. No merges. Waiting on Michael.
+- **Next:** Merge PRs (#1→#2→#3→#4→#5), push main to origin, add API keys (blocker #4).
+
+## 2026-04-28 (run 23)
+- **Task:** N/A — NO-OP
+- **Summary:** All 31 PRs still open. No merges. Waiting on Michael.
+- **Next:** Merge PRs (#1→#2→#3→#4→#5), push main to origin, add API keys (blocker #4).
+
+## 2026-04-28 (run 22)
+- **Task:** N/A — NO-OP
+- **Summary:** All 31 PRs still open. No merges. Waiting on Michael.
+- **Next:** Merge PRs (#1→#2→#3→#4→#5), push main to origin, add API keys (blocker #4).
+
+## 2026-04-28 (run 21)
+- **Task:** N/A — NO-OP
+- **Summary:** All 31 PRs still open. No merges. Waiting on Michael.
+- **Next:** Merge PRs (#1→#2→#3→#4→#5), push main to origin, add API keys (blocker #4).
+
+## 2026-04-28 (run 20)
+- **Task:** N/A — NO-OP
+- **Summary:** All 31 PRs still open. No merges. Waiting on Michael.
+- **Next:** Merge PRs (#1→#2→#3→#4→#5), push main to origin, add API keys (blocker #4).
+
+## 2026-04-28 (run 19)
+- **Task:** N/A — NO-OP
+- **Summary:** All 31 PRs still open. No merges. Waiting on Michael.
+- **Next:** Merge PRs (#1→#2→#3→#4→#5), push main to origin, add API keys (blocker #4).
+
+## 2026-04-27 (run 18)
+- **Task:** N/A — NO-OP
+- **Summary:** All 31 PRs still open. No merges. Waiting on Michael.
+- **Next:** Merge PRs (#1→#2→#3→#4→#5), push main to origin, add API keys (blocker #4).
+
+## 2026-04-27 (run 17)
+- **Task:** N/A — NO-OP
+- **Summary:** All 31 PRs still open. No merges. Waiting on Michael.
+- **Next:** Merge PRs (#1→#2→#3→#4→#5), push main to origin, add API keys (blocker #4).
+
+## 2026-04-27 (run 16)
+- **Task:** N/A — NO-OP
+- **Summary:** All 31 PRs still open. No merges. Waiting on Michael.
+- **Next:** Merge PRs (#1→#2→#3→#4→#5), push main to origin, add API keys (blocker #4).
+
+## 2026-04-27 (run 15)
+- **Task:** N/A — NO-OP
+- **Summary:** All 31 PRs still open. No merges. Waiting on Michael.
+- **Next:** Merge PRs (#1→#2→#3→#4→#5), push main to origin, add API keys (blocker #4).
+
+## 2026-04-27 (run 14)
+- **Task:** N/A — NO-OP
+- **Summary:** All 31 PRs still open. No merges. Waiting on Michael.
+- **Next:** Merge PRs (#1→#2→#3→#4→#5), push main to origin, add API keys (blocker #4).
+
+## 2026-04-27 (run 13)
+- **Task:** N/A — NO-OP
+- **Summary:** All 31 PRs still open. No merges. Waiting on Michael.
+- **Next:** Merge PRs (#1→#2→#3→#4→#5), push main to origin, add API keys (blocker #4).
+
+## 2026-04-27 (run 12)
+- **Task:** N/A — NO-OP
+- **Summary:** All 31 PRs still open. No merges. Waiting on Michael.
+- **Next:** Merge PRs (#1→#2→#3→#4→#5), push main to origin, add API keys (blocker #4).
+
+## 2026-04-27 (run 11)
+- **Task:** N/A — NO-OP
+- **Summary:** All 31 PRs still open. No merges. Waiting on Michael.
+- **Next:** Merge PRs (#1→#2→#3→#4→#5), push main to origin, add API keys (blocker #4).
+
+## 2026-04-27 (run 10)
+- **Task:** N/A — NO-OP
+- **Summary:** All 31 PRs still open. No merges. Waiting on Michael.
+- **Next:** Merge PRs (#1→#2→#3→#4→#5), push main to origin, add API keys (blocker #4).
+
+## 2026-04-27 (run 9)
+- **Task:** N/A — NO-OP
+- **Summary:** All 31 PRs still open. No merges. Waiting on Michael.
+- **Next:** Merge PRs (#1→#2→#3→#4→#5), push main to origin, add API keys (blocker #4).
+
+## 2026-04-27 (run 8)
+- **Task:** N/A — NO-OP
+- **Summary:** All 31 PRs still open. No merges. Waiting on Michael.
+- **Next:** Merge PRs (#1→#2→#3→#4→#5), push main to origin, add API keys (blocker #4).
+
+## 2026-04-27 (run 7)
+- **Task:** N/A — NO-OP
+- **Summary:** All 31 PRs still open, covering every actionable item. No merges since last run. 25+ consecutive NO-OP runs.
+- **Next:** Michael: merge PRs (start with #1→#2→#3→#4→#5), push main to origin, add API keys (blocker #4).
+
+## 2026-04-27 (run 6)
+- **Task:** N/A — NO-OP
+- **Summary:** All 31 PRs still open, covering every actionable item. No merges since last run.
+- **Next:** Michael: merge PRs (start with #1→#2→#3→#4→#5), push main to origin, add API keys (blocker #4).
+
+## 2026-04-27 (run 5)
+- **Task:** N/A — NO-OP
+- **Summary:** All 31 PRs still open, covering every actionable item. No merges since last run. 20+ consecutive NO-OP runs.
+- **Next:** Michael: merge PRs (start with #1→#2→#3→#4→#5), push main to origin, add API keys (blocker #4).
+
+## 2026-04-27 (run 4)
+- **Task:** N/A — NO-OP
+- **Summary:** All 31 PRs still open, covering every actionable item. No merges since last run.
+- **Next:** Michael: merge PRs (start with #1→#2→#3→#4→#5), push main to origin, add API keys (blocker #4).
+
+## 2026-04-27 (run 3)
+- **Task:** N/A — NO-OP
+- **Summary:** All 31 PRs still cover every actionable item. Waiting on Michael to merge PRs and add API keys (blocker #4).
+- **Next:** Michael: merge PRs (start with #1→#2→#3→#4→#5), push main to origin, add API keys (blocker #4).
+
+## 2026-04-27 (run 2)
+- **Task:** N/A — NO-OP
+- **Summary:** All 31 PRs still cover every actionable item. Waiting on Michael to merge PRs and add API keys (blocker #4).
+- **Next:** Michael: merge PRs (start with #1→#2→#3→#4→#5), push main to origin, add API keys (blocker #4).
+
+## 2026-04-27
+- **Task:** N/A — NO-OP
+- **Summary:** All 31 PRs still cover every actionable item. Waiting on Michael to merge PRs and add API keys (blocker #4).
+
+## 2026-04-26 (late night 8)
+- **Task:** N/A — NO-OP
+- **Summary:** Same state. All 31 PRs cover every actionable item. Waiting on Michael to merge PRs and add API keys.
+
+## 2026-04-26 (late night 7)
+- **Task:** N/A — NO-OP
+- **Summary:** All 31 open PRs still cover every actionable checklist item. Nothing new to do.
+- **Next:** Michael: merge PRs (start with #1→#2→#3→#4→#5), push main to origin, add API keys (blocker #4).
+
+## 2026-04-26 (late night 6)
+- **Task:** N/A — NO-OP
+- **Summary:** All 31 open PRs still cover every actionable checklist item. Nothing new to do.
+- **Next:** Michael: merge PRs (start with #1→#2→#3→#4→#5), push main to origin, add API keys (blocker #4).
+
+## 2026-04-26 (late night 5)
+- **Task:** N/A — NO-OP
+- **Summary:** All 31 open PRs still cover every actionable checklist item. Nothing new to do.
+- **Next:** Michael: merge PRs (start with #1→#2→#3→#4→#5), push main to origin, add API keys (blocker #4).
+
+## 2026-04-26 (late night 4)
+- **Task:** N/A — NO-OP
+- **Summary:** All 31 open PRs still cover every actionable checklist item. Nothing new to do. Main still has unstaged QUE-STATUS.md changes and 2 untracked files.
+- **Next:** Michael: merge PRs (start with #1→#2→#3→#4→#5), push main to origin, add API keys (blocker #4).
+
+## 2026-04-26 (late night 3)
+- **Task:** N/A — NO-OP
+- **Summary:** All 31 open PRs still cover every actionable checklist item. Nothing new to do.
+- **Next:** Michael: merge PRs (start with #1→#2→#3→#4→#5), push main to origin, add API keys (blocker #4).
+
+## 2026-04-26 (late night 2)
+- **Task:** N/A — NO-OP
+- **Summary:** All 31 open PRs still cover every actionable checklist item. Nothing new to do. Same state as prior 15+ runs.
+- **Next:** Michael: merge PRs, push main to origin, add API keys (blocker #4).
+
+## 2026-04-26 (night)
+- **Task:** N/A — NO-OP
+- **Branch:** none
+- **PR:** none
+- **Summary:** All 31 open PRs still cover every actionable checklist item. Nothing unblocked remains. Main still 3 commits ahead of origin with unstaged changes and 2 untracked files.
+- **Next:** Michael: merge PRs (start with #1→#2→#3→#4→#5), push local main commits to origin, and add API keys (blocker #4) to unblock audio generation.
+
+## 2026-04-26 (afternoon)
+- **Task:** N/A — NO-OP
+- **Branch:** none
+- **PR:** none
+- **Summary:** All 31 open PRs still cover every actionable checklist item. Nothing unblocked remains. Main still 3 commits ahead of origin with unstaged changes and 2 untracked files.
+- **Next:** Michael: merge PRs (start with #1→#2→#3→#4→#5), push local main commits to origin, and add API keys (blocker #4) to unblock audio generation.
+
+## 2026-04-26 (overnight)
+- **Task:** N/A — NO-OP
+- **Branch:** none
+- **PR:** none
+- **Summary:** All 31 open PRs still cover every actionable checklist item. Nothing unblocked remains. Main still 3 commits ahead of origin with unstaged changes and 2 untracked files.
+- **Next:** Michael: merge PRs (start with #1→#2→#3→#4→#5), push local main commits to origin, and add API keys (blocker #4) to unblock audio generation.
+
+## 2026-04-26 (late night)
+- **Task:** N/A — NO-OP
+- **Branch:** none
+- **PR:** none
+- **Summary:** All 31 open PRs still cover every actionable checklist item. Nothing unblocked remains. Main still 3 commits ahead of origin with unstaged changes and 2 untracked files.
+- **Next:** Michael: merge PRs (start with #1→#2→#3→#4→#5), push local main commits to origin, and add API keys (blocker #4) to unblock audio generation.
+
+## 2026-04-26 (evening, manual)
+- **Task:** N/A — NO-OP
+- **Branch:** none
+- **PR:** none
+- **Summary:** All 31 open PRs still cover every actionable checklist item. No unblocked items remain without an in-flight branch. Main is 3 commits ahead of origin with unstaged QUE-STATUS.md changes and 2 untracked files — not touching per protocol.
+- **Next:** Michael needs to review and merge the PR backlog to unblock further work. Recommended merge order: #1 (onboarding) → #2 (notifications) → #3 (alarm scheduling) → #4 (background audio) → #5 (edge cases) → #25 (scripts) → #26 (pipeline). Also resolve blocker #4 (API keys) to unblock real audio generation. Push the 3 local-only commits on main to origin.
+
+## 2026-04-26 15:00 local time
+- **Task:** N/A — NO-OP
+- **Branch:** none
+- **PR:** none
+- **Summary:** All 31 open PRs still cover every actionable checklist item. No unblocked items remain without an in-flight branch. Main is 3 commits ahead of origin with unstaged QUE-STATUS.md changes and 2 untracked files — not touching per protocol.
+- **Next:** Michael needs to review and merge the PR backlog to unblock further work. Recommended merge order: #1 (onboarding) → #2 (notifications) → #3 (alarm scheduling) → #4 (background audio) → #5 (edge cases) → #25 (scripts) → #26 (pipeline). Also resolve blocker #4 (API keys) to unblock real audio generation. Push the 3 local-only commits on main to origin.
+
+## 2026-04-26 (manual run)
+- **Task:** N/A — NO-OP
+- **Branch:** none
+- **PR:** none
+- **Summary:** All 31 open PRs still cover every actionable checklist item. No unblocked items remain without an in-flight branch. Main is 3 commits ahead of origin with unstaged QUE-STATUS.md changes and 2 untracked files — not touching per protocol.
+- **Next:** Michael needs to review and merge the PR backlog to unblock further work. Recommended merge order: #1 (onboarding) → #2 (notifications) → #3 (alarm scheduling) → #4 (background audio) → #5 (edge cases) → #25 (scripts) → #26 (pipeline). Also resolve blocker #4 (API keys) to unblock real audio generation. Push the 3 local-only commits on main to origin.
+
+## 2026-04-27 02:00 local time
+- **Task:** N/A — NO-OP
+- **Branch:** none
+- **PR:** none
+- **Summary:** All 31 open PRs still cover every actionable checklist item. No unblocked items remain without an in-flight branch. Main is 3 commits ahead of origin with unstaged QUE-STATUS.md changes and 2 untracked files — not touching per protocol.
+- **Next:** Michael needs to review and merge the PR backlog to unblock further work. Recommended merge order: #1 (onboarding) → #2 (notifications) → #3 (alarm scheduling) → #4 (background audio) → #5 (edge cases) → #25 (scripts) → #26 (pipeline). Also resolve blocker #4 (API keys) to unblock real audio generation. Push the 3 local-only commits on main to origin.
+
+## 2026-04-26 22:00 local time
+- **Task:** N/A — NO-OP
+- **Branch:** none
+- **PR:** none
+- **Summary:** All 31 open PRs still cover every actionable checklist item. No unblocked items remain without an in-flight branch. Main is 3 commits ahead of origin with unstaged QUE-STATUS.md changes and 2 untracked files — not touching per protocol.
+- **Next:** Michael needs to review and merge the PR backlog to unblock further work. Recommended merge order: #1 (onboarding) → #2 (notifications) → #3 (alarm scheduling) → #4 (background audio) → #5 (edge cases) → #25 (scripts) → #26 (pipeline). Also resolve blocker #4 (API keys) to unblock real audio generation. Push the 3 local-only commits on main to origin.
+
+## 2026-04-26 18:00 local time
+- **Task:** N/A — NO-OP
+- **Branch:** none
+- **PR:** none
+- **Summary:** All 31 open PRs still cover every actionable checklist item. No unblocked items remain without an in-flight branch. Main is 3 commits ahead of origin with unstaged QUE-STATUS.md changes and 2 untracked files — not touching per protocol.
+- **Next:** Michael needs to review and merge the PR backlog to unblock further work. Recommended merge order: #1 (onboarding) → #2 (notifications) → #3 (alarm scheduling) → #4 (background audio) → #5 (edge cases) → #25 (scripts) → #26 (pipeline). Also resolve blocker #4 (API keys) to unblock real audio generation. Push the 3 local-only commits on main to origin.
+
+## 2026-04-26 14:00 local time
+- **Task:** N/A — NO-OP
+- **Branch:** none
+- **PR:** none
+- **Summary:** All 31 open PRs still cover every actionable checklist item. No unblocked items remain without an in-flight branch. Main is 3 commits ahead of origin with unstaged QUE-STATUS.md changes and 2 untracked files — not touching per protocol.
+- **Next:** Michael needs to review and merge the PR backlog to unblock further work. Recommended merge order: #1 (onboarding) → #2 (notifications) → #3 (alarm scheduling) → #4 (background audio) → #5 (edge cases) → #25 (scripts) → #26 (pipeline). Also resolve blocker #4 (API keys) to unblock real audio generation. Push the 3 local-only commits on main to origin.
+
+## 2026-04-26 10:00 local time
+- **Task:** N/A — NO-OP
+- **Branch:** none
+- **PR:** none
+- **Summary:** All 31 open PRs still cover every actionable checklist item. No unblocked items remain without an in-flight branch. Main is 3 commits ahead of origin with unstaged QUE-STATUS.md changes and 2 untracked files — not touching per protocol.
+- **Next:** Michael needs to review and merge the PR backlog to unblock further work. Recommended merge order: #1 (onboarding) → #2 (notifications) → #3 (alarm scheduling) → #4 (background audio) → #5 (edge cases) → #25 (scripts) → #26 (pipeline). Also resolve blocker #4 (API keys) to unblock real audio generation. Push the 3 local-only commits on main to origin.
+
+## 2026-04-25 21:00 local time
+- **Task:** N/A — NO-OP
+- **Branch:** none
+- **PR:** none
+- **Summary:** All 31 open PRs still cover every actionable checklist item. No unblocked items remain without an in-flight branch. Main is 3 commits ahead of origin with unstaged QUE-STATUS.md changes and 2 untracked files — not touching per protocol.
+- **Next:** Michael needs to review and merge the PR backlog to unblock further work. Recommended merge order: #1 (onboarding) → #2 (notifications) → #3 (alarm scheduling) → #4 (background audio) → #5 (edge cases) → #25 (scripts) → #26 (pipeline). Also resolve blocker #4 (API keys) to unblock real audio generation. Push the 3 local-only commits on main to origin.
+
+## 2026-04-25 17:00 local time
+- **Task:** N/A — NO-OP
+- **Branch:** none
+- **PR:** none
+- **Summary:** All 31 open PRs still cover every actionable checklist item. No unblocked items remain without an in-flight branch. Main is 3 commits ahead of origin with unstaged QUE-STATUS.md changes and 2 untracked files — not touching per protocol.
+- **Next:** Michael needs to review and merge the PR backlog to unblock further work. Recommended merge order: #1 (onboarding) → #2 (notifications) → #3 (alarm scheduling) → #4 (background audio) → #5 (edge cases) → #25 (scripts) → #26 (pipeline). Also resolve blocker #4 (API keys) to unblock real audio generation. Push the 3 local-only commits on main to origin.
+
+## 2026-04-26 02:00 local time
+- **Task:** N/A — NO-OP
+- **Branch:** none
+- **PR:** none
+- **Summary:** All 31 open PRs still cover every actionable checklist item. No unblocked items remain without an in-flight branch. Main is 3 commits ahead of origin with unstaged QUE-STATUS.md changes and 2 untracked files — not touching per protocol.
+- **Next:** Michael needs to review and merge the PR backlog to unblock further work. Recommended merge order: #1 (onboarding) → #2 (notifications) → #3 (alarm scheduling) → #4 (background audio) → #5 (edge cases) → #25 (scripts) → #26 (pipeline). Also resolve blocker #4 (API keys) to unblock real audio generation. Push the 3 local-only commits on main to origin.
+
+## 2026-04-26 00:30 local time
+- **Task:** N/A — NO-OP
+- **Branch:** none
+- **PR:** none
+- **Summary:** All 31 open PRs still cover every actionable checklist item. No unblocked items remain without an in-flight branch. Main is 3 commits ahead of origin with unstaged QUE-STATUS.md changes and 2 untracked files — not touching per protocol.
+- **Next:** Michael needs to review and merge the PR backlog to unblock further work. Recommended merge order: #1 (onboarding) → #2 (notifications) → #3 (alarm scheduling) → #4 (background audio) → #5 (edge cases) → #25 (scripts) → #26 (pipeline). Also resolve blocker #4 (API keys) to unblock real audio generation. Push the 3 local-only commits on main to origin.
+
+## 2026-04-25 23:00 local time
+- **Task:** N/A — NO-OP
+- **Branch:** none
+- **PR:** none
+- **Summary:** All 31 open PRs still cover every actionable checklist item. No unblocked items remain without an in-flight branch. Main is 3 commits ahead of origin with unstaged QUE-STATUS.md changes and 2 untracked files — not touching per protocol.
+- **Next:** Michael needs to review and merge the PR backlog to unblock further work. Recommended merge order: #1 (onboarding) → #2 (notifications) → #3 (alarm scheduling) → #4 (background audio) → #5 (edge cases) → #25 (scripts) → #26 (pipeline). Also resolve blocker #4 (API keys) to unblock real audio generation. Push the 3 local-only commits on main to origin.
+
+## 2026-04-25 21:30 local time
+- **Task:** N/A — NO-OP
+- **Branch:** none
+- **PR:** none
+- **Summary:** All 31 open PRs still cover every actionable checklist item. No unblocked items remain without an in-flight branch. Main is 3 commits ahead of origin with unstaged QUE-STATUS.md changes and 2 untracked files (`.eslintrc.js`, `lib/elevenlabs.ts`) — not touching per protocol.
+- **Next:** Michael needs to review and merge the PR backlog to unblock further work. Recommended merge order: #1 (onboarding) → #2 (notifications) → #3 (alarm scheduling) → #4 (background audio) → #5 (edge cases) → #25 (scripts) → #26 (pipeline). Also resolve blocker #4 (API keys) to unblock real audio generation. Push the 3 local-only commits on main to origin.
+
+## 2026-04-25 18:00 local time
+- **Task:** N/A — NO-OP
+- **Branch:** none
+- **PR:** none
+- **Summary:** All 31 open PRs still cover every actionable checklist item. No unblocked items remain without an in-flight branch. Main is 3 commits ahead of origin (prior status-update commits). Two untracked files on main (`.eslintrc.js`, `lib/elevenlabs.ts`) — not touching them.
+- **Next:** Michael needs to review and merge the PR backlog to unblock further work. Recommended merge order: #1 (onboarding) → #2 (notifications) → #3 (alarm scheduling) → #4 (background audio) → #5 (edge cases) → #25 (scripts) → #26 (pipeline). Also resolve blocker #4 (API keys) to unblock real audio generation.
 
 ## 2026-04-25 14:00 local time
 - **Task:** N/A — NO-OP

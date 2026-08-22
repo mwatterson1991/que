@@ -10,7 +10,8 @@ import {
   Alert,
   ScrollView,
 } from "react-native";
-import { useLocalSearchParams, useRouter } from "expo-router";
+import { useLocalSearchParams, useRouter, useNavigation } from "expo-router";
+import { DrawerActions } from "@react-navigation/routers";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 import { Ionicons } from "@expo/vector-icons";
 import { Svg, Defs, LinearGradient, Stop, Rect } from "react-native-svg";
@@ -245,6 +246,7 @@ function MantraTeleprompter({
 export default function PlayerScreen() {
   const { id } = useLocalSearchParams<{ id: string }>();
   const router = useRouter();
+  const navigation = useNavigation();
   const insets = useSafeAreaInsets();
   const { sessions } = useSessions();
   const { add: logActivity } = useActivity();
@@ -364,7 +366,14 @@ export default function PlayerScreen() {
     <View style={styles.container}>
       {/* Nav bar */}
       <View style={[styles.navBar, { paddingTop: insets.top }]}>
-        <Pressable style={styles.backButton} onPress={() => router.back()} hitSlop={12}>
+        <Pressable
+          style={styles.navIconBtn}
+          onPress={() => navigation.dispatch(DrawerActions.openDrawer())}
+          hitSlop={12}
+        >
+          <Ionicons name="menu-outline" size={26} color="#f5f5f7" />
+        </Pressable>
+        <Pressable style={styles.navIconBtn} onPress={() => router.back()} hitSlop={12}>
           <Ionicons name="chevron-back" size={28} color="#f5f5f7" />
         </Pressable>
       </View>
@@ -471,8 +480,9 @@ const styles = StyleSheet.create({
     alignItems: "center",
     paddingLeft: 8,
     paddingBottom: 8,
+    gap: 4,
   },
-  backButton: {
+  navIconBtn: {
     width: 40,
     height: 40,
     alignItems: "center",

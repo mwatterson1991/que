@@ -1,4 +1,4 @@
-import { View, Text, Pressable, ScrollView, StyleSheet } from "react-native";
+import { View, Text, Pressable, FlatList, StyleSheet } from "react-native";
 import { useRouter } from "expo-router";
 import { F } from "@/lib/fonts";
 
@@ -25,14 +25,29 @@ export default function CreateScreen() {
   const router = useRouter();
 
   return (
-    <ScrollView style={styles.container} contentContainerStyle={styles.scroll}>
-      {OPTIONS.map((opt, i) => (
-        <Pressable key={i} style={styles.card}>
-          <Text style={styles.cardTitle}>{opt.title}</Text>
-          <Text style={styles.cardSubtitle}>{opt.subtitle}</Text>
-        </Pressable>
-      ))}
-    </ScrollView>
+    <View style={styles.container}>
+      <FlatList
+        data={OPTIONS}
+        keyExtractor={(_, i) => String(i)}
+        contentContainerStyle={styles.list}
+        showsVerticalScrollIndicator={false}
+        renderItem={({ item }) => (
+          <Pressable
+            style={styles.row}
+            onPress={() => {
+              if (item.title === "Gratitude Log") router.push("/gratitude" as any);
+              if (item.title === "Habit Tracker") router.push("/habit-track" as any);
+            }}
+          >
+            <Text style={styles.rowTitle}>{item.title}</Text>
+            <Text style={styles.rowSubtitle}>{item.subtitle}</Text>
+          </Pressable>
+        )}
+        ItemSeparatorComponent={() => (
+          <View style={styles.separator} />
+        )}
+      />
+    </View>
   );
 }
 
@@ -41,29 +56,27 @@ const styles = StyleSheet.create({
     flex: 1,
     backgroundColor: "#000000",
   },
-  scroll: {
+  list: {
     paddingHorizontal: 20,
-    paddingTop: 16,
-    paddingBottom: 48,
+    paddingBottom: 32,
   },
-  card: {
-    borderWidth: 1,
-    borderColor: "#27272a",
-    borderRadius: 16,
-    paddingHorizontal: 20,
-    paddingVertical: 22,
-    marginBottom: 16,
+  separator: {
+    height: StyleSheet.hairlineWidth,
+    backgroundColor: "#1c1c1e",
   },
-  cardTitle: {
+  row: {
+    paddingVertical: 20,
+  },
+  rowTitle: {
     color: "#f5f5f7",
-    fontSize: 18,
-    fontFamily: F.bold,
+    fontSize: 20,
+    fontFamily: F.medium,
     marginBottom: 6,
   },
-  cardSubtitle: {
+  rowSubtitle: {
     color: "#71717a",
     fontSize: 15,
-    lineHeight: 20,
     fontFamily: F.regular,
+    lineHeight: 21,
   },
 });

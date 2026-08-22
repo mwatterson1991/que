@@ -5,6 +5,7 @@ import { useState, useEffect } from "react";
 import { F } from "@/lib/fonts";
 import { useAuth } from "@/lib/auth";
 import { useProfile, usePreferences } from "@/lib/useSupabase";
+import { supabase } from "@/lib/supabase";
 
 type SettingsRowProps = {
   icon: keyof typeof Ionicons.glyphMap;
@@ -149,6 +150,38 @@ export default function SettingsScreen() {
         icon="cloud-outline"
         label="Data & Storage"
         onPress={() => Alert.alert("Data & Storage", "Storage management coming soon.")}
+      />
+
+      {/* Developer */}
+      <Text style={styles.sectionTitle}>DEVELOPER</Text>
+      <SettingsRow
+        icon="bug-outline"
+        label="Debug Alarms"
+        onPress={() => router.push("/alarm-debug" as any)}
+      />
+      <View style={styles.rowSep} />
+      <SettingsRow
+        icon="refresh-outline"
+        label="Reset Onboarding"
+        onPress={() =>
+          Alert.alert(
+            "Reset Onboarding",
+            "This will clear your onboarding state and restart the intro flow on next login.",
+            [
+              { text: "Cancel", style: "cancel" },
+              {
+                text: "Reset",
+                style: "destructive",
+                onPress: async () => {
+                  await supabase.auth.updateUser({
+                    data: { onboarded: false },
+                  });
+                  Alert.alert("Done", "Sign out and back in to see the onboarding flow.");
+                },
+              },
+            ]
+          )
+        }
       />
 
       {/* Support */}

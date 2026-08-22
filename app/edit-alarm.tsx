@@ -13,6 +13,7 @@ import { Ionicons } from "@expo/vector-icons";
 import { useLocalSearchParams, useRouter, useFocusEffect, useNavigation } from "expo-router";
 import { useAlarms, useSessions } from "@/lib/useSupabase";
 import { consumePickedSound } from "@/lib/soundPicker";
+import { scheduleAlarm, cancelAlarm } from "@/lib/alarmScheduler";
 import { F } from "@/lib/fonts";
 
 // ─── Scroll-wheel column ──────────────────────────────────
@@ -142,19 +143,42 @@ export default function EditAlarmScreen() {
     if (fire.getTime() <= Date.now()) fire.setDate(fire.getDate() + 1);
 
     if (existing) {
-      await update(existing.id, {
+      // Cancel old notification before rescheduling
+      await cancelAlarm(existing.id);
+      const { data: updated } = await update(existing.id, {
         label,
         mantra_id: sessionId,
         next_fire_at: fire.toISOString(),
       });
+      if (updated) {
+        await scheduleAlarm({
+          id: updated.id,
+          label: updated.label,
+          next_fire_at: updated.next_fire_at,
+          mantra_id: updated.mantra_id,
+          enabled: updated.enabled,
+          repeat_days: updated.repeat_days,
+        });
+      }
     } else {
-      await add({
+      const result = await add({
         label,
         mantra_id: sessionId || "focus",
         next_fire_at: fire.toISOString(),
         repeat_days: [],
         enabled: true,
       });
+      const created = result?.data;
+      if (created) {
+        await scheduleAlarm({
+          id: created.id,
+          label: created.label,
+          next_fire_at: created.next_fire_at,
+          mantra_id: created.mantra_id,
+          enabled: created.enabled,
+          repeat_days: created.repeat_days,
+        });
+      }
     }
     router.back();
   };

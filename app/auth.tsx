@@ -15,9 +15,9 @@ import { useAuth } from "@/lib/auth";
 import { F } from "@/lib/fonts";
 
 const PHRASES = [
-  "Start your day the right way",
-  "The alarm clock that doesn't suck",
-  "Wake up on the right side of the bed",
+  "Your mind is trainable.",
+  "Wake up. Rewire. Repeat.",
+  "The alarm that changes how you think.",
 ];
 
 // ─── Cycling tagline ─────────────────────────────────────
@@ -103,9 +103,8 @@ export default function AuthScreen() {
     setBusy(false);
     if (error) {
       Alert.alert("Login failed", error.message);
-    } else {
-      router.replace("/");
     }
+    // AuthGate in _layout.tsx handles routing after session is set
   };
 
   const handleSignUp = async () => {
@@ -135,33 +134,23 @@ export default function AuthScreen() {
   if (mode === "landing") {
     return (
       <View style={styles.container}>
-        <Pressable onPress={() => router.replace("/")} style={styles.closeButton} hitSlop={16}>
-          <Ionicons name="close" size={24} color="#f5f5f7" />
-        </Pressable>
-
         <View style={styles.center}>
-          <Text style={styles.logoText}>Morning Q</Text>
+          <Text style={styles.logoText}>Que</Text>
           <CyclingTagline />
         </View>
 
         <View style={styles.bottomSheet}>
-          <Pressable style={styles.appleButton}>
-            <Ionicons name="logo-apple" size={20} color="#000" />
-            <Text style={styles.appleText}>Continue with Apple</Text>
+          <Pressable style={styles.primaryButton} onPress={() => setMode("signup")}>
+            <Text style={styles.primaryButtonText}>Create account</Text>
           </Pressable>
 
-          <Pressable style={styles.darkButton}>
-            <Text style={styles.googleG}>G</Text>
-            <Text style={styles.darkButtonText}>Continue with Google</Text>
-          </Pressable>
-
-          <Pressable style={styles.darkButton} onPress={() => setMode("signup")}>
-            <Text style={styles.darkButtonText}>Sign up</Text>
-          </Pressable>
-
-          <Pressable style={styles.loginButton} onPress={() => setMode("login")}>
+          <Pressable style={styles.darkButton} onPress={() => setMode("login")}>
             <Text style={styles.darkButtonText}>Log in</Text>
           </Pressable>
+
+          <Text style={styles.legalText}>
+            By continuing you agree to our Terms & Privacy Policy.
+          </Text>
         </View>
       </View>
     );
@@ -251,7 +240,7 @@ const styles = StyleSheet.create({
   closeButton: {
     position: "absolute",
     top: 60,
-    right: 20,
+    left: 20,
     zIndex: 99,
     padding: 12,
   },
@@ -284,24 +273,25 @@ const styles = StyleSheet.create({
 
   // Bottom sheet (landing)
   bottomSheet: {
-    backgroundColor: "#1c1c1e",
-    borderTopLeftRadius: 24,
-    borderTopRightRadius: 24,
+    backgroundColor: "#0f0f13",
+    borderTopLeftRadius: 28,
+    borderTopRightRadius: 28,
+    borderTopWidth: 1,
+    borderColor: "#1c1c1e",
     paddingHorizontal: 20,
-    paddingTop: 24,
-    paddingBottom: 40,
+    paddingTop: 28,
+    paddingBottom: 48,
     gap: 12,
   },
-  appleButton: {
+  primaryButton: {
     flexDirection: "row",
     alignItems: "center",
     justifyContent: "center",
     backgroundColor: "#f5f5f7",
-    borderRadius: 14,
-    height: 56,
-    gap: 8,
+    borderRadius: 16,
+    height: 58,
   },
-  appleText: {
+  primaryButtonText: {
     fontSize: 17,
     fontFamily: F.semibold,
     color: "#000000",
@@ -310,29 +300,23 @@ const styles = StyleSheet.create({
     flexDirection: "row",
     alignItems: "center",
     justifyContent: "center",
-    backgroundColor: "#2c2c2e",
-    borderRadius: 14,
-    height: 56,
+    backgroundColor: "transparent",
+    borderRadius: 16,
+    height: 58,
     borderWidth: 1,
-    borderColor: "#3a3a3c",
-    gap: 8,
+    borderColor: "#2c2c2e",
   },
   darkButtonText: {
     fontSize: 17,
     fontFamily: F.semibold,
     color: "#f5f5f7",
   },
-  loginButton: {
-    flexDirection: "row",
-    alignItems: "center",
-    justifyContent: "center",
-    height: 56,
-    borderRadius: 14,
-  },
-  googleG: {
-    fontSize: 18,
-    fontFamily: F.bold,
-    color: "#f5f5f7",
+  legalText: {
+    fontSize: 12,
+    fontFamily: F.regular,
+    color: "#3f3f46",
+    textAlign: "center",
+    marginTop: 4,
   },
 
   // Form screen
