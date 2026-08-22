@@ -7,7 +7,11 @@ import { Audio } from "expo-av";
 export type AmbientSoundId =
   | "silence"
   | "theta-binaural"
-  | "soft-rain";
+  | "dawn-birds"
+  | "river"
+  | "ocean-waves"
+  | "rain"
+  | "crickets-night";
 
 export type AmbientSoundEntry = {
   id: AmbientSoundId;
@@ -16,6 +20,8 @@ export type AmbientSoundEntry = {
   icon: string; // Ionicons name
 };
 
+// Nature recordings are public-domain field recordings — sources and
+// licenses documented in ATTRIBUTIONS.md.
 export const AMBIENT_SOUNDS: AmbientSoundEntry[] = [
   {
     id: "silence",
@@ -24,22 +30,50 @@ export const AMBIENT_SOUNDS: AmbientSoundEntry[] = [
     icon: "volume-mute-outline",
   },
   {
+    id: "dawn-birds",
+    label: "Dawn Chorus",
+    description: "Early morning birdsong over a running brook",
+    icon: "sunny-outline",
+  },
+  {
+    id: "river",
+    label: "River",
+    description: "A steady river flowing over stones",
+    icon: "leaf-outline",
+  },
+  {
+    id: "ocean-waves",
+    label: "Ocean Waves",
+    description: "Waves breaking on a rocky Chilean shore",
+    icon: "water-outline",
+  },
+  {
+    id: "rain",
+    label: "Rain on Leaves",
+    description: "Soft rain falling through a forest canopy",
+    icon: "rainy-outline",
+  },
+  {
+    id: "crickets-night",
+    label: "Night Crickets",
+    description: "Warm evening crickets under a clear sky",
+    icon: "moon-outline",
+  },
+  {
     id: "theta-binaural",
     label: "Theta Binaural",
     description: "Low binaural hum at 6 Hz — matches the theta brain state",
     icon: "radio-outline",
   },
-  {
-    id: "soft-rain",
-    label: "Soft Rain",
-    description: "Gentle pink noise that sounds like distant rain",
-    icon: "rainy-outline",
-  },
 ];
 
-const AMBIENT_ASSETS: Record<string, any> = {
+export const AMBIENT_ASSETS: Record<string, any> = {
   "theta-binaural": require("../assets/audio/ambient-theta.wav"),
-  "soft-rain": require("../assets/audio/ambient-noise.wav"),
+  "dawn-birds": require("../assets/audio/ambient-dawn-birds.m4a"),
+  "river": require("../assets/audio/ambient-river.m4a"),
+  "ocean-waves": require("../assets/audio/ambient-ocean.m4a"),
+  "rain": require("../assets/audio/ambient-rain.m4a"),
+  "crickets-night": require("../assets/audio/ambient-crickets.m4a"),
 };
 
 // ─── Ambient playback engine ───────────────────────────────

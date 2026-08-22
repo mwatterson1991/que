@@ -8,16 +8,14 @@ import { F } from "@/lib/fonts";
 import { usePreferences } from "@/lib/useSupabase";
 import {
   AMBIENT_SOUNDS,
+  AMBIENT_ASSETS,
   AmbientSoundId,
   AmbientSoundEntry,
 } from "@/lib/ambient";
 
 const PREVIEW_VOLUME = 0.4;
 
-const PREVIEW_ASSETS: Record<string, any> = {
-  "theta-binaural": require("../assets/audio/ambient-theta.wav"),
-  "soft-rain": require("../assets/audio/ambient-noise.wav"),
-};
+const PREVIEW_ASSETS: Record<string, any> = AMBIENT_ASSETS;
 
 export default function AmbientPickerScreen() {
   const router = useRouter();
