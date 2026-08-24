@@ -249,6 +249,226 @@ export function useSessions() {
   return { sessions, loading, refresh: fetch };
 }
 
+// ─── Habits ──────────────────────────────────────────────
+type Habit = Database["public"]["Tables"]["habits"]["Row"];
+type HabitLog = Database["public"]["Tables"]["habit_logs"]["Row"];
+
+export function useHabits() {
+  const { user } = useAuth();
+  const [habits, setHabits] = useState<Habit[]>([]);
+  const [loading, setLoading] = useState(true);
+
+  const fetch = useCallback(async () => {
+    if (!user) return;
+    const { data } = await supabase
+      .from("habits")
+      .select("*")
+      .eq("user_id", user.id)
+      .eq("archived", false)
+      .order("created_at", { ascending: true });
+    setHabits(data ?? []);
+    setLoading(false);
+  }, [user]);
+
+  useEffect(() => { fetch(); }, [fetch]);
+
+  const add = async (habit: Omit<Database["public"]["Tables"]["habits"]["Insert"], "user_id">) => {
+    if (!user) return;
+    const { data, error } = await supabase
+      .from("habits")
+      .insert({ ...habit, user_id: user.id })
+      .select()
+      .single();
+    if (data) setHabits((prev) => [...prev, data]);
+    return { data, error };
+  };
+
+  const update = async (id: string, fields: Database["public"]["Tables"]["habits"]["Update"]) => {
+    const { data, error } = await supabase
+      .from("habits")
+      .update(fields)
+      .eq("id", id)
+      .select()
+      .single();
+    if (data) setHabits((prev) => prev.map((h) => (h.id === id ? data : h)));
+    return { data, error };
+  };
+
+  const archive = async (id: string) => {
+    await update(id, { archived: true });
+    setHabits((prev) => prev.filter((h) => h.id !== id));
+  };
+
+  return { habits, loading, refresh: fetch, add, update, archive };
+}
+
+export function useHabitLogs(rangedays = 31) {
+  const { user } = useAuth();
+  const [logs, setLogs] = useState<HabitLog[]>([]);
+  const [loading, setLoading] = useState(true);
+
+  const since = new Date();
+  since.setDate(since.getDate() - rangedays);
+  const sinceStr = since.toLocaleDateString("en-CA");
+
+  const fetch = useCallback(async () => {
+    if (!user) return;
+    const { data } = await supabase
+      .from("habit_logs")
+      .select("*")
+      .eq("user_id", user.id)
+      .gte("log_date", sinceStr)
+      .order("logged_at", { ascending: true });
+    setLogs(data ?? []);
+    setLoading(false);
+  }, [user, sinceStr]);
+
+  useEffect(() => { fetch(); }, [fetch]);
+
+  const logHabit = async (habit_id: string) => {
+    if (!user) return;
+    const log_date = new Date().toLocaleDateString("en-CA");
+    const { data, error } = await supabase
+      .from("habit_logs")
+      .insert({ habit_id, user_id: user.id, log_date })
+      .select()
+      .single();
+    if (data) setLogs((prev) => [...prev, data]);
+    return { data, error };
+  };
+
+  const removeLog = async (id: string) => {
+    await supabase.from("habit_logs").delete().eq("id", id);
+    setLogs((prev) => prev.filter((l) => l.id !== id));
+  };
+
+  // Count today's logs for a given habit
+  const todayCount = (habit_id: string) => {
+    const today = new Date().toLocaleDateString("en-CA");
+    return logs.filter((l) => l.habit_id === habit_id && l.log_date === today).length;
+  };
+
+  // All logs for a given habit on a given date
+  const logsForHabitOnDate = (habit_id: string, date: string) =>
+    logs.filter((l) => l.habit_id === habit_id && l.log_date === date);
+
+  return { logs, loading, refresh: fetch, logHabit, removeLog, todayCount, logsForHabitOnDate };
+}
+
+// ─── Gratitude Entries ───────────────────────────────────
+type GratitudeEntry = Database["public"]["Tables"]["gratitude_entries"]["Row"];
+
+const POINTS_PER_ENTRY = 1;
+const POINTS_COMPLETION_BONUS = 3; // extra points when all 7 are saved in a day
+
+function localDateString(date = new Date()) {
+  // YYYY-MM-DD in the device's local timezone
+  return date.toLocaleDateString("en-CA");
+}
+
+export function useGratitudeEntries() {
+  const { user } = useAuth();
+  const [entries, setEntries] = useState<GratitudeEntry[]>([]);
+  const [loading, setLoading] = useState(true);
+
+  const fetch = useCallback(async () => {
+    if (!user) return;
+    const { data } = await supabase
+      .from("gratitude_entries")
+      .select("*")
+      .eq("user_id", user.id)
+      .order("entry_date", { ascending: false })
+      .order("entry_number", { ascending: true });
+    setEntries(data ?? []);
+    setLoading(false);
+  }, [user]);
+
+  useEffect(() => { fetch(); }, [fetch]);
+
+  const upsert = async (entry_number: number, entry_text: string, entry_date: string) => {
+    if (!user) return;
+
+    // Is this a new entry or an edit of an existing one?
+    const isNew = !entries.find(
+      (e) => e.entry_date === entry_date && e.entry_number === entry_number
+    );
+
+    // Optimistic update
+    const tempId = `optimistic-${entry_date}-${entry_number}`;
+    setEntries((prev) => {
+      const filtered = prev.filter(
+        (e) => !(e.entry_date === entry_date && e.entry_number === entry_number)
+      );
+      const updated: GratitudeEntry = {
+        id: tempId,
+        user_id: user.id,
+        entry_text,
+        entry_number,
+        entry_date,
+        created_at: new Date().toISOString(),
+      };
+      return [...filtered, updated].sort((a, b) => {
+        if (a.entry_date !== b.entry_date) return b.entry_date.localeCompare(a.entry_date);
+        return a.entry_number - b.entry_number;
+      });
+    });
+
+    const { data, error } = await supabase
+      .from("gratitude_entries")
+      .upsert(
+        { user_id: user.id, entry_text, entry_number, entry_date },
+        { onConflict: "user_id,entry_date,entry_number" }
+      )
+      .select()
+      .single();
+
+    if (data) {
+      // Replace optimistic entry with the real persisted row
+      setEntries((prev) =>
+        prev
+          .map((e) => (e.id === tempId ? data : e))
+          .sort((a, b) => {
+            if (a.entry_date !== b.entry_date) return b.entry_date.localeCompare(a.entry_date);
+            return a.entry_number - b.entry_number;
+          })
+      );
+
+      // Award points only for new entries (not edits)
+      if (isNew) {
+        let points = POINTS_PER_ENTRY;
+
+        // Count how many real entries exist for this date after this save
+        const savedForDate = entries.filter(
+          (e) => e.entry_date === entry_date
+        ).length + 1; // +1 for the one we just saved
+
+        if (savedForDate === 7) {
+          points += POINTS_COMPLETION_BONUS;
+        }
+
+        await supabase.from("scores").insert({ user_id: user.id, score: points });
+
+        // Increment profile total score
+        const { data: profile } = await supabase
+          .from("profiles")
+          .select("score")
+          .eq("id", user.id)
+          .single();
+        if (profile) {
+          await supabase
+            .from("profiles")
+            .update({ score: profile.score + points })
+            .eq("id", user.id);
+        }
+      }
+    }
+
+    return { data, error };
+  };
+
+  return { entries, loading, refresh: fetch, upsert, localDateString };
+}
+
 // ─── Preferences ─────────────────────────────────────────
 export function usePreferences() {
   const { user } = useAuth();

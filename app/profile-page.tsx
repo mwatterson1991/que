@@ -1,173 +1,93 @@
-import { useEffect, useState } from "react";
-import { View, Text, Pressable, ScrollView, StyleSheet } from "react-native";
+import { useEffect, useState, useMemo } from "react";
+import { View, Text, Pressable, ScrollView, StyleSheet, useWindowDimensions } from "react-native";
 import { Ionicons } from "@expo/vector-icons";
 import {
   Svg,
   Polyline,
-  Polygon,
   Defs,
   LinearGradient,
   Stop,
   Line,
+  Circle,
 } from "react-native-svg";
-import { useRouter, useNavigation } from "expo-router";
+import { useRouter, useNavigation, useLocalSearchParams } from "expo-router";
+import { DrawerActions } from "@react-navigation/routers";
 import { F } from "@/lib/fonts";
+import { useHabits, useHabitLogs, useProfile } from "@/lib/useSupabase";
 
-// ─── Chart data by time range ────────────────────────────
-const CHART_RANGES: Record<string, { data: number[]; labels: string[] }> = {
-  "1W": {
-    data: [42, 44, 40, 48, 52, 50, 56],
-    labels: ["M", "T", "W", "T", "F", "S", "S"],
-  },
-  "1M": {
-    data: [30, 28, 34, 32, 38, 36, 40, 42, 38, 44, 42, 48, 50, 46, 52, 50, 48, 54, 56, 52, 58, 55, 53, 57, 60, 58, 62, 56, 54, 56],
-    labels: ["Week 1", "", "Week 2", "", "Week 3", "", "Week 4"],
-  },
-  "3M": {
-    data: [18, 20, 22, 24, 22, 26, 28, 30, 32, 28, 34, 38, 36, 40, 42, 44, 48, 46, 50, 52, 48, 54, 56],
-    labels: ["Jan", "", "Feb", "", "Mar", ""],
-  },
-  "6M": {
-    data: [10, 14, 12, 18, 16, 20, 22, 26, 24, 28, 30, 26, 32, 36, 34, 38, 40, 42, 44, 48, 46, 50, 52, 48, 54, 56],
-    labels: ["Oct", "Nov", "Dec", "Jan", "Feb", "Mar"],
-  },
-  "1Y": {
-    data: [5, 8, 6, 10, 12, 14, 16, 14, 18, 20, 22, 18, 24, 26, 22, 28, 30, 32, 28, 34, 36, 38, 40, 42, 44, 48, 46, 50, 52, 48, 54, 56],
-    labels: ["Apr", "", "Jun", "", "Aug", "", "Oct", "", "Dec", "", "Feb", "", "Apr"],
-  },
-  All: {
-    data: [2, 4, 3, 6, 5, 8, 10, 8, 12, 14, 10, 16, 18, 14, 20, 22, 24, 20, 26, 28, 30, 32, 28, 34, 36, 38, 40, 42, 44, 48, 46, 50, 52, 48, 54, 56],
-    labels: ["2024", "", "", "", "", "2025", "", "", "", "", "2026"],
-  },
-};
+const TIME_RANGES = ["1W", "1M", "3M", "6M", "1Y"];
+const RANGE_DAYS: Record<string, number> = { "1W": 7, "1M": 31, "3M": 91, "6M": 182, "1Y": 365 };
 
-const TIME_RANGES = ["1W", "1M", "3M", "6M", "1Y", "All"];
-
-// ─── Placeholder data ────────────────────────────────────
-const SCORE = 847;
-const SCORE_DELTA = 12;
-const STATS = [
-  { value: "32", label: "DAY STREAK" },
-  { value: "89", label: "SESSIONS" },
-  { value: "14", label: "HABITS" },
-];
-const CATEGORIES = [
-  { name: "Sleep", sessions: 28, minutes: 412, progress: 82, color: "#22c55e" },
-  { name: "Confidence", sessions: 22, minutes: 286, progress: 65, color: "#22c55e" },
-  { name: "Addiction", sessions: 18, minutes: 198, progress: 48, color: "#22c55e" },
-  { name: "Anxiety", sessions: 12, minutes: 156, progress: 35, color: "#22c55e" },
-  { name: "Gratitude", sessions: 15, minutes: 120, progress: 30, color: "#22c55e" },
-  { name: "Mindfulness", sessions: 9, minutes: 90, progress: 22, color: "#22c55e" },
-];
-const RECENT = [
-  { title: "Morning Confidence Ritual", date: "Today" },
-  { title: "Deep Sleep Induction", date: "Yesterday" },
-  { title: "Stop Scrolling", date: "Apr 9" },
-  { title: "Gratitude Flood", date: "Apr 8" },
-];
-
-// ─── Chart component ─────────────────────────────────────
-function ScoreChart() {
+// ─── Habit chart ─────────────────────────────────────────
+function HabitChart() {
+  const { width: screenW } = useWindowDimensions();
   const [range, setRange] = useState("1M");
-  const { data, labels } = CHART_RANGES[range];
+  const [hiddenHabits, setHiddenHabits] = useState<Set<string>>(new Set());
 
-  const W = 340;
+  const days = RANGE_DAYS[range];
+  const { habits } = useHabits();
+  const { logs } = useHabitLogs(days);
+
+  // Build date array for the range
+  const dates = useMemo(() => {
+    const arr: string[] = [];
+    for (let i = days - 1; i >= 0; i--) {
+      const d = new Date();
+      d.setDate(d.getDate() - i);
+      arr.push(d.toLocaleDateString("en-CA"));
+    }
+    return arr;
+  }, [days]);
+
+  // For each habit, build cumulative completions × factor over dates
+  const series = useMemo(() =>
+    habits.map((habit) => {
+      let cumulative = 0;
+      const points = dates.map((date) => {
+        const count = logs.filter(
+          (l) => l.habit_id === habit.id && l.log_date === date
+        ).length;
+        cumulative += count * habit.factor;
+        return cumulative;
+      });
+      return { habit, points };
+    }),
+    [habits, logs, dates]
+  );
+
+  const W = screenW - 40;
   const H = 180;
-  const padX = 10;
-  const padTop = 16;
-  const padBottom = 30;
+  const padX = 4;
+  const padTop = 12;
+  const padBottom = 24;
   const chartH = H - padTop - padBottom;
 
-  const max = Math.max(...data);
-  const min = Math.min(...data);
-  const dataRange = max - min || 1;
+  const allValues = series.flatMap((s) => s.points);
+  const maxVal = allValues.length > 0 ? Math.max(...allValues, 1) : 1;
 
-  // Build points for the polyline
-  const pts = data.map((v, i) => {
-    const x = padX + (i / (data.length - 1)) * (W - padX * 2);
-    const y = padTop + (1 - (v - min) / dataRange) * chartH;
-    return { x, y };
-  });
-  const linePoints = pts.map((p) => `${p.x},${p.y}`).join(" ");
+  const getX = (i: number) => padX + (i / Math.max(dates.length - 1, 1)) * (W - padX * 2);
+  const getY = (v: number) => padTop + (1 - v / maxVal) * chartH;
 
-  // Polygon for gradient fill (line + bottom edge)
-  const fillPoints =
-    linePoints +
-    ` ${pts[pts.length - 1].x},${padTop + chartH} ${pts[0].x},${padTop + chartH}`;
+  // X-axis label positions
+  const xLabels = useMemo(() => {
+    const step = Math.max(1, Math.floor(dates.length / 5));
+    return dates
+      .map((d, i) => ({ i, label: d.slice(5).replace("-", "/") }))
+      .filter((_, i) => i % step === 0 || i === dates.length - 1);
+  }, [dates]);
 
-  // Grid lines (4 horizontal)
-  const gridLines = [0.25, 0.5, 0.75, 1.0].map(
-    (pct) => padTop + chartH * (1 - pct)
-  );
+  const gridLines = [0.25, 0.5, 0.75, 1.0].map((p) => padTop + chartH * (1 - p));
 
-  // Grid vertical lines
-  const vLineCount = Math.min(labels.length, 7);
-  const vLines = Array.from({ length: vLineCount }, (_, i) =>
-    padX + (i / (vLineCount - 1)) * (W - padX * 2)
-  );
+  const toggleHabit = (id: string) => {
+    setHiddenHabits((prev) => {
+      const next = new Set(prev);
+      next.has(id) ? next.delete(id) : next.add(id);
+      return next;
+    });
+  };
 
   return (
     <View style={styles.chartCard}>
-      <Svg width={W} height={H} viewBox={`0 0 ${W} ${H}`}>
-        <Defs>
-          <LinearGradient id="chartGrad" x1="0" y1="0" x2="0" y2="1">
-            <Stop offset="0" stopColor="#22c55e" stopOpacity="0.3" />
-            <Stop offset="0.7" stopColor="#22c55e" stopOpacity="0.05" />
-            <Stop offset="1" stopColor="#22c55e" stopOpacity="0" />
-          </LinearGradient>
-        </Defs>
-
-        {/* Horizontal grid lines */}
-        {gridLines.map((y, i) => (
-          <Line
-            key={`h${i}`}
-            x1={padX}
-            y1={y}
-            x2={W - padX}
-            y2={y}
-            stroke="#1c1c1e"
-            strokeWidth="1"
-          />
-        ))}
-
-        {/* Vertical grid lines */}
-        {vLines.map((x, i) => (
-          <Line
-            key={`v${i}`}
-            x1={x}
-            y1={padTop}
-            x2={x}
-            y2={padTop + chartH}
-            stroke="#1c1c1e"
-            strokeWidth="1"
-          />
-        ))}
-
-        {/* Gradient fill */}
-        <Polygon points={fillPoints} fill="url(#chartGrad)" />
-
-        {/* Line */}
-        <Polyline
-          points={linePoints}
-          fill="none"
-          stroke="#22c55e"
-          strokeWidth="2"
-          strokeLinejoin="round"
-          strokeLinecap="round"
-        />
-      </Svg>
-
-      {/* X-axis labels */}
-      <View style={styles.labelRow}>
-        {labels
-          .filter((l) => l !== "")
-          .map((l, i) => (
-            <Text key={i} style={styles.labelText}>
-              {l}
-            </Text>
-          ))}
-      </View>
-
       {/* Time range pills */}
       <View style={styles.rangePills}>
         {TIME_RANGES.map((r) => (
@@ -176,33 +96,143 @@ function ScoreChart() {
             onPress={() => setRange(r)}
             style={[styles.rangePill, r === range && styles.rangePillActive]}
           >
-            <Text
-              style={[
-                styles.rangePillText,
-                r === range && styles.rangePillTextActive,
-              ]}
-            >
+            <Text style={[styles.rangePillText, r === range && styles.rangePillTextActive]}>
               {r}
             </Text>
           </Pressable>
         ))}
       </View>
+
+      {/* SVG chart */}
+      <Svg width={W} height={H} viewBox={`0 0 ${W} ${H}`}>
+        <Defs>
+          <LinearGradient id="glowGrad" x1="0" y1="1" x2="0" y2="0">
+            <Stop offset="0" stopColor="#00ff88" stopOpacity="0.06" />
+            <Stop offset="0.3" stopColor="#00ff88" stopOpacity="0.02" />
+            <Stop offset="1" stopColor="#00ff88" stopOpacity="0" />
+          </LinearGradient>
+        </Defs>
+
+        {/* Green glow band near baseline */}
+        <Line x1={padX} y1={getY(0)} x2={W - padX} y2={getY(0)} stroke="#00ff8822" strokeWidth="12" />
+
+        {/* Horizontal grid */}
+        {gridLines.map((y, i) => (
+          <Line key={i} x1={padX} y1={y} x2={W - padX} y2={y} stroke="#1c1c1e" strokeWidth="1" />
+        ))}
+
+        {/* One polyline per habit */}
+        {series.map(({ habit, points }) => {
+          if (hiddenHabits.has(habit.id)) return null;
+          const linePoints = points
+            .map((v, i) => `${getX(i)},${getY(v)}`)
+            .join(" ");
+          return (
+            <Polyline
+              key={habit.id}
+              points={linePoints}
+              fill="none"
+              stroke={habit.color}
+              strokeWidth="2"
+              strokeLinejoin="round"
+              strokeLinecap="round"
+            />
+          );
+        })}
+
+        {/* Endpoint dots */}
+        {series.map(({ habit, points }) => {
+          if (hiddenHabits.has(habit.id) || points.length === 0) return null;
+          const last = points[points.length - 1];
+          return (
+            <Circle
+              key={`dot-${habit.id}`}
+              cx={getX(points.length - 1)}
+              cy={getY(last)}
+              r="3"
+              fill={habit.color}
+            />
+          );
+        })}
+
+        {/* X-axis labels */}
+        {xLabels.map(({ i, label }) => (
+          <Line key={`vg${i}`} x1={getX(i)} y1={padTop} x2={getX(i)} y2={padTop + chartH} stroke="#1c1c1e" strokeWidth="1" />
+        ))}
+      </Svg>
+
+      {/* X label row */}
+      <View style={[styles.labelRow, { width: W }]}>
+        {xLabels.map(({ i, label }) => (
+          <Text key={i} style={styles.labelText}>{label}</Text>
+        ))}
+      </View>
+
+      {/* Legend */}
+      {habits.length > 0 && (
+        <View style={styles.legend}>
+          {habits.map((habit) => {
+            const hidden = hiddenHabits.has(habit.id);
+            return (
+              <Pressable
+                key={habit.id}
+                onPress={() => toggleHabit(habit.id)}
+                style={styles.legendItem}
+              >
+                <View style={[styles.legendDot, { backgroundColor: hidden ? "#27272a" : habit.color }]} />
+                <Text style={[styles.legendLabel, hidden && { color: "#3f3f46" }]}>
+                  {habit.title}
+                </Text>
+              </Pressable>
+            );
+          })}
+        </View>
+      )}
+
+      {habits.length === 0 && (
+        <Text style={styles.chartEmpty}>Add habits to see your progress here.</Text>
+      )}
     </View>
   );
 }
 
 // ─── Screen ──────────────────────────────────────────────
+// ─── Placeholder stats (to be wired later) ───────────────
+const STATS = [
+  { value: "—", label: "DAY STREAK" },
+  { value: "—", label: "SESSIONS" },
+  { value: "—", label: "HABITS" },
+];
+const RECENT = [
+  { title: "Morning Confidence Ritual", date: "Today" },
+  { title: "Deep Sleep Induction", date: "Yesterday" },
+];
+
 export default function ProfileScreen() {
   const router = useRouter();
   const navigation = useNavigation();
+  const { from } = useLocalSearchParams<{ from?: string }>();
+  const fromDrawer = from === "drawer";
+  const { profile } = useProfile();
+  const { habits } = useHabits();
 
   useEffect(() => {
     navigation.setOptions({
-      headerLeft: () => (
-        <Pressable onPress={() => router.back()} style={{ marginLeft: 4 }}>
-          <Ionicons name="chatbubble-outline" size={22} color="#f5f5f7" />
-        </Pressable>
-      ),
+      headerLeft: () =>
+        fromDrawer ? (
+          // Came from nav tray → re-open the drawer
+          <Pressable
+            onPress={() => navigation.dispatch(DrawerActions.openDrawer())}
+            style={{ marginLeft: 4, padding: 4 }}
+          >
+            <Ionicons name="menu-outline" size={26} color="#f5f5f7" />
+          </Pressable>
+        ) : (
+          // Came from a screen (e.g. chat) → go back
+          <Pressable onPress={() => router.back()} style={{ marginLeft: 4, padding: 4 }}>
+            <Ionicons name="chevron-back" size={26} color="#f5f5f7" />
+          </Pressable>
+        ),
       headerRight: () => (
         <View style={{ flexDirection: "row", alignItems: "center", gap: 16, marginRight: 4 }}>
           <Pressable>
@@ -214,7 +244,7 @@ export default function ProfileScreen() {
         </View>
       ),
     });
-  }, [navigation, router]);
+  }, [navigation, router, fromDrawer]);
 
   return (
     <View style={styles.container}>
@@ -227,44 +257,31 @@ export default function ProfileScreen() {
     >
       {/* Score */}
       <View style={styles.scoreRow}>
-        <Text style={styles.scoreValue}>{SCORE}</Text>
-        <Text style={styles.scoreDelta}>+{SCORE_DELTA}</Text>
+        <Text style={styles.scoreValue}>{profile?.score ?? 0}</Text>
+        <Text style={styles.scoreDelta}>+{profile?.score ?? 0}</Text>
       </View>
 
-      {/* Chart */}
-      <ScoreChart />
+      {/* Habit chart */}
+      <HabitChart />
 
       {/* Stats */}
       <View style={styles.statsRow}>
-        {STATS.map((s, i) => (
-          <View key={i} style={styles.statItem}>
-            <Text style={styles.statValue}>{s.value}</Text>
-            <Text style={styles.statLabel}>{s.label}</Text>
-          </View>
-        ))}
+        <View style={styles.statItem}>
+          <Text style={styles.statValue}>{profile?.day_streak ?? 0}</Text>
+          <Text style={styles.statLabel}>DAY STREAK</Text>
+        </View>
+        <View style={styles.statItem}>
+          <Text style={styles.statValue}>{profile?.sessions_completed ?? 0}</Text>
+          <Text style={styles.statLabel}>SESSIONS</Text>
+        </View>
+        <View style={styles.statItem}>
+          <Text style={styles.statValue}>{habits.length}</Text>
+          <Text style={styles.statLabel}>HABITS</Text>
+        </View>
       </View>
 
-      {/* Separator */}
-      <View style={styles.sectionSep} />
-
-      {/* Categories */}
-      <Text style={styles.sectionTitle}>CATEGORIES</Text>
-      {CATEGORIES.map((cat, i) => (
-        <View key={i} style={styles.catRow}>
-          <View style={styles.catHeader}>
-            <Text style={styles.catName}>{cat.name}</Text>
-            <Text style={styles.catMeta}>{cat.sessions} sessions · {cat.minutes} min</Text>
-          </View>
-          <View style={styles.progressTrack}>
-            <View style={[styles.progressFill, { width: `${cat.progress}%`, backgroundColor: cat.color }]} />
-          </View>
-        </View>
-      ))}
-
-      {/* Separator */}
-      <View style={styles.sectionSep} />
-
       {/* Recent Activity */}
+      <View style={styles.sectionSep} />
       <Text style={styles.sectionTitle}>RECENT ACTIVITY</Text>
       {RECENT.map((item, i) => (
         <View key={i} style={styles.activityRow}>
@@ -272,11 +289,6 @@ export default function ProfileScreen() {
           <Text style={styles.activityDate}>{item.date}</Text>
         </View>
       ))}
-
-      {/* Share button */}
-      <Pressable style={styles.shareButton}>
-        <Text style={styles.shareText}>SHARE PROGRESS</Text>
-      </Pressable>
     </ScrollView>
     </View>
   );
@@ -358,6 +370,34 @@ const styles = StyleSheet.create({
   },
   rangePillTextActive: {
     color: "#f5f5f7",
+  },
+  legend: {
+    flexDirection: "row",
+    flexWrap: "wrap",
+    gap: 12,
+    marginTop: 12,
+  },
+  legendItem: {
+    flexDirection: "row",
+    alignItems: "center",
+    gap: 6,
+  },
+  legendDot: {
+    width: 8,
+    height: 8,
+    borderRadius: 4,
+  },
+  legendLabel: {
+    color: "#a1a1aa",
+    fontSize: 12,
+    fontFamily: F.regular,
+  },
+  chartEmpty: {
+    color: "#3f3f46",
+    fontSize: 13,
+    fontFamily: F.regular,
+    textAlign: "center",
+    marginTop: 12,
   },
 
   // Stats

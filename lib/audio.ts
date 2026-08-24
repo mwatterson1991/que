@@ -4,7 +4,7 @@ import { Audio, AVPlaybackStatus } from "expo-av";
 // Maps audio_asset keys (from the sessions table) to local require() sources.
 const BUNDLED_ASSETS: Record<string, any> = {
   "deep-sleep": require("../assets/audio/deep-sleep.aiff"),
-  "morning-confidence": require("../assets/audio/morning-confidence.aiff"),
+  "morning-confidence": require("../assets/audio/tts_2026-05-20T10-06-22-531Z.mp3"),
   "quit-vaping": require("../assets/audio/quit-vaping.aiff"),
   "stop-scrolling": require("../assets/audio/stop-scrolling.aiff"),
   "overeating-reset": require("../assets/audio/overeating-reset.aiff"),

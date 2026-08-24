@@ -2,6 +2,8 @@ import { View, Text, Pressable, StyleSheet } from "react-native";
 import { Drawer } from "expo-router/drawer";
 import { Ionicons } from "@expo/vector-icons";
 import { useRouter } from "expo-router";
+import { useNavigation } from "@react-navigation/native";
+import { DrawerActions } from "@react-navigation/routers";
 import {
   DrawerContentScrollView,
   type DrawerContentComponentProps,
@@ -26,13 +28,13 @@ function CustomDrawerContent(props: DrawerContentComponentProps) {
         contentContainerStyle={styles.scrollContent}
         scrollEnabled={false}
       >
-        <Pressable style={styles.navItem} onPress={() => navigate("/")}>
-          <Ionicons name="chatbubble-outline" size={24} color="#f5f5f7" style={styles.navIcon} />
-          <Text style={styles.navText}>Chat</Text>
-        </Pressable>
         <Pressable style={styles.navItem} onPress={() => navigate("/alarms")}>
           <Ionicons name="alarm-outline" size={24} color="#f5f5f7" style={styles.navIcon} />
           <Text style={styles.navText}>Alarms</Text>
+        </Pressable>
+        <Pressable style={styles.navItem} onPress={() => navigate("/")}>
+          <Ionicons name="chatbubble-outline" size={24} color="#f5f5f7" style={styles.navIcon} />
+          <Text style={styles.navText}>Chat</Text>
         </Pressable>
         <Pressable style={styles.navItem} onPress={() => navigate("/search")}>
           <Ionicons name="search-outline" size={24} color="#f5f5f7" style={styles.navIcon} />
@@ -41,6 +43,10 @@ function CustomDrawerContent(props: DrawerContentComponentProps) {
         <Pressable style={styles.navItem} onPress={() => navigate("/create")}>
           <Ionicons name="add" size={24} color="#f5f5f7" style={styles.navIcon} />
           <Text style={styles.navText}>Create</Text>
+        </Pressable>
+        <Pressable style={styles.navItem} onPress={() => navigate("/profile-page?from=drawer")}>
+          <Ionicons name="person-outline" size={24} color="#f5f5f7" style={styles.navIcon} />
+          <Text style={styles.navText}>Profile</Text>
         </Pressable>
       </DrawerContentScrollView>
 
@@ -68,6 +74,20 @@ function CustomDrawerContent(props: DrawerContentComponentProps) {
   );
 }
 
+function SuggestButton() {
+  const router = useRouter();
+  // We pass a query param that search.tsx reads via useFocusEffect to open the modal
+  return (
+    <Pressable
+      onPress={() => router.setParams({ suggest: "1" })}
+      style={{ marginRight: 16, padding: 4 }}
+      hitSlop={8}
+    >
+      <Ionicons name="add" size={26} color="#f5f5f7" />
+    </Pressable>
+  );
+}
+
 function AddAlarmButton() {
   const router = useRouter();
   return (
@@ -78,6 +98,18 @@ function AddAlarmButton() {
         color="#f5f5f7"
         style={{ marginRight: 16 }}
       />
+    </Pressable>
+  );
+}
+
+function HamburgerButton() {
+  const navigation = useNavigation();
+  return (
+    <Pressable
+      onPress={() => navigation.dispatch(DrawerActions.openDrawer())}
+      style={{ marginLeft: 16, padding: 4 }}
+    >
+      <Ionicons name="menu-outline" size={26} color="#f5f5f7" />
     </Pressable>
   );
 }
@@ -99,6 +131,7 @@ function ProfileButton() {
 export default function DrawerLayout() {
   return (
     <Drawer
+      initialRouteName="alarms"
       drawerContent={(props) => <CustomDrawerContent {...props} />}
       screenOptions={{
         headerStyle: {
@@ -126,17 +159,25 @@ export default function DrawerLayout() {
             fontWeight: "400",
             color: "#f5f5f7",
           },
-          headerRight: () => <ProfileButton />,
+          headerLeft: () => <HamburgerButton />,
         }}
       />
       <Drawer.Screen
         name="alarms"
         options={{
           title: "Alarms",
+          headerLeft: () => <HamburgerButton />,
           headerRight: () => <AddAlarmButton />,
         }}
       />
-      <Drawer.Screen name="search" options={{ title: "Search" }} />
+      <Drawer.Screen
+        name="search"
+        options={{
+          title: "Search",
+          headerLeft: () => <HamburgerButton />,
+          headerRight: () => <SuggestButton />,
+        }}
+      />
       <Drawer.Screen name="create" options={{ title: "Create" }} />
       <Drawer.Screen name="profile" options={{ title: "Profile", drawerItemStyle: { display: "none" } }} />
     </Drawer>

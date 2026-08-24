@@ -195,6 +195,95 @@ export interface Database {
         };
         Relationships: [];
       };
+      habits: {
+        Row: {
+          id: string;
+          user_id: string;
+          title: string;
+          times_per_day: number;
+          factor: number;
+          color: string;
+          archived: boolean;
+          created_at: string;
+        };
+        Insert: {
+          id?: string;
+          user_id: string;
+          title: string;
+          times_per_day?: number;
+          factor?: number;
+          color: string;
+          archived?: boolean;
+        };
+        Update: {
+          title?: string;
+          times_per_day?: number;
+          factor?: number;
+          color?: string;
+          archived?: boolean;
+        };
+        Relationships: [];
+      };
+      habit_logs: {
+        Row: {
+          id: string;
+          habit_id: string;
+          user_id: string;
+          log_date: string;
+          logged_at: string;
+        };
+        Insert: {
+          id?: string;
+          habit_id: string;
+          user_id: string;
+          log_date: string;
+        };
+        Update: Record<string, never>;
+        Relationships: [];
+      };
+      gratitude_entries: {
+        Row: {
+          id: string;
+          user_id: string;
+          entry_text: string;
+          entry_number: number;
+          entry_date: string;
+          created_at: string;
+        };
+        Insert: {
+          id?: string;
+          user_id: string;
+          entry_text: string;
+          entry_number: number;
+          entry_date: string;
+        };
+        Update: {
+          entry_text?: string;
+        };
+        Relationships: [];
+      };
+      session_suggestions: {
+        Row: {
+          id: string;
+          user_id: string | null;
+          suggestion_text: string;
+          vote_count: number;
+          status: "submitted" | "planned" | "shipped" | "declined";
+          created_at: string;
+        };
+        Insert: {
+          id?: string;
+          user_id?: string | null;
+          suggestion_text: string;
+          vote_count?: number;
+          status?: "submitted" | "planned" | "shipped" | "declined";
+        };
+        Update: {
+          vote_count?: number;
+          status?: "submitted" | "planned" | "shipped" | "declined";
+        };
+        Relationships: [];
+      };
       preferences: {
         Row: {
           user_id: string;

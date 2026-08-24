@@ -1,13 +1,30 @@
-import { useCallback, useEffect, useState } from "react";
-import { Text, TextInput } from "react-native";
+import { useCallback, useEffect, useRef, useState } from "react";
+import { Alert, Text, TextInput } from "react-native";
 import { Stack, useRouter, useSegments } from "expo-router";
 import { GestureHandlerRootView } from "react-native-gesture-handler";
 import { StatusBar } from "expo-status-bar";
 import { useFonts } from "expo-font";
 import * as SplashScreen from "expo-splash-screen";
+import * as Notifications from "expo-notifications";
 import { AuthProvider, useAuth } from "@/lib/auth";
+import { requestAlarmPermissions, ensureAndroidChannel } from "@/lib/alarmScheduler";
 
 SplashScreen.preventAutoHideAsync();
+
+// ─── Notification handler (module-level, before any render) ──
+// This controls how notifications behave when the app is FOREGROUNDED.
+// Must be set before any notification can fire.
+Notifications.setNotificationHandler({
+  handleNotification: async (notification) => {
+    const isAlarm = notification.request.content.data?.type === "alarm";
+    return {
+      // Show a banner even when the app is open, so the user sees the alarm
+      shouldShowAlert: true,
+      shouldPlaySound: isAlarm,
+      shouldSetBadge: false,
+    };
+  },
+});
 
 const applyDefaultFont = (Component: any) => {
   Component.defaultProps = Component.defaultProps || {};
@@ -20,28 +37,91 @@ const applyDefaultFont = (Component: any) => {
 applyDefaultFont(Text);
 applyDefaultFont(TextInput);
 
+// ─── Notification listener setup ─────────────────────────
+// Handles tapping on a fired alarm notification → navigate to player.
+function NotificationGate() {
+  const router = useRouter();
+  const responseListener = useRef<Notifications.Subscription>();
+  const receivedListener = useRef<Notifications.Subscription>();
+
+  useEffect(() => {
+    // Permissions + Android channel on every app launch
+    requestAlarmPermissions();
+    ensureAndroidChannel();
+
+    // Foreground notification received — show an in-app alert for alarms
+    receivedListener.current = Notifications.addNotificationReceivedListener(
+      (notification) => {
+        const data = notification.request.content.data;
+        if (data?.type !== "alarm") return;
+        const sessionId = data?.sessionId as string | undefined;
+        Alert.alert(
+          notification.request.content.title ?? "Alarm",
+          notification.request.content.body ?? "",
+          [
+            { text: "Dismiss", style: "cancel" },
+            {
+              text: "Start Session",
+              onPress: () => {
+                if (sessionId) router.push(`/player?id=${sessionId}` as any);
+              },
+            },
+          ]
+        );
+      }
+    );
+
+    // Notification tapped (app was backgrounded or killed)
+    responseListener.current = Notifications.addNotificationResponseReceivedListener(
+      (response) => {
+        const data = response.notification.request.content.data;
+        if (data?.type !== "alarm") return;
+        const sessionId = data?.sessionId as string | undefined;
+        if (sessionId) {
+          // Small delay to let the navigator mount after cold start
+          setTimeout(() => router.push(`/player?id=${sessionId}` as any), 300);
+        }
+      }
+    );
+
+    return () => {
+      receivedListener.current?.remove();
+      responseListener.current?.remove();
+    };
+  }, []);
+
+  return null;
+}
+
 // ─── Auth-gated routing ──────────────────────────────────
 function AuthGate() {
-  const { session, loading } = useAuth();
+  const { session, user, loading } = useAuth();
   const router = useRouter();
   const segments = useSegments();
-  const [initialRouted, setInitialRouted] = useState(false);
 
   useEffect(() => {
     if (loading) return;
 
     const onAuthScreen = segments[0] === "auth";
+    const onOnboarding = segments[0] === "onboarding";
 
-    if (!session && !onAuthScreen) {
-      // Not logged in and not on auth → send to auth
-      router.replace("/auth");
-    } else if (session && onAuthScreen) {
-      // Logged in but still on auth → send to app
-      router.replace("/");
+    if (!session) {
+      // Not logged in → send to auth (unless already there)
+      if (!onAuthScreen) router.replace("/auth");
+      return;
     }
 
-    if (!initialRouted) setInitialRouted(true);
-  }, [session, loading, segments]);
+    // Logged in — check if onboarding is complete
+    const onboarded = user?.user_metadata?.onboarded === true;
+
+    if (!onboarded && !onOnboarding) {
+      // First-time user → send to onboarding
+      router.replace("/onboarding" as any);
+    } else if (onboarded && (onAuthScreen || onOnboarding)) {
+      // Returning user who somehow landed on auth/onboarding → send home
+      router.replace("/alarms");
+    }
+  }, [session, user, loading, segments]);
 
   return null;
 }
@@ -82,12 +162,22 @@ export default function RootLayout() {
       >
         <StatusBar style="light" />
         <AuthGate />
+        <NotificationGate />
         <Stack screenOptions={{ headerShown: false }}>
           <Stack.Screen
             name="auth"
             options={{
               headerShown: false,
               animation: "none",
+              contentStyle: { backgroundColor: "#000000" },
+            }}
+          />
+          <Stack.Screen
+            name="onboarding"
+            options={{
+              headerShown: false,
+              animation: "fade",
+              gestureEnabled: false,
               contentStyle: { backgroundColor: "#000000" },
             }}
           />
@@ -169,6 +259,54 @@ export default function RootLayout() {
               animation: "slide_from_right",
               headerShown: false,
               contentStyle: { flex: 1, backgroundColor: "#000000" },
+            }}
+          />
+          <Stack.Screen
+            name="habit-track"
+            options={{
+              animation: "slide_from_right",
+              headerShown: true,
+              title: "Track",
+              headerBackTitle: "",
+              headerBackTitleVisible: false,
+              ...HEADER_BASE,
+              contentStyle: { flex: 1, backgroundColor: "#000000" },
+            }}
+          />
+          <Stack.Screen
+            name="habit-add"
+            options={{
+              animation: "slide_from_right",
+              headerShown: true,
+              title: "Add Habit",
+              headerBackTitle: "",
+              headerBackTitleVisible: false,
+              ...HEADER_BASE,
+              contentStyle: { flex: 1, backgroundColor: "#0b0b0f" },
+            }}
+          />
+          <Stack.Screen
+            name="gratitude"
+            options={{
+              animation: "slide_from_right",
+              headerShown: true,
+              title: "Gratitude",
+              headerBackTitle: "",
+              headerBackTitleVisible: false,
+              ...HEADER_BASE,
+              contentStyle: { flex: 1, backgroundColor: "#000000" },
+            }}
+          />
+          <Stack.Screen
+            name="alarm-debug"
+            options={{
+              animation: "slide_from_right",
+              headerShown: true,
+              title: "Alarm Debug",
+              headerBackTitle: "",
+              headerBackTitleVisible: false,
+              ...HEADER_BASE,
+              contentStyle: { flex: 1, backgroundColor: "#0b0b0f" },
             }}
           />
         </Stack>

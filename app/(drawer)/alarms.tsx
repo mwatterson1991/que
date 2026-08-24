@@ -1,6 +1,8 @@
 import { View, Text, FlatList, Switch, Pressable, StyleSheet, ActivityIndicator } from "react-native";
-import { useRouter } from "expo-router";
+import { useRouter, useFocusEffect } from "expo-router";
+import { useCallback } from "react";
 import { useAlarms, useSessions } from "@/lib/useSupabase";
+import { scheduleAlarm, cancelAlarm } from "@/lib/alarmScheduler";
 import { F } from "@/lib/fonts";
 import type { Database } from "@/lib/database.types";
 
@@ -52,9 +54,34 @@ function AlarmRow({ item, onToggle, sessionMap }: { item: Alarm; onToggle: (id: 
 }
 
 export default function AlarmsScreen() {
-  const { alarms, loading, toggle } = useAlarms();
+  const { alarms, loading, toggle, refresh, remove } = useAlarms();
   const { sessions } = useSessions();
   const router = useRouter();
+
+  // Re-fetch every time this screen comes into focus so new/edited alarms appear
+  useFocusEffect(
+    useCallback(() => {
+      refresh();
+    }, [refresh])
+  );
+
+  // Toggle: cancel or reschedule the OS notification to match enabled state
+  const handleToggle = useCallback(async (id: string, enabled: boolean) => {
+    await toggle(id, enabled);
+    const alarm = alarms.find((a) => a.id === id);
+    if (!alarm) return;
+    if (enabled) {
+      await scheduleAlarm({ ...alarm, enabled: true });
+    } else {
+      await cancelAlarm(id);
+    }
+  }, [alarms, toggle]);
+
+  // Delete: cancel OS notification then remove from DB
+  const handleDelete = useCallback(async (id: string) => {
+    await cancelAlarm(id);
+    await remove(id);
+  }, [remove]);
 
   const sessionMap: SessionMap = {};
   for (const s of sessions) sessionMap[s.id] = s;
@@ -80,7 +107,7 @@ export default function AlarmsScreen() {
             keyExtractor={(a) => a.id}
             ItemSeparatorComponent={() => <View style={styles.separator} />}
             renderItem={({ item }) => (
-              <AlarmRow item={item} onToggle={toggle} sessionMap={sessionMap} />
+              <AlarmRow item={item} onToggle={handleToggle} sessionMap={sessionMap} />
             )}
             ListFooterComponent={() => <View style={styles.separator} />}
           />
