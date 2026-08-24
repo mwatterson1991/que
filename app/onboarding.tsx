@@ -450,7 +450,7 @@ export default function OnboardingScreen() {
         ) : (
           <View style={{ width: 40 }} />
         )}
-        <Text style={styles.logoText}>Que</Text>
+        <Text style={styles.logoText}>Morning Que</Text>
         <View style={{ width: 40 }} />
       </View>
 

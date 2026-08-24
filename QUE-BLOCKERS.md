@@ -4,6 +4,10 @@
 
 ## Active blockers
 
+### 0. Supabase project is asleep — quickest fix, do first
+- **Status:** The app's database (wesobiewlaakwvrfldpn.supabase.co) no longer responds — free-tier projects pause after weeks of inactivity, and it's been idle since May. Login and all data fail until it's restored.
+- **Do:** Open https://supabase.com/dashboard on your phone → open the project → tap Restore. Takes ~2 minutes to wake.
+
 ### 1. Apple Developer Program enrollment — THE critical path
 - **Blocks:** Everything in Phase 04/05 — bundle ID, App Store Connect, production builds, TestFlight, submission.
 - **Do:** https://developer.apple.com/programs/ — enroll as individual (~$99/yr). Approval takes 24–48h, so start now.

@@ -135,7 +135,7 @@ export default function AuthScreen() {
     return (
       <View style={styles.container}>
         <View style={styles.center}>
-          <Text style={styles.logoText}>Que</Text>
+          <Text style={styles.logoText}>Morning Que</Text>
           <CyclingTagline />
         </View>
 
