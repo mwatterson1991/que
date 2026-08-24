@@ -6,9 +6,11 @@ import { StatusBar } from "expo-status-bar";
 import { useFonts } from "expo-font";
 import * as SplashScreen from "expo-splash-screen";
 import * as Notifications from "expo-notifications";
+import AsyncStorage from "@react-native-async-storage/async-storage";
 import { AuthProvider, useAuth } from "@/lib/auth";
 import { requestAlarmPermissions, ensureAndroidChannel } from "@/lib/alarmScheduler";
 import { initBackgroundAudio } from "@/lib/backgroundAudio";
+import { WELCOME_COUNT_KEY, WELCOME_MAX_SHOWS } from "./welcome";
 
 SplashScreen.preventAutoHideAsync();
 
@@ -100,22 +102,53 @@ function NotificationGate() {
 }
 
 // ─── Auth-gated routing ──────────────────────────────────
+// The welcome screen (landing-page hero + one Enter tap) is the front
+// door. It shows on every open until a session exists, and for the
+// first WELCOME_MAX_SHOWS opens after that. Home base is /alarms.
+let welcomeShownThisLaunch = false;
+
 function AuthGate() {
   const { session, user, loading } = useAuth();
   const router = useRouter();
   const segments = useSegments();
+  const [welcomeCount, setWelcomeCount] = useState<number | null>(null);
 
   useEffect(() => {
-    if (loading) return;
+    AsyncStorage.getItem(WELCOME_COUNT_KEY)
+      .then((raw) => setWelcomeCount(parseInt(raw ?? "0", 10) || 0))
+      .catch(() => setWelcomeCount(WELCOME_MAX_SHOWS));
+  }, []);
+
+  useEffect(() => {
+    if (loading || welcomeCount === null) return;
 
     const onAuthScreen = segments[0] === "auth";
     const onOnboarding = segments[0] === "onboarding";
+    const onWelcome = segments[0] === "welcome";
 
     if (!session) {
-      // Not logged in → send to auth (unless already there)
-      if (!onAuthScreen) router.replace("/auth");
+      // No account yet → the welcome screen is the entry point.
+      // (Its Enter button creates a guest session; Log in goes to /auth.)
+      if (!onAuthScreen && !onWelcome) {
+        welcomeShownThisLaunch = true;
+        router.replace("/welcome" as any);
+      }
       return;
     }
+
+    // Signed in — replay the welcome moment for the first few opens
+    if (
+      !welcomeShownThisLaunch &&
+      welcomeCount < WELCOME_MAX_SHOWS &&
+      !onWelcome &&
+      !onOnboarding
+    ) {
+      welcomeShownThisLaunch = true;
+      router.replace("/welcome" as any);
+      return;
+    }
+
+    if (onWelcome) return; // Enter button handles leaving
 
     // Logged in — check if onboarding is complete
     const onboarded = user?.user_metadata?.onboarded === true;
@@ -127,7 +160,7 @@ function AuthGate() {
       // Returning user who somehow landed on auth/onboarding → send home
       router.replace("/alarms");
     }
-  }, [session, user, loading, segments]);
+  }, [session, user, loading, segments, welcomeCount]);
 
   return null;
 }
@@ -256,6 +289,14 @@ export default function RootLayout() {
               headerBackTitle: "",
               headerBackTitleVisible: false,
               ...HEADER_BASE,
+              contentStyle: { flex: 1, backgroundColor: "#000000" },
+            }}
+          />
+          <Stack.Screen
+            name="welcome"
+            options={{
+              animation: "fade",
+              headerShown: false,
               contentStyle: { flex: 1, backgroundColor: "#000000" },
             }}
           />
