@@ -38,6 +38,8 @@ export default function CreateScreen() {
               if (item.title === "Gratitude Log") router.push("/gratitude" as any);
               if (item.title === "Habit Tracker") router.push("/habit-track" as any);
             }}
+            accessibilityRole="button"
+            accessibilityLabel={`${item.title}, ${item.subtitle}`}
           >
             <Text style={styles.rowTitle}>{item.title}</Text>
             <Text style={styles.rowSubtitle}>{item.subtitle}</Text>

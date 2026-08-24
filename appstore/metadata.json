@@ -1,0 +1,45 @@
+{
+  "appName": "Morning Que",
+  "urls": {
+    "privacyPolicy": "https://mwatterson1991.github.io/morningque-site/privacy.html",
+    "support": "https://mwatterson1991.github.io/morningque-site/support.html",
+    "marketing": "https://morningque.netlify.app"
+  },
+  "ios": {
+    "primaryCategory": "HEALTH_AND_FITNESS",
+    "secondaryCategory": "PRODUCTIVITY",
+    "bundleId": "com.michaelwatterson.morningque",
+    "minimumOSVersion": "16.0",
+    "requiredDeviceCapabilities": ["arm64"],
+    "supportedInterfaceOrientations": ["portrait"],
+    "supportsTablet": true,
+    "contentRights": {
+      "containsThirdPartyContent": false,
+      "hasRightsToAllContent": true
+    },
+    "ageRating": {
+      "kidsCategory": false,
+      "madeForKids": false
+    }
+  },
+  "android": {
+    "primaryCategory": "HEALTH_AND_FITNESS",
+    "contentRating": "everyone",
+    "packageName": "com.michaelwatterson.morningque"
+  },
+  "pricing": {
+    "model": "freemium",
+    "monthlyPrice": 7.99,
+    "annualPrice": 49.99,
+    "currency": "USD",
+    "freeTierPrograms": [
+      "General Morning Mindset",
+      "High Performer Daily Activation",
+      "Calm & Centered Start"
+    ]
+  },
+  "localization": {
+    "defaultLanguage": "en-US",
+    "availableLanguages": ["en-US"]
+  }
+}

@@ -1,34 +1,49 @@
 {
   "expo": {
-    "name": "Que",
+    "name": "Morning Que",
     "slug": "mantra-alarm",
     "version": "0.1.0",
     "orientation": "portrait",
+    "icon": "./assets/icon.png",
     "scheme": "mantraalarm",
     "userInterfaceStyle": "automatic",
-    "newArchEnabled": true,
     "ios": {
       "supportsTablet": true,
-      "bundleIdentifier": "com.michaelwatterson.que",
+      "bundleIdentifier": "com.michaelwatterson.morningque",
       "buildNumber": "1",
+      "config": {
+        "usesNonExemptEncryption": false
+      },
+      "entitlements": {
+        "aps-environment": "development",
+        "com.apple.developer.usernotifications.time-sensitive": true
+      },
       "infoPlist": {
-        "NSMicrophoneUsageDescription": "Que uses your microphone so you can set alarms with your voice.",
-        "NSSpeechRecognitionUsageDescription": "Que transcribes what you say to create alarms and mantras.",
-        "NSUserNotificationsUsageDescription": "Que uses notifications to fire your alarms at the right time.",
+        "NSMicrophoneUsageDescription": "Morning Que uses your microphone so you can set alarms with your voice.",
+        "NSSpeechRecognitionUsageDescription": "Morning Que transcribes what you say to create alarms and mantras.",
+        "NSUserNotificationsUsageDescription": "Morning Que uses notifications to fire your alarms at the right time.",
         "UIBackgroundModes": [
           "audio",
-          "fetch"
+          "fetch",
+          "remote-notification"
         ],
         "ITSAppUsesNonExemptEncryption": false
       }
     },
     "android": {
-      "package": "com.michaelwatterson.mantraalarm",
+      "adaptiveIcon": {
+        "foregroundImage": "./assets/adaptive-icon.png",
+        "backgroundColor": "#0b0b0f"
+      },
+      "package": "com.michaelwatterson.morningque",
       "permissions": [
         "RECORD_AUDIO",
         "SCHEDULE_EXACT_ALARM",
         "POST_NOTIFICATIONS",
         "WAKE_LOCK",
+        "RECEIVE_BOOT_COMPLETED",
+        "FOREGROUND_SERVICE",
+        "FOREGROUND_SERVICE_MEDIA_PLAYBACK",
         "android.permission.RECORD_AUDIO",
         "android.permission.MODIFY_AUDIO_SETTINGS"
       ]
@@ -36,7 +51,14 @@
     "plugins": [
       "expo-router",
       "expo-av",
-      "expo-notifications",
+      [
+        "expo-notifications",
+        {
+          "color": "#0b0b0f",
+          "defaultChannel": "alarms",
+          "enableBackgroundRemoteNotifications": true
+        }
+      ],
       "expo-speech-recognition",
       "expo-font"
     ],

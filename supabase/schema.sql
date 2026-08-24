@@ -119,6 +119,7 @@ create table public.preferences (
   dark_mode boolean default true,
   default_sound text default 'focus',
   default_duration_min int default 10,
+  ambient_sound text default 'silence',
   updated_at timestamptz default now()
 );
 

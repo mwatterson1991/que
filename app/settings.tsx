@@ -6,6 +6,7 @@ import { F } from "@/lib/fonts";
 import { useAuth } from "@/lib/auth";
 import { useProfile, usePreferences } from "@/lib/useSupabase";
 import { supabase } from "@/lib/supabase";
+import { AMBIENT_SOUNDS, AmbientSoundId } from "@/lib/ambient";
 
 type SettingsRowProps = {
   icon: keyof typeof Ionicons.glyphMap;
@@ -19,7 +20,12 @@ type SettingsRowProps = {
 
 function SettingsRow({ icon, label, value, hasToggle, toggleValue, onToggle, onPress }: SettingsRowProps) {
   return (
-    <Pressable onPress={onPress} style={styles.row}>
+    <Pressable
+      onPress={onPress}
+      style={styles.row}
+      accessibilityRole={hasToggle ? undefined : "button"}
+      accessibilityLabel={hasToggle ? undefined : value ? `${label}, ${value}` : label}
+    >
       <Ionicons name={icon} size={20} color="#a1a1aa" style={styles.rowIcon} />
       <Text style={styles.rowLabel}>{label}</Text>
       <View style={styles.rowRight}>
@@ -30,6 +36,9 @@ function SettingsRow({ icon, label, value, hasToggle, toggleValue, onToggle, onP
             trackColor={{ true: "#4cd964", false: "#39393d" }}
             thumbColor="#ffffff"
             style={{ transform: [{ scaleX: 0.8 }, { scaleY: 0.8 }] }}
+            accessibilityRole="switch"
+            accessibilityState={{ checked: toggleValue }}
+            accessibilityLabel={label}
           />
         ) : value ? (
           <>
@@ -140,6 +149,21 @@ export default function SettingsScreen() {
       />
       <View style={styles.rowSep} />
       <SettingsRow
+        icon="water-outline"
+        label="Ambient Sound"
+        value={
+          AMBIENT_SOUNDS.find(
+            (s) => s.id === (prefs?.ambient_sound as AmbientSoundId),
+          )?.label ?? "Silence"
+        }
+        onPress={() =>
+          router.push(
+            `/ambient-picker?current=${prefs?.ambient_sound ?? "silence"}` as any,
+          )
+        }
+      />
+      <View style={styles.rowSep} />
+      <SettingsRow
         icon="time-outline"
         label="Default Duration"
         value="10 min"
@@ -213,6 +237,7 @@ export default function SettingsScreen() {
       {/* Sign out */}
       <Pressable
         style={styles.signOutButton}
+        accessibilityRole="button"
         onPress={() => Alert.alert("Sign Out", "Are you sure?", [
           { text: "Cancel", style: "cancel" },
           { text: "Sign Out", style: "destructive", onPress: async () => {

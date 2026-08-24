@@ -41,6 +41,8 @@ function SessionRow({ session }: { session: Session }) {
     <Pressable
       onPress={() => router.push(`/player?id=${session.id}` as any)}
       style={styles.sessionRow}
+      accessibilityRole="button"
+      accessibilityLabel={`Play ${session.title}, ${session.narrator}, ${formatDuration(session.duration_sec)}`}
     >
       <Text style={styles.sessionTitle}>{session.title}</Text>
       <Text style={styles.sessionDescription}>{session.description}</Text>
@@ -56,7 +58,12 @@ function SessionRow({ session }: { session: Session }) {
 // ─── End-of-list CTA card ─────────────────────────────────
 function SuggestCard({ onPress }: { onPress: () => void }) {
   return (
-    <Pressable onPress={onPress} style={styles.suggestCard}>
+    <Pressable
+      onPress={onPress}
+      style={styles.suggestCard}
+      accessibilityRole="button"
+      accessibilityLabel="Didn't find what you were looking for? Suggest one"
+    >
       <View style={styles.suggestCardInner}>
         <Text style={styles.suggestCardTitle}>Didn't find what you were looking for?</Text>
         <Text style={styles.suggestCardSub}>Suggest one →</Text>
@@ -138,7 +145,13 @@ function SuggestionModal({
         {/* Header */}
         <View style={styles.modalHeader}>
           <Text style={styles.modalTitle}>Suggest a Session</Text>
-          <Pressable onPress={onClose} hitSlop={12} style={styles.modalClose}>
+          <Pressable
+            onPress={onClose}
+            hitSlop={12}
+            style={styles.modalClose}
+            accessibilityRole="button"
+            accessibilityLabel="Close"
+          >
             <Ionicons name="close" size={22} color="#71717a" />
           </Pressable>
         </View>
@@ -172,6 +185,8 @@ function SuggestionModal({
               style={[styles.submitButton, !canSubmit && styles.submitButtonDisabled]}
               onPress={handleSubmit}
               disabled={!canSubmit}
+              accessibilityRole="button"
+              accessibilityState={{ disabled: !canSubmit }}
             >
               <Text style={[styles.submitText, !canSubmit && styles.submitTextDisabled]}>
                 Submit
@@ -244,12 +259,15 @@ export default function SearchScreen() {
                 key={cat}
                 onPress={() => setActiveCategory(cat)}
                 style={[styles.categoryPill, active && styles.categoryPillActive]}
+                accessibilityRole="button"
+                accessibilityState={{ selected: active }}
               >
                 <Text
                   style={[
                     styles.categoryText,
                     active && styles.categoryTextActive,
                   ]}
+                  maxFontSizeMultiplier={1.4}
                 >
                   {cat}
                 </Text>

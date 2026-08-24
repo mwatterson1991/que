@@ -27,7 +27,7 @@ import Animated, {
 } from "react-native-reanimated";
 import { AVPlaybackStatus } from "expo-av";
 import { F } from "@/lib/fonts";
-import { useSessions, useActivity, useProfile, useCategories } from "@/lib/useSupabase";
+import { useSessions, useActivity, useProfile, useCategories, usePreferences } from "@/lib/useSupabase";
 import { setPickedSound } from "@/lib/soundPicker";
 import {
   resolveSource,
@@ -37,6 +37,18 @@ import {
   seekSession,
   stopSession,
 } from "@/lib/audio";
+import {
+  playAlarmSession,
+  stopAlarmSession,
+  skipFadeIn,
+} from "@/lib/alarmAudio";
+import {
+  startAmbient,
+  pauseAmbient,
+  resumeAmbient,
+  stopAmbient,
+  AmbientSoundId,
+} from "@/lib/ambient";
 
 const { width: SCREEN_W } = Dimensions.get("window");
 const ORB_RADIUS = 38;
@@ -244,7 +256,8 @@ function MantraTeleprompter({
 
 // ─── Screen ──────────────────────────────────────────────
 export default function PlayerScreen() {
-  const { id } = useLocalSearchParams<{ id: string }>();
+  const { id, alarm } = useLocalSearchParams<{ id: string; alarm?: string }>();
+  const isAlarmMode = alarm === "1";
   const router = useRouter();
   const navigation = useNavigation();
   const insets = useSafeAreaInsets();
@@ -252,6 +265,7 @@ export default function PlayerScreen() {
   const { add: logActivity } = useActivity();
   const { profile, update: updateProfile } = useProfile();
   const { categories, updateProgress } = useCategories();
+  const { prefs } = usePreferences();
 
   const session = sessions.find((s) => s.id === id) ?? null;
 
@@ -270,21 +284,37 @@ export default function PlayerScreen() {
     if (!session || startedRef.current) return;
     startedRef.current = true;
 
-    const source = resolveSource(session.audio_url, session.audio_asset);
-    if (!source) return;
-
     setDuration(session.duration_sec);
-    playSession(source, (status: AVPlaybackStatus) => {
+
+    const onStatus = (status: AVPlaybackStatus) => {
       if (!status.isLoaded) return;
       if (!scrubbing) setElapsed(Math.floor(status.positionMillis / 1000));
       setPlaying(status.isPlaying);
       if (status.durationMillis) setDuration(Math.floor(status.durationMillis / 1000));
-      if (status.didJustFinish) { setPlaying(false); setCompleted(true); }
-    });
+      if (status.didJustFinish) { setPlaying(false); setCompleted(true); stopAmbient(); }
+    };
+
+    if (isAlarmMode) {
+      // Alarm mode: gentle 30-second volume fade-in with error fallback
+      playAlarmSession(session.audio_url, session.audio_asset, onStatus);
+    } else {
+      // Normal mode: instant full-volume playback
+      const source = resolveSource(session.audio_url, session.audio_asset);
+      if (!source) return;
+      playSession(source, onStatus);
+    }
+
+    // Start ambient layer based on user preference
+    const ambientId = (prefs?.ambient_sound as AmbientSoundId) ?? "silence";
+    startAmbient(ambientId);
 
     setPlaying(true);
-    return () => { stopSession(); };
-  }, [session]);
+    return () => {
+      if (isAlarmMode) stopAlarmSession();
+      else stopSession();
+      stopAmbient();
+    };
+  }, [session, isAlarmMode]);
 
   useEffect(() => {
     if (!playing || !session?.mantras?.length) return;
@@ -343,8 +373,15 @@ export default function PlayerScreen() {
   ).current;
 
   const togglePlay = async () => {
-    if (playing) await pauseSession();
-    else await resumeSession();
+    if (playing) {
+      await pauseSession();
+      await pauseAmbient();
+      // User is awake — skip remaining fade-in on next resume
+      if (isAlarmMode) await skipFadeIn();
+    } else {
+      await resumeSession();
+      await resumeAmbient();
+    }
   };
 
   const skip = async (delta: number) => {
@@ -370,10 +407,18 @@ export default function PlayerScreen() {
           style={styles.navIconBtn}
           onPress={() => navigation.dispatch(DrawerActions.openDrawer())}
           hitSlop={12}
+          accessibilityRole="button"
+          accessibilityLabel="Open menu"
         >
           <Ionicons name="menu-outline" size={26} color="#f5f5f7" />
         </Pressable>
-        <Pressable style={styles.navIconBtn} onPress={() => router.back()} hitSlop={12}>
+        <Pressable
+          style={styles.navIconBtn}
+          onPress={() => router.back()}
+          hitSlop={12}
+          accessibilityRole="button"
+          accessibilityLabel="Go back"
+        >
           <Ionicons name="chevron-back" size={28} color="#f5f5f7" />
         </Pressable>
       </View>
@@ -395,6 +440,8 @@ export default function PlayerScreen() {
             style={styles.menuButton}
             hitSlop={12}
             onPress={() => Alert.alert(session?.title ?? "", session?.description ?? "")}
+            accessibilityRole="button"
+            accessibilityLabel="Session details"
           >
             <Ionicons name="ellipsis-horizontal" size={22} color="#71717a" />
           </Pressable>
@@ -410,21 +457,31 @@ export default function PlayerScreen() {
             }}
             style={styles.progressTrackOuter}
             {...panResponder.panHandlers}
+            accessible={true}
+            accessibilityRole="adjustable"
+            accessibilityLabel="Playback position"
+            accessibilityValue={{ text: `${formatTime(displayElapsed)} of ${formatTime(duration)}` }}
           >
             <View style={styles.progressTrack}>
               <View style={[styles.progressFill, { width: `${progress * 100}%` }]} />
             </View>
           </View>
           <View style={styles.timeRow}>
-            <Text style={styles.timeText}>{formatTime(displayElapsed)}</Text>
-            <Text style={styles.timeText}>{formatTime(duration)}</Text>
+            <Text style={styles.timeText} maxFontSizeMultiplier={1.4}>{formatTime(displayElapsed)}</Text>
+            <Text style={styles.timeText} maxFontSizeMultiplier={1.4}>{formatTime(duration)}</Text>
           </View>
         </View>
 
         {/* Controls */}
         <View style={styles.controls}>
           {/* Skip back 10s */}
-          <Pressable style={styles.controlBtn} onPress={() => skip(-10)} hitSlop={8}>
+          <Pressable
+            style={styles.controlBtn}
+            onPress={() => skip(-10)}
+            hitSlop={8}
+            accessibilityRole="button"
+            accessibilityLabel="Skip back 10 seconds"
+          >
             <Ionicons
               name="refresh"
               size={22}
@@ -435,7 +492,12 @@ export default function PlayerScreen() {
           </Pressable>
 
           {/* Play / pause */}
-          <Pressable style={styles.controlBtn} onPress={togglePlay}>
+          <Pressable
+            style={styles.controlBtn}
+            onPress={togglePlay}
+            accessibilityRole="button"
+            accessibilityLabel={playing ? "Pause session" : "Play session"}
+          >
             <Ionicons
               name={playing ? "pause" : "play"}
               size={26}
@@ -445,7 +507,13 @@ export default function PlayerScreen() {
           </Pressable>
 
           {/* Skip forward 10s */}
-          <Pressable style={styles.controlBtn} onPress={() => skip(10)} hitSlop={8}>
+          <Pressable
+            style={styles.controlBtn}
+            onPress={() => skip(10)}
+            hitSlop={8}
+            accessibilityRole="button"
+            accessibilityLabel="Skip forward 10 seconds"
+          >
             <Ionicons name="refresh" size={22} color="#f5f5f7" />
             <Text style={styles.skipLabel}>10</Text>
           </Pressable>
@@ -458,7 +526,12 @@ export default function PlayerScreen() {
             <Text style={styles.completedText}>SESSION COMPLETE</Text>
           </View>
         ) : (
-          <Pressable style={styles.alarmButton} onPress={handleSetAsAlarm}>
+          <Pressable
+            style={styles.alarmButton}
+            onPress={handleSetAsAlarm}
+            accessibilityRole="button"
+            accessibilityLabel="Set as alarm"
+          >
             <Text style={styles.alarmButtonText}>SET AS ALARM</Text>
             <Ionicons name="arrow-forward" size={18} color="#f5f5f7" style={{ marginLeft: 8 }} />
           </Pressable>

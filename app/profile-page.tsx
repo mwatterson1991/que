@@ -95,8 +95,14 @@ function HabitChart() {
             key={r}
             onPress={() => setRange(r)}
             style={[styles.rangePill, r === range && styles.rangePillActive]}
+            accessibilityRole="button"
+            accessibilityLabel={`Show ${r} range`}
+            accessibilityState={{ selected: r === range }}
           >
-            <Text style={[styles.rangePillText, r === range && styles.rangePillTextActive]}>
+            <Text
+              style={[styles.rangePillText, r === range && styles.rangePillTextActive]}
+              maxFontSizeMultiplier={1.4}
+            >
               {r}
             </Text>
           </Pressable>
@@ -178,6 +184,9 @@ function HabitChart() {
                 key={habit.id}
                 onPress={() => toggleHabit(habit.id)}
                 style={styles.legendItem}
+                accessibilityRole="button"
+                accessibilityLabel={`${hidden ? "Show" : "Hide"} ${habit.title} on chart`}
+                accessibilityState={{ selected: !hidden }}
               >
                 <View style={[styles.legendDot, { backgroundColor: hidden ? "#27272a" : habit.color }]} />
                 <Text style={[styles.legendLabel, hidden && { color: "#3f3f46" }]}>
@@ -224,21 +233,32 @@ export default function ProfileScreen() {
           <Pressable
             onPress={() => navigation.dispatch(DrawerActions.openDrawer())}
             style={{ marginLeft: 4, padding: 4 }}
+            accessibilityRole="button"
+            accessibilityLabel="Open menu"
           >
             <Ionicons name="menu-outline" size={26} color="#f5f5f7" />
           </Pressable>
         ) : (
           // Came from a screen (e.g. chat) → go back
-          <Pressable onPress={() => router.back()} style={{ marginLeft: 4, padding: 4 }}>
+          <Pressable
+            onPress={() => router.back()}
+            style={{ marginLeft: 4, padding: 4 }}
+            accessibilityRole="button"
+            accessibilityLabel="Go back"
+          >
             <Ionicons name="chevron-back" size={26} color="#f5f5f7" />
           </Pressable>
         ),
       headerRight: () => (
         <View style={{ flexDirection: "row", alignItems: "center", gap: 16, marginRight: 4 }}>
-          <Pressable>
+          <Pressable accessibilityRole="button" accessibilityLabel="Share">
             <Ionicons name="share-outline" size={22} color="#f5f5f7" />
           </Pressable>
-          <Pressable onPress={() => router.push("/settings" as any)}>
+          <Pressable
+            onPress={() => router.push("/settings" as any)}
+            accessibilityRole="button"
+            accessibilityLabel="Settings"
+          >
             <Ionicons name="settings-outline" size={22} color="#f5f5f7" />
           </Pressable>
         </View>

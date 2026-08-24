@@ -38,7 +38,13 @@ function SessionRow({
   onSelect: () => void;
 }) {
   return (
-    <Pressable onPress={onSelect} style={styles.sessionRow}>
+    <Pressable
+      onPress={onSelect}
+      style={styles.sessionRow}
+      accessibilityRole="button"
+      accessibilityLabel={`${session.title}, ${session.narrator}, ${formatDuration(session.duration_sec)}`}
+      accessibilityState={{ selected: isSelected }}
+    >
       <View style={styles.sessionContent}>
         <Text style={styles.sessionTitle}>{session.title}</Text>
         <Text style={styles.sessionDescription}>{session.description}</Text>
@@ -113,12 +119,15 @@ export default function SoundsScreen() {
                 key={cat}
                 onPress={() => setActiveCategory(cat)}
                 style={[styles.categoryPill, active && styles.categoryPillActive]}
+                accessibilityRole="button"
+                accessibilityState={{ selected: active }}
               >
                 <Text
                   style={[
                     styles.categoryText,
                     active && styles.categoryTextActive,
                   ]}
+                  maxFontSizeMultiplier={1.4}
                 >
                   {cat}
                 </Text>

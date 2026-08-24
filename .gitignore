@@ -16,3 +16,5 @@ scripts/logs/
 
 expo-env.d.ts
 # @end expo-cli
+
+generated-audio/
