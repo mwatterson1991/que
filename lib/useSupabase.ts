@@ -1,4 +1,5 @@
 import { useEffect, useState, useCallback } from "react";
+import AsyncStorage from "@react-native-async-storage/async-storage";
 import { supabase } from "./supabase";
 import { useAuth } from "./auth";
 import type { Database } from "./database.types";
@@ -46,12 +47,37 @@ export function useProfile() {
 }
 
 // ─── Alarms ──────────────────────────────────────────────
+// Guest alarms live on-device so the app works with no account.
+const GUEST_ALARMS_KEY = "guest_alarms";
+
+async function readGuestAlarms(): Promise<Alarm[]> {
+  try {
+    const raw = await AsyncStorage.getItem(GUEST_ALARMS_KEY);
+    return raw ? (JSON.parse(raw) as Alarm[]) : [];
+  } catch {
+    return [];
+  }
+}
+
+async function writeGuestAlarms(list: Alarm[]): Promise<void> {
+  try {
+    await AsyncStorage.setItem(GUEST_ALARMS_KEY, JSON.stringify(list));
+  } catch {}
+}
+
 export function useAlarms() {
-  const { user } = useAuth();
+  const { user, isGuest } = useAuth();
   const [alarms, setAlarms] = useState<Alarm[]>([]);
   const [loading, setLoading] = useState(true);
 
   const fetch = useCallback(async () => {
+    if (isGuest) {
+      const list = await readGuestAlarms();
+      list.sort((a, b) => a.next_fire_at.localeCompare(b.next_fire_at));
+      setAlarms(list);
+      setLoading(false);
+      return;
+    }
     if (!user) return;
     const { data } = await supabase
       .from("alarms")
@@ -60,11 +86,29 @@ export function useAlarms() {
       .order("next_fire_at", { ascending: true });
     setAlarms(data ?? []);
     setLoading(false);
-  }, [user]);
+  }, [user, isGuest]);
 
   useEffect(() => { fetch(); }, [fetch]);
 
   const add = async (alarm: Omit<Database["public"]["Tables"]["alarms"]["Insert"], "user_id">) => {
+    if (isGuest) {
+      const now = new Date().toISOString();
+      const data: Alarm = {
+        id: `guest-${Date.now()}-${Math.random().toString(36).slice(2, 8)}`,
+        user_id: "guest",
+        label: alarm.label ?? "Alarm",
+        next_fire_at: alarm.next_fire_at,
+        repeat_days: alarm.repeat_days ?? [],
+        mantra_id: alarm.mantra_id ?? "focus",
+        enabled: alarm.enabled ?? true,
+        created_at: now,
+        updated_at: now,
+      };
+      const next = [...(await readGuestAlarms()), data];
+      await writeGuestAlarms(next);
+      setAlarms(next);
+      return { data, error: null };
+    }
     if (!user) return;
     const { data, error } = await supabase
       .from("alarms")
@@ -76,6 +120,16 @@ export function useAlarms() {
   };
 
   const update = async (id: string, fields: Database["public"]["Tables"]["alarms"]["Update"]) => {
+    if (isGuest) {
+      const list = await readGuestAlarms();
+      const idx = list.findIndex((a) => a.id === id);
+      if (idx === -1) return { data: null, error: { message: "Alarm not found" } };
+      const data = { ...list[idx], ...fields, updated_at: new Date().toISOString() } as Alarm;
+      list[idx] = data;
+      await writeGuestAlarms(list);
+      setAlarms([...list]);
+      return { data, error: null };
+    }
     const { data, error } = await supabase
       .from("alarms")
       .update(fields)
@@ -87,6 +141,12 @@ export function useAlarms() {
   };
 
   const remove = async (id: string) => {
+    if (isGuest) {
+      const list = (await readGuestAlarms()).filter((a) => a.id !== id);
+      await writeGuestAlarms(list);
+      setAlarms(list);
+      return;
+    }
     await supabase.from("alarms").delete().eq("id", id);
     setAlarms((prev) => prev.filter((a) => a.id !== id));
   };

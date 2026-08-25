@@ -7,6 +7,7 @@ import AsyncStorage from "@react-native-async-storage/async-storage";
 import { Svg, Defs, LinearGradient, Stop, Rect } from "react-native-svg";
 import { F } from "@/lib/fonts";
 import { ensureGuestSession } from "@/lib/guestAuth";
+import { useAuth } from "@/lib/auth";
 
 // Same hero footage the morningque.netlify.app landing page streams.
 // Portrait-first for phones; falls back to plain black if offline.
@@ -20,6 +21,7 @@ export const WELCOME_MAX_SHOWS = 3;
 
 export default function WelcomeScreen() {
   const router = useRouter();
+  const { enterAsGuest } = useAuth();
   const insets = useSafeAreaInsets();
   const [entering, setEntering] = useState(false);
   const [videoIndex] = useState(() => Math.floor(Math.random() * HERO_VIDEOS.length));
@@ -37,14 +39,13 @@ export default function WelcomeScreen() {
   const handleEnter = async () => {
     if (entering) return;
     setEntering(true);
+    // Prefer a server-side anonymous session (syncs across devices);
+    // fall back to on-device guest mode so Enter ALWAYS gets you in.
     const result = await ensureGuestSession();
-    if (result.ok) {
-      router.replace("/alarms");
-    } else {
-      // Anonymous sign-ins unavailable — fall back to the classic auth flow
-      setEntering(false);
-      router.push("/auth");
+    if (!result.ok) {
+      await enterAsGuest();
     }
+    router.replace("/alarms");
   };
 
   return (

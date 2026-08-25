@@ -108,7 +108,7 @@ function NotificationGate() {
 let welcomeShownThisLaunch = false;
 
 function AuthGate() {
-  const { session, user, loading } = useAuth();
+  const { session, user, isGuest, loading } = useAuth();
   const router = useRouter();
   const segments = useSegments();
   const [welcomeCount, setWelcomeCount] = useState<number | null>(null);
@@ -126,9 +126,9 @@ function AuthGate() {
     const onOnboarding = segments[0] === "onboarding";
     const onWelcome = segments[0] === "welcome";
 
-    if (!session) {
+    if (!session && !isGuest) {
       // No account yet → the welcome screen is the entry point.
-      // (Its Enter button creates a guest session; Log in goes to /auth.)
+      // (Its Enter button starts a guest session; Log in goes to /auth.)
       if (!onAuthScreen && !onWelcome) {
         welcomeShownThisLaunch = true;
         router.replace("/welcome" as any);
@@ -150,8 +150,8 @@ function AuthGate() {
 
     if (onWelcome) return; // Enter button handles leaving
 
-    // Logged in — check if onboarding is complete
-    const onboarded = user?.user_metadata?.onboarded === true;
+    // Guests skip onboarding entirely — home base is the alarms list
+    const onboarded = isGuest || user?.user_metadata?.onboarded === true;
 
     if (!onboarded && !onOnboarding) {
       // First-time user → send to onboarding
@@ -160,7 +160,7 @@ function AuthGate() {
       // Returning user who somehow landed on auth/onboarding → send home
       router.replace("/alarms");
     }
-  }, [session, user, loading, segments, welcomeCount]);
+  }, [session, user, isGuest, loading, segments, welcomeCount]);
 
   return null;
 }
