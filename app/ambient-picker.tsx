@@ -184,7 +184,7 @@ function AmbientRow({
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    backgroundColor: "#0b0b0f",
+    backgroundColor: "#000000",
   },
   header: {
     flexDirection: "row",

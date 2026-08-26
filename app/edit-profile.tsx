@@ -103,7 +103,7 @@ export default function EditProfileScreen() {
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    backgroundColor: "#0b0b0f",
+    backgroundColor: "#000000",
   },
   scroll: {
     paddingHorizontal: 20,

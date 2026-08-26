@@ -205,7 +205,7 @@ export default function AlarmDebugScreen() {
 }
 
 const styles = StyleSheet.create({
-  container: { flex: 1, backgroundColor: "#0b0b0f" },
+  container: { flex: 1, backgroundColor: "#000000" },
   scroll: { padding: 20, paddingBottom: 60 },
 
   section: { marginBottom: 32 },

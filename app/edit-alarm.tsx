@@ -67,7 +67,7 @@ function WheelColumn({
             <View style={{ height: ITEM_H, justifyContent: "center", alignItems: "center" }}>
               <Text
                 style={{
-                  fontSize: 20,
+                  fontSize: 22,
                   fontFamily: F.regular,
                   color: isSelected ? "#f5f5f7" : "#48484a",
                 }}
@@ -315,7 +315,7 @@ export default function EditAlarmScreen() {
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    backgroundColor: "#0b0b0f",
+    backgroundColor: "#000000",
   },
   scroll: {
     paddingHorizontal: 20,
@@ -350,19 +350,19 @@ const styles = StyleSheet.create({
   },
   heroKicker: {
     color: "rgba(255,255,255,0.65)",
-    fontSize: 11,
+    fontSize: 12,
     fontFamily: F.semibold,
     letterSpacing: 2,
     marginBottom: 4,
   },
   heroTitle: {
     color: "#ffffff",
-    fontSize: 24,
+    fontSize: 27,
     fontFamily: F.bold,
   },
   heroMeta: {
     color: "rgba(255,255,255,0.7)",
-    fontSize: 13,
+    fontSize: 14,
     fontFamily: F.regular,
     marginTop: 3,
   },
@@ -390,7 +390,7 @@ const styles = StyleSheet.create({
   },
   timeLabel: {
     color: "#f5f5f7",
-    fontSize: 16,
+    fontSize: 18,
     fontFamily: F.medium,
   },
   timeRight: {
@@ -400,7 +400,7 @@ const styles = StyleSheet.create({
   },
   timeValue: {
     color: "#f5f5f7",
-    fontSize: 28,
+    fontSize: 34,
     fontFamily: F.light,
   },
 
@@ -424,7 +424,7 @@ const styles = StyleSheet.create({
     alignItems: "center",
   },
   pickerColon: {
-    fontSize: 20,
+    fontSize: 22,
     fontFamily: F.regular,
     color: "#f5f5f7",
     marginBottom: 2,
@@ -446,12 +446,12 @@ const styles = StyleSheet.create({
   },
   rowLabel: {
     color: "#f5f5f7",
-    fontSize: 16,
+    fontSize: 17,
     fontFamily: F.medium,
   },
   rowValue: {
     color: "#71717a",
-    fontSize: 16,
+    fontSize: 17,
     fontFamily: F.regular,
   },
   rowRight: {
@@ -461,7 +461,7 @@ const styles = StyleSheet.create({
   },
   rowInput: {
     color: "#71717a",
-    fontSize: 16,
+    fontSize: 17,
     fontFamily: F.regular,
     textAlign: "right",
     flex: 1,
@@ -469,7 +469,7 @@ const styles = StyleSheet.create({
   },
   deleteText: {
     color: "#ff3b30",
-    fontSize: 16,
+    fontSize: 17,
     fontFamily: F.regular,
   },
 });

@@ -1,5 +1,6 @@
 import { useCallback, useEffect, useRef, useState } from "react";
-import { Alert, Text, TextInput } from "react-native";
+import { Alert, Text, TextInput, Pressable, Platform } from "react-native";
+import { Ionicons } from "@expo/vector-icons";
 import { Stack, useRouter, useSegments } from "expo-router";
 import { GestureHandlerRootView } from "react-native-gesture-handler";
 import { StatusBar } from "expo-status-bar";
@@ -165,9 +166,26 @@ function AuthGate() {
   return null;
 }
 
+// Back button aligned with the drawer screens' hamburger (16pt inset) —
+// the native chevron hugs the edge too tightly.
+function HeaderBackButton() {
+  const router = useRouter();
+  return (
+    <Pressable
+      onPress={() => router.back()}
+      hitSlop={12}
+      style={{ marginLeft: Platform.OS === "ios" ? 4 : 0, padding: 4 }}
+      accessibilityRole="button"
+      accessibilityLabel="Go back"
+    >
+      <Ionicons name="chevron-back" size={26} color="#f5f5f7" />
+    </Pressable>
+  );
+}
+
 // ─── Shared header config ────────────────────────────────
 const HEADER_BASE = {
-  headerStyle: { backgroundColor: "#0b0b0f" },
+  headerStyle: { backgroundColor: "#000000" },
   headerTintColor: "#f5f5f7",
   headerShadowVisible: false,
   headerTitleStyle: { fontFamily: "Switzer-Semibold", fontSize: 17 },
@@ -243,7 +261,7 @@ export default function RootLayout() {
               headerBackTitle: "",
               headerBackTitleVisible: false,
               ...HEADER_BASE,
-              contentStyle: { flex: 1, backgroundColor: "#0b0b0f" },
+              contentStyle: { flex: 1, backgroundColor: "#000000" },
             }}
           />
           <Stack.Screen
@@ -255,7 +273,7 @@ export default function RootLayout() {
               headerBackTitle: "",
               headerBackTitleVisible: false,
               ...HEADER_BASE,
-              contentStyle: { flex: 1, backgroundColor: "#0b0b0f" },
+              contentStyle: { flex: 1, backgroundColor: "#000000" },
             }}
           />
           <Stack.Screen
@@ -267,7 +285,7 @@ export default function RootLayout() {
               headerBackTitle: "",
               headerBackTitleVisible: false,
               ...HEADER_BASE,
-              contentStyle: { flex: 1, backgroundColor: "#0b0b0f" },
+              contentStyle: { flex: 1, backgroundColor: "#000000" },
             }}
           />
           <Stack.Screen
@@ -277,6 +295,7 @@ export default function RootLayout() {
               headerShown: true,
               headerBackTitle: "",
               headerBackTitleVisible: false,
+              headerLeft: () => <HeaderBackButton />,
               ...HEADER_BASE,
             }}
           />
@@ -329,7 +348,7 @@ export default function RootLayout() {
               headerBackTitle: "",
               headerBackTitleVisible: false,
               ...HEADER_BASE,
-              contentStyle: { flex: 1, backgroundColor: "#0b0b0f" },
+              contentStyle: { flex: 1, backgroundColor: "#000000" },
             }}
           />
           <Stack.Screen
@@ -353,7 +372,7 @@ export default function RootLayout() {
               headerBackTitle: "",
               headerBackTitleVisible: false,
               ...HEADER_BASE,
-              contentStyle: { flex: 1, backgroundColor: "#0b0b0f" },
+              contentStyle: { flex: 1, backgroundColor: "#000000" },
             }}
           />
         </Stack>

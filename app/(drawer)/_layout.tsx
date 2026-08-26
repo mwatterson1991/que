@@ -36,9 +36,9 @@ function CustomDrawerContent(props: DrawerContentComponentProps) {
           <Ionicons name="chatbubble-outline" size={24} color="#f5f5f7" style={styles.navIcon} />
           <Text style={styles.navText}>Chat</Text>
         </Pressable>
-        <Pressable style={styles.navItem} onPress={() => navigate("/search")} accessibilityRole="button" accessibilityLabel="Search">
+        <Pressable style={styles.navItem} onPress={() => navigate("/search")} accessibilityRole="button" accessibilityLabel="Sounds">
           <Ionicons name="search-outline" size={24} color="#f5f5f7" style={styles.navIcon} />
-          <Text style={styles.navText}>Search</Text>
+          <Text style={styles.navText}>Sounds</Text>
         </Pressable>
         <Pressable style={styles.navItem} onPress={() => navigate("/create")} accessibilityRole="button" accessibilityLabel="Create">
           <Ionicons name="add" size={24} color="#f5f5f7" style={styles.navIcon} />
@@ -140,7 +140,7 @@ export default function DrawerLayout() {
       drawerContent={(props) => <CustomDrawerContent {...props} />}
       screenOptions={{
         headerStyle: {
-          backgroundColor: "#0b0b0f",
+          backgroundColor: "#000000",
           elevation: 0,
           shadowOpacity: 0,
           borderBottomWidth: 0,
@@ -151,7 +151,7 @@ export default function DrawerLayout() {
           fontSize: 17,
         },
         drawerStyle: { backgroundColor: "#000000", width: 280 },
-        sceneContainerStyle: { flex: 1, backgroundColor: "#0b0b0f" },
+        sceneContainerStyle: { flex: 1, backgroundColor: "#000000" },
       }}
     >
       <Drawer.Screen
@@ -182,7 +182,7 @@ export default function DrawerLayout() {
       <Drawer.Screen
         name="search"
         options={{
-          title: "Search",
+          title: "Sounds",
           headerLeft: () => <HamburgerButton />,
           headerRight: () => <SuggestButton />,
         }}
