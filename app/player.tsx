@@ -9,9 +9,9 @@ import {
   GestureResponderEvent,
   Alert,
   ScrollView,
+  Image,
 } from "react-native";
-import { useLocalSearchParams, useRouter, useNavigation } from "expo-router";
-import { DrawerActions } from "@react-navigation/routers";
+import { useLocalSearchParams, useRouter } from "expo-router";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 import { Ionicons } from "@expo/vector-icons";
 import { Svg, Defs, LinearGradient, Stop, Rect } from "react-native-svg";
@@ -49,6 +49,7 @@ import {
   stopAmbient,
   AmbientSoundId,
 } from "@/lib/ambient";
+import { artworkFor, isHypnotherapy } from "@/lib/catalog";
 
 const { width: SCREEN_W } = Dimensions.get("window");
 const ORB_RADIUS = 38;
@@ -259,7 +260,6 @@ export default function PlayerScreen() {
   const { id, alarm } = useLocalSearchParams<{ id: string; alarm?: string }>();
   const isAlarmMode = alarm === "1";
   const router = useRouter();
-  const navigation = useNavigation();
   const insets = useSafeAreaInsets();
   const { sessions } = useSessions();
   const { add: logActivity } = useActivity();
@@ -398,36 +398,66 @@ export default function PlayerScreen() {
   const displayElapsed = scrubbing ? Math.floor(scrubPos * duration) : elapsed;
   const progress = duration > 0 ? displayElapsed / duration : 0;
   const mantras = session?.mantras ?? [];
+  // Hypnotherapy keeps the orb + mantra teleprompter; everything else
+  // (naturescapes, frequencies, …) shows its artwork instead.
+  const showOrb = session ? isHypnotherapy(session) : true;
 
   return (
     <View style={styles.container}>
-      {/* Nav bar */}
-      <View style={[styles.navBar, { paddingTop: insets.top }]}>
-        <Pressable
-          style={styles.navIconBtn}
-          onPress={() => navigation.dispatch(DrawerActions.openDrawer())}
-          hitSlop={12}
-          accessibilityRole="button"
-          accessibilityLabel="Open menu"
-        >
-          <Ionicons name="menu-outline" size={26} color="#f5f5f7" />
-        </Pressable>
-        <Pressable
-          style={styles.navIconBtn}
-          onPress={() => router.back()}
-          hitSlop={12}
-          accessibilityRole="button"
-          accessibilityLabel="Go back"
-        >
-          <Ionicons name="chevron-back" size={28} color="#f5f5f7" />
-        </Pressable>
-      </View>
+      {showOrb ? (
+        <>
+          {/* Nav bar */}
+          <View style={[styles.navBar, { paddingTop: insets.top }]}>
+            <Pressable
+              style={styles.navIconBtn}
+              onPress={() => router.back()}
+              hitSlop={12}
+              accessibilityRole="button"
+              accessibilityLabel="Go back"
+            >
+              <Ionicons name="chevron-back" size={28} color="#f5f5f7" />
+            </Pressable>
+          </View>
 
-      {/* Particle orb */}
-      <HypnoticOrb playing={playing} />
+          {/* Particle orb */}
+          <HypnoticOrb playing={playing} />
 
-      {/* Teleprompter mantras */}
-      <MantraTeleprompter mantras={mantras} activeMantra={activeMantra} />
+          {/* Teleprompter mantras */}
+          <MantraTeleprompter mantras={mantras} activeMantra={activeMantra} />
+        </>
+      ) : (
+        <View style={styles.artworkArea}>
+          {session && (
+            <Image
+              source={{ uri: artworkFor(session) }}
+              style={StyleSheet.absoluteFill}
+              resizeMode="cover"
+            />
+          )}
+          {/* Fade the artwork into the black bottom sheet */}
+          <View style={styles.artworkFade} pointerEvents="none">
+            <Svg width="100%" height="100%">
+              <Defs>
+                <LinearGradient id="gArt" x1="0" y1="0" x2="0" y2="1">
+                  <Stop offset="0%" stopColor="#000000" stopOpacity="0" />
+                  <Stop offset="100%" stopColor="#000000" stopOpacity="1" />
+                </LinearGradient>
+              </Defs>
+              <Rect x="0" y="0" width="100%" height="100%" fill="url(#gArt)" />
+            </Svg>
+          </View>
+          {/* Fixed back button over the artwork */}
+          <Pressable
+            style={[styles.artworkBack, { top: insets.top + 6 }]}
+            onPress={() => router.back()}
+            hitSlop={12}
+            accessibilityRole="button"
+            accessibilityLabel="Go back"
+          >
+            <Ionicons name="chevron-back" size={26} color="#f5f5f7" />
+          </Pressable>
+        </View>
+      )}
 
       {/* Bottom section */}
       <View style={[styles.bottomSection, { paddingBottom: Math.max(insets.bottom + 12, 28) }]}>
@@ -560,6 +590,30 @@ const styles = StyleSheet.create({
     height: 40,
     alignItems: "center",
     justifyContent: "center",
+  },
+
+  // Artwork mode (non-hypnotherapy sessions)
+  artworkArea: {
+    flex: 1,
+    position: "relative",
+    overflow: "hidden",
+  },
+  artworkFade: {
+    position: "absolute",
+    left: 0,
+    right: 0,
+    bottom: 0,
+    height: 160,
+  },
+  artworkBack: {
+    position: "absolute",
+    left: 12,
+    width: 40,
+    height: 40,
+    alignItems: "center",
+    justifyContent: "center",
+    borderRadius: 20,
+    backgroundColor: "rgba(0,0,0,0.45)",
   },
 
   // Orb

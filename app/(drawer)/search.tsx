@@ -19,7 +19,7 @@ import { F } from "@/lib/fonts";
 import { useSessions } from "@/lib/useSupabase";
 import { useAuth } from "@/lib/auth";
 import { supabase } from "@/lib/supabase";
-import { artworkFor, groupIntoRails } from "@/lib/catalog";
+import { artworkFor, groupIntoRails, channelArtwork } from "@/lib/catalog";
 import type { Session } from "@/lib/types";
 
 const MAX_CHARS = 280;
@@ -58,19 +58,47 @@ function SessionCard({ session, wide }: { session: Session; wide?: boolean }) {
   );
 }
 
-// ─── Category rail ────────────────────────────────────────
+// ─── Coming-soon card for empty channels ──────────────────
+function ComingSoonCard({ channel }: { channel: string }) {
+  return (
+    <View style={styles.card} accessible accessibilityLabel={`${channel}, coming soon`}>
+      <View style={styles.comingSoonWrap}>
+        <Image
+          source={{ uri: channelArtwork(channel) }}
+          style={[styles.cardArt, styles.comingSoonArt]}
+          resizeMode="cover"
+        />
+        <View style={styles.comingSoonBadge}>
+          <Text style={styles.comingSoonText} maxFontSizeMultiplier={1.4}>Coming soon</Text>
+        </View>
+      </View>
+      <Text style={styles.cardTitle} numberOfLines={1} maxFontSizeMultiplier={1.4}>
+        {channel}
+      </Text>
+      <Text style={styles.cardMeta} maxFontSizeMultiplier={1.4}>In the works</Text>
+    </View>
+  );
+}
+
+// ─── Channel rail ─────────────────────────────────────────
 function CategoryRail({ title, sessions }: { title: string; sessions: Session[] }) {
   return (
     <View style={styles.rail}>
       <Text style={styles.railTitle} maxFontSizeMultiplier={1.4}>{title}</Text>
-      <FlatList
-        data={sessions}
-        horizontal
-        keyExtractor={(s) => s.id}
-        showsHorizontalScrollIndicator={false}
-        contentContainerStyle={styles.railContent}
-        renderItem={({ item }) => <SessionCard session={item} />}
-      />
+      {sessions.length === 0 ? (
+        <View style={styles.railContent}>
+          <ComingSoonCard channel={title} />
+        </View>
+      ) : (
+        <FlatList
+          data={sessions}
+          horizontal
+          keyExtractor={(s) => s.id}
+          showsHorizontalScrollIndicator={false}
+          contentContainerStyle={styles.railContent}
+          renderItem={({ item }) => <SessionCard session={item} />}
+        />
+      )}
     </View>
   );
 }
@@ -251,9 +279,6 @@ export default function SearchScreen() {
   const openModal = useCallback(() => setModalVisible(true), []);
   const closeModal = useCallback(() => setModalVisible(false), []);
 
-  // The hypnotherapy library starts after the Naturescapes rail
-  const firstHypnoIndex = rails.findIndex(([cat]) => cat !== "Naturescapes");
-
   return (
     <View style={styles.container}>
       {/* Search bar */}
@@ -301,15 +326,8 @@ export default function SearchScreen() {
           showsVerticalScrollIndicator={false}
           contentContainerStyle={styles.railsScroll}
         >
-          {rails.map(([cat, list], i) => (
-            <View key={cat}>
-              {i === firstHypnoIndex && (
-                <Text style={styles.groupLabel} maxFontSizeMultiplier={1.4}>
-                  HYPNOTHERAPY
-                </Text>
-              )}
-              <CategoryRail title={cat} sessions={list} />
-            </View>
+          {rails.map(([cat, list]) => (
+            <CategoryRail key={cat} title={cat} sessions={list} />
           ))}
           <View style={styles.suggestWrap}>
             <SuggestCard onPress={openModal} />
@@ -372,14 +390,31 @@ const styles = StyleSheet.create({
     paddingHorizontal: 16,
     gap: 12,
   },
-  groupLabel: {
-    color: "#52525b",
+  comingSoonWrap: {
+    position: "relative",
+  },
+  comingSoonArt: {
+    opacity: 0.45,
+  },
+  comingSoonBadge: {
+    position: "absolute",
+    top: 0,
+    left: 0,
+    right: 0,
+    bottom: 8,
+    alignItems: "center",
+    justifyContent: "center",
+  },
+  comingSoonText: {
+    color: "#f5f5f7",
     fontSize: 12,
     fontFamily: F.semibold,
-    letterSpacing: 2,
-    paddingHorizontal: 16,
-    marginBottom: 14,
-    marginTop: 4,
+    letterSpacing: 1,
+    backgroundColor: "rgba(0,0,0,0.55)",
+    paddingHorizontal: 10,
+    paddingVertical: 5,
+    borderRadius: 999,
+    overflow: "hidden",
   },
 
   // Cards

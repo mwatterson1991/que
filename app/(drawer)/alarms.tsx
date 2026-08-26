@@ -1,4 +1,4 @@
-import { View, Text, FlatList, Switch, Pressable, StyleSheet, ActivityIndicator } from "react-native";
+import { View, Text, FlatList, Pressable, StyleSheet, ActivityIndicator, Animated } from "react-native";
 import { useRouter, useFocusEffect } from "expo-router";
 import { useCallback, useEffect, useRef } from "react";
 import AsyncStorage from "@react-native-async-storage/async-storage";
@@ -40,10 +40,52 @@ function formatTime(iso: string) {
 
 type SessionMap = Record<string, Database["public"]["Tables"]["sessions"]["Row"]>;
 
+// Apple-style pill switch: 51×31 track, 27pt thumb that slides across.
+// The switch alone carries on/off state — row text stays white.
+function PillSwitch({
+  value,
+  onValueChange,
+  accessibilityLabel,
+}: {
+  value: boolean;
+  onValueChange: (val: boolean) => void;
+  accessibilityLabel: string;
+}) {
+  const anim = useRef(new Animated.Value(value ? 1 : 0)).current;
+
+  useEffect(() => {
+    Animated.timing(anim, {
+      toValue: value ? 1 : 0,
+      duration: 180,
+      useNativeDriver: false,
+    }).start();
+  }, [value, anim]);
+
+  const translateX = anim.interpolate({ inputRange: [0, 1], outputRange: [2, 22] });
+  const trackColor = anim.interpolate({
+    inputRange: [0, 1],
+    outputRange: ["#39393d", "#34C759"],
+  });
+
+  return (
+    <Pressable
+      onPress={() => onValueChange(!value)}
+      hitSlop={10}
+      accessibilityRole="switch"
+      accessibilityState={{ checked: value }}
+      accessibilityLabel={accessibilityLabel}
+    >
+      <Animated.View style={[styles.switchTrack, { backgroundColor: trackColor }]}>
+        <Animated.View style={[styles.switchThumb, { transform: [{ translateX }] }]} />
+      </Animated.View>
+    </Pressable>
+  );
+}
+
 function AlarmRow({ item, onToggle, sessionMap }: { item: Alarm; onToggle: (id: string, enabled: boolean) => void; sessionMap: SessionMap }) {
   const { hour, ampm } = formatTime(item.next_fire_at);
-  const color = item.enabled ? "#f5f5f7" : "#52525b";
-  const dimColor = item.enabled ? "#71717a" : "#3f3f46";
+  const color = "#f5f5f7";
+  const dimColor = "#71717a";
   const router = useRouter();
   const session = sessionMap[item.mantra_id];
   const soundName = session?.title || "Default";
@@ -70,13 +112,9 @@ function AlarmRow({ item, onToggle, sessionMap }: { item: Alarm; onToggle: (id: 
           {soundName} · {duration}
         </Text>
       </View>
-      <Switch
+      <PillSwitch
         value={item.enabled}
         onValueChange={(val) => onToggle(item.id, val)}
-        trackColor={{ true: "#4cd964", false: "#39393d" }}
-        thumbColor="#ffffff"
-        accessibilityRole="switch"
-        accessibilityState={{ checked: item.enabled }}
         accessibilityLabel={`${item.label || "Alarm"} at ${hour} ${ampm}`}
       />
     </Pressable>
@@ -172,6 +210,22 @@ export default function AlarmsScreen() {
 }
 
 const styles = StyleSheet.create({
+  switchTrack: {
+    width: 51,
+    height: 31,
+    borderRadius: 999,
+    justifyContent: "center",
+  },
+  switchThumb: {
+    width: 27,
+    height: 27,
+    borderRadius: 999,
+    backgroundColor: "#ffffff",
+    shadowColor: "#000",
+    shadowOpacity: 0.25,
+    shadowRadius: 3,
+    shadowOffset: { width: 0, height: 2 },
+  },
   container: {
     flex: 1,
     backgroundColor: "#000000",

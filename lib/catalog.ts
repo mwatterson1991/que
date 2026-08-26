@@ -35,6 +35,9 @@ const ARTWORK_BY_CATEGORY: Record<string, string> = {
   Addiction: pex(216798), // autumn path — a new road
   Mindfulness: pex(268134),
   Anxiety: pex(462162), // calm ocean cove
+  Frequencies: pex(62693), // clean light stripes
+  Horoscope: pex(355887), // night sky over trees
+  "Positive Words": pex(736230), // pink rose
 };
 
 const ARTWORK_FALLBACK = pex(371633);
@@ -80,39 +83,55 @@ export const LOCAL_SESSIONS: Session[] = [
   local("local-ocean-waves", "Ocean Waves", "Waves breaking on a rocky Chilean shore", "ambient-ocean-waves", 148),
   local("local-rain", "Rain on Leaves", "Soft rain falling through a forest canopy", "ambient-rain", 150),
   local("local-crickets", "Night Crickets", "Warm evening crickets under a clear sky", "ambient-crickets", 80),
+  local("local-theta", "Theta 6 Hz", "Low binaural hum tuned to the theta brain state", "theta-binaural", 120),
 ];
 
-// ─── Category rails ────────────────────────────────────────
-// Display order for the browse screen. Naturescapes first, then the
-// hypnotherapy library grouped by its categories.
-export const CATEGORY_ORDER = [
+// ─── Channels ──────────────────────────────────────────────
+// The browse screen shows one rail per CHANNEL. The hypnotherapy
+// library's database categories (Sleep, Confidence, …) all collapse
+// into a single Hypnotherapy rail; the per-session category still
+// shows on the player. Channels with no content yet render a
+// coming-soon card so the shelf is visible.
+
+const HYPNOTHERAPY_CATEGORIES = new Set([
+  "Sleep", "Confidence", "Anxiety", "Mindfulness", "Addiction", "General",
+]);
+
+export const CHANNEL_ORDER = [
   "Naturescapes",
-  "Sleep",
-  "Confidence",
-  "Anxiety",
-  "Mindfulness",
-  "Addiction",
+  "Hypnotherapy",
+  "Frequencies",
+  "Horoscope",
+  "Positive Words",
 ];
 
-/** Group sessions into ordered rails: [category, sessions[]]. */
+/** Which channel rail a session belongs to. */
+export function channelFor(session: Pick<Session, "id" | "category">): string {
+  if (session.id === "local-theta") return "Frequencies";
+  if (HYPNOTHERAPY_CATEGORIES.has(session.category)) return "Hypnotherapy";
+  return session.category;
+}
+
+/** Group sessions into ordered channel rails: [channel, sessions[]].
+ * Channels in CHANNEL_ORDER always appear, even when empty. */
 export function groupIntoRails(sessions: Session[]): Array<[string, Session[]]> {
-  const byCat = new Map<string, Session[]>();
+  const byChannel = new Map<string, Session[]>();
+  for (const ch of CHANNEL_ORDER) byChannel.set(ch, []);
   for (const s of sessions) {
-    const list = byCat.get(s.category) ?? [];
+    const ch = channelFor(s);
+    const list = byChannel.get(ch) ?? [];
     list.push(s);
-    byCat.set(s.category, list);
+    byChannel.set(ch, list);
   }
-  const ordered: Array<[string, Session[]]> = [];
-  for (const cat of CATEGORY_ORDER) {
-    const list = byCat.get(cat);
-    if (list?.length) {
-      ordered.push([cat, list]);
-      byCat.delete(cat);
-    }
-  }
-  // Any categories not in the preset order go last, alphabetically
-  for (const cat of [...byCat.keys()].sort()) {
-    ordered.push([cat, byCat.get(cat)!]);
-  }
-  return ordered;
+  return [...byChannel.entries()];
+}
+
+/** Placeholder artwork for an empty channel's coming-soon card. */
+export function channelArtwork(channel: string): string {
+  return ARTWORK_BY_CATEGORY[channel] ?? ARTWORK_FALLBACK;
+}
+
+/** Hypnotherapy sessions keep the orb player; everything else shows artwork. */
+export function isHypnotherapy(session: Pick<Session, "id" | "category">): boolean {
+  return channelFor(session) === "Hypnotherapy";
 }
