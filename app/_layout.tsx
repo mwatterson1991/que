@@ -1,6 +1,10 @@
 import { useCallback, useEffect, useRef, useState } from "react";
 import { F, S } from "@/lib/fonts";
-import { Alert, Text, TextInput, Pressable, Platform } from "react-native";
+import { Alert, Text, TextInput, Pressable, Platform, LogBox } from "react-native";
+
+// view-shot's native half ships with the next dev build; hide its
+// missing-module warning until then.
+LogBox.ignoreLogs(["react-native-view-shot"]);
 import { Ionicons } from "@expo/vector-icons";
 import { Stack, useRouter, useSegments } from "expo-router";
 import { GestureHandlerRootView } from "react-native-gesture-handler";
