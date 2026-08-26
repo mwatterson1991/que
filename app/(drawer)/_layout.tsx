@@ -155,7 +155,6 @@ export default function DrawerLayout() {
           fontSize: S.body,
         },
         drawerStyle: { backgroundColor: "#000000", width: 280 },
-        sceneContainerStyle: { flex: 1, backgroundColor: "#000000" },
       }}
     >
       <Drawer.Screen

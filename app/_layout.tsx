@@ -34,6 +34,8 @@ Notifications.setNotificationHandler({
     return {
       // Show a banner even when the app is open, so the user sees the alarm
       shouldShowAlert: true,
+      shouldShowBanner: true,
+      shouldShowList: true,
       shouldPlaySound: isAlarm,
       shouldSetBadge: false,
     };
@@ -55,8 +57,8 @@ applyDefaultFont(TextInput);
 // Handles tapping on a fired alarm notification → navigate to player.
 function NotificationGate() {
   const router = useRouter();
-  const responseListener = useRef<Notifications.Subscription>();
-  const receivedListener = useRef<Notifications.Subscription>();
+  const responseListener = useRef<Notifications.Subscription | undefined>(undefined);
+  const receivedListener = useRef<Notifications.Subscription | undefined>(undefined);
 
   useEffect(() => {
     // Permissions + Android channel on every app launch
@@ -250,7 +252,6 @@ export default function RootLayout() {
               headerShown: true,
               title: "Settings",
               headerBackTitle: "",
-              headerBackTitleVisible: false,
               ...HEADER_BASE,
               contentStyle: { flex: 1, backgroundColor: "#000000" },
             }}
@@ -262,7 +263,6 @@ export default function RootLayout() {
               headerShown: true,
               title: "Edit Profile",
               headerBackTitle: "",
-              headerBackTitleVisible: false,
               ...HEADER_BASE,
               contentStyle: { flex: 1, backgroundColor: "#000000" },
             }}
@@ -274,7 +274,6 @@ export default function RootLayout() {
               headerShown: true,
               title: "Email",
               headerBackTitle: "",
-              headerBackTitleVisible: false,
               ...HEADER_BASE,
               contentStyle: { flex: 1, backgroundColor: "#000000" },
             }}
@@ -285,7 +284,6 @@ export default function RootLayout() {
               animation: "default",
               headerShown: true,
               headerBackTitle: "",
-              headerBackTitleVisible: false,
               headerLeft: () => <HeaderBackButton />,
               ...HEADER_BASE,
             }}
@@ -297,7 +295,6 @@ export default function RootLayout() {
               headerShown: true,
               title: "Sounds",
               headerBackTitle: "",
-              headerBackTitleVisible: false,
               ...HEADER_BASE,
               contentStyle: { flex: 1, backgroundColor: "#000000" },
             }}
@@ -342,7 +339,6 @@ export default function RootLayout() {
               headerShown: true,
               title: "Track",
               headerBackTitle: "",
-              headerBackTitleVisible: false,
               ...HEADER_BASE,
               contentStyle: { flex: 1, backgroundColor: "#000000" },
             }}
@@ -354,7 +350,6 @@ export default function RootLayout() {
               headerShown: true,
               title: "Add Habit",
               headerBackTitle: "",
-              headerBackTitleVisible: false,
               ...HEADER_BASE,
               contentStyle: { flex: 1, backgroundColor: "#000000" },
             }}
@@ -366,7 +361,6 @@ export default function RootLayout() {
               headerShown: true,
               title: "Gratitude",
               headerBackTitle: "",
-              headerBackTitleVisible: false,
               ...HEADER_BASE,
               contentStyle: { flex: 1, backgroundColor: "#000000" },
             }}
@@ -378,7 +372,6 @@ export default function RootLayout() {
               headerShown: true,
               title: "Alarm Debug",
               headerBackTitle: "",
-              headerBackTitleVisible: false,
               ...HEADER_BASE,
               contentStyle: { flex: 1, backgroundColor: "#000000" },
             }}

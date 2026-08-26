@@ -105,8 +105,11 @@ export async function scheduleAlarm(alarm: SchedulableAlarm): Promise<string | n
           interruptionLevel: "timeSensitive" as const,
         }),
       },
-      // DateTriggerInput in expo-notifications 0.28.x is simply a Date object
-      trigger: fireDate,
+      // SDK 53+: date triggers are explicit typed objects
+      trigger: {
+        type: Notifications.SchedulableTriggerInputTypes.DATE,
+        date: fireDate,
+      },
     });
 
     console.log(`[alarmScheduler] Scheduled "${alarm.label}" at ${fireDate.toISOString()} id=${id}`);
