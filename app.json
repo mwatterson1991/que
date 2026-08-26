@@ -9,7 +9,7 @@
     "userInterfaceStyle": "automatic",
     "ios": {
       "supportsTablet": true,
-      "bundleIdentifier": "com.michaelwatterson.morningque",
+      "bundleIdentifier": "com.michaelwatterson.que",
       "buildNumber": "1",
       "config": {
         "usesNonExemptEncryption": false
@@ -35,7 +35,7 @@
         "foregroundImage": "./assets/adaptive-icon.png",
         "backgroundColor": "#0b0b0f"
       },
-      "package": "com.michaelwatterson.morningque",
+      "package": "com.michaelwatterson.que",
       "permissions": [
         "RECORD_AUDIO",
         "SCHEDULE_EXACT_ALARM",
