@@ -4,61 +4,33 @@
 >
 > Legend: `[ ]` not started · `[✴]` PR open, awaiting review · `[x]` done · `[🚫]` blocked (see QUE-BLOCKERS.md)
 
-## The only two PRs that matter
+## Where things stand (2026-08-26)
 
-1. **[PR #32](https://github.com/mwatterson1991/que/pull/32)** — May local work (merge FIRST)
-2. **[PR #33](https://github.com/mwatterson1991/que/pull/33)** — everything salvaged from the old 31-PR backlog, integrated (merge SECOND)
+Everything ships from `main`; branch `sdk-53` holds the toolchain upgrade until its build verifies.
 
-All 31 April PRs are closed with notes explaining where their work went.
+### Done
+- [x] App core: alarms, player, browser rails, welcome + intro, guest mode
+- [x] Real voices: Brian (18 hypnotherapy sessions, streamed) + Lily (horoscope, positive words)
+- [x] 5 naturescapes + 3 binaural frequencies, all with artwork
+- [x] Gratitude log + habit tracker in nav (accounts), positivity graph + share
+- [x] App Store Connect record: Morning Que · com.michaelwatterson.que · ID 6751096101
+- [x] Privacy/support pages live; listing copy, icon, keywords drafted
+- [x] Type scale tokens, single black, a11y labels
 
-## Checklist state
+### In flight
+- [~] SDK 53 build compiling on EAS (branch sdk-53)
+- [ ] Merge sdk-53 → main once the build runs clean
 
-### Phase 01 — Core App
-- [x] App built and functional
-- [x] Supabase backend configured
-- [✴] ElevenLabs pipeline ready (`scripts/generate-audio.mjs`) — PR #33
-- [🚫] Real audio generated — 3/18 done, blocked on ElevenLabs quota (blocker #4)
-- [✴] Alarm trigger plays audio with fade-in, preload, fallback — PR #33
-- [✴] Background audio (iOS background modes + lifecycle module) — PR #33
-- [x] Edge cases — permissions, silent mode, missing audio (May work, PR #32)
+### Michael-only before submission
+- [🚫] Age rating questionnaire (ASC → App Information)
+- [🚫] Content rights declaration (same page)
+- [🚫] EU trader status (ASC → Business) — required for EU distribution
+- [🚫] Paid Apps Agreement + banking/tax — ONLY if turning the paywall on
+- [🚫] TestFlight pass on a real iPhone
 
-### Phase 02 — App Polish
-- [x] Onboarding flow (May work, PR #32)
-- [x] Notification permissions flow (May work, PR #32)
-- [x] Empty states (May work, PR #32)
-- [🚫] Crash-free on real devices *(human-only — TestFlight after Apple enrollment)*
-- [ ] Dark mode — deferred, not a launch blocker (closed PR #7 has a reference ThemeProvider)
-- [ ] Accessibility pass — re-apply fresh on current code (closed PR #8 targeted stale screens)
-
-### Phase 03 — App Store Content
-- [x] Final app name locked — **Morning Que** (bundle ID com.michaelwatterson.morningque)
-- [✴] Subtitle, description, keywords, promo text — `appstore/` in PR #33
-- [✴] Screenshots (3 device sizes) + preview video — PR #33
-- [✴] App icon 1024×1024 — PR #33
-- [x] Privacy policy URL — https://mwatterson1991.github.io/morningque-site/privacy.html
-- [x] Support URL — https://mwatterson1991.github.io/morningque-site/support.html
-- [x] Category selected — Health & Fitness (appstore/metadata.json)
-- [🚫] Age rating questionnaire *(human-only)*
-
-### Phase 04 — Apple Developer
-- [🚫] Apple Developer Program enrolled *(human-only — blocker #1, START THIS FIRST)*
-- [🚫] Bundle ID + app record in App Store Connect *(human-only, after enrollment)*
-- [x] Capabilities enabled — background audio, notifications (app.json, PR #33)
-- [x] Entitlements declared — time-sensitive notifications, aps-environment (PR #33)
-- [x] EAS build + submit config (eas.json; Apple Team ID/ASC App ID placeholders remain)
-
-### Phase 05 — Submission
-- [ ] **Expo SDK upgrade 51 → current** — required; Apple's minimum-SDK rules will reject SDK 51 builds (expo-av → expo-audio migration is the main effort)
-- [~] EAS iOS simulator build — first cloud build running (proves config)
-- [ ] Production build via EAS (needs Apple credentials)
-- [✴] Review notes written — docs/APP-REVIEW-NOTES.md in PR #33
-- [🚫] Submit for App Review *(human-only)*
-
-## After merging PR #33 — one-time setup
-
-1. Run `supabase/migrations/2026-08-22-add-ambient-sound.sql` in the Supabase SQL editor (dashboard → SQL). The app's preferences now include `ambient_sound`.
-2. Add `SUPABASE_SERVICE_ROLE_KEY` to `.env` (dashboard → Settings → API) so the audio pipeline can upload.
-3. EAS env vars for Supabase are already set (all three environments).
+### Then
+- [ ] Production build (`eas build --profile production`) + `eas submit`
+- [ ] Fresh screenshots from the real app for the listing
 
 ## Run journal
 
