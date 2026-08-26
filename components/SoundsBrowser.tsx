@@ -1,4 +1,5 @@
 import { useMemo, useState, ReactNode } from "react";
+import { useRouter } from "expo-router";
 import {
   View,
   Text,
@@ -14,6 +15,7 @@ import { Ionicons } from "@expo/vector-icons";
 import { F, S } from "@/lib/fonts";
 import { useSessions } from "@/lib/useSupabase";
 import { artworkFor, groupIntoRails, channelArtwork } from "@/lib/catalog";
+import { usePremium, isLocked } from "@/lib/premium";
 import type { Session } from "@/lib/types";
 
 // One browser, two jobs: the drawer's Sounds screen (tap → player) and
@@ -31,11 +33,13 @@ function SessionCard({
   session,
   wide,
   selected,
+  locked,
   onPress,
 }: {
   session: Session;
   wide?: boolean;
   selected?: boolean;
+  locked?: boolean;
   onPress: (session: Session) => void;
 }) {
   const width = wide ? undefined : CARD_W;
@@ -45,7 +49,7 @@ function SessionCard({
       style={[styles.card, wide && styles.cardWide, { width }]}
       accessibilityRole="button"
       accessibilityState={selected !== undefined ? { selected } : undefined}
-      accessibilityLabel={`${session.title}, ${formatDuration(session.duration_sec)}`}
+      accessibilityLabel={`${session.title}, ${formatDuration(session.duration_sec)}${locked ? ", premium" : ""}`}
     >
       <View>
         <Image
@@ -56,6 +60,11 @@ function SessionCard({
         {selected && (
           <View style={styles.selectedBadge}>
             <Ionicons name="checkmark-circle" size={22} color="#f5f5f7" />
+          </View>
+        )}
+        {locked && !selected && (
+          <View style={styles.lockBadge}>
+            <Ionicons name="lock-closed" size={12} color="#f5f5f7" />
           </View>
         )}
       </View>
@@ -100,7 +109,18 @@ export default function SoundsBrowser({
   footer?: ReactNode;
 }) {
   const { sessions, loading } = useSessions();
+  const { unlocked } = usePremium();
+  const router = useRouter();
   const [query, setQuery] = useState("");
+
+  // Locked sessions route to the paywall instead of playing/selecting
+  const handlePress = (session: Session) => {
+    if (isLocked(session, unlocked)) {
+      router.push(`/paywall?id=${session.id}` as any);
+    } else {
+      onPressSession(session);
+    }
+  };
 
   const rails = useMemo(() => groupIntoRails(sessions), [sessions]);
 
@@ -153,7 +173,8 @@ export default function SoundsBrowser({
               session={item}
               wide
               selected={selectedId !== undefined ? item.id === selectedId : undefined}
-              onPress={onPressSession}
+              locked={isLocked(item, unlocked)}
+              onPress={handlePress}
             />
           )}
           contentContainerStyle={styles.grid}
@@ -187,7 +208,8 @@ export default function SoundsBrowser({
                     <SessionCard
                       session={item}
                       selected={selectedId !== undefined ? item.id === selectedId : undefined}
-                      onPress={onPressSession}
+                      locked={isLocked(item, unlocked)}
+                      onPress={handlePress}
                     />
                   )}
                 />
@@ -270,6 +292,17 @@ const styles = StyleSheet.create({
   cardArtSelected: {
     borderWidth: 2,
     borderColor: "#f5f5f7",
+  },
+  lockBadge: {
+    position: "absolute",
+    top: 8,
+    right: 8,
+    width: 24,
+    height: 24,
+    borderRadius: 12,
+    backgroundColor: "rgba(0,0,0,0.55)",
+    alignItems: "center",
+    justifyContent: "center",
   },
   selectedBadge: {
     position: "absolute",

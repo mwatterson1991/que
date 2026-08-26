@@ -168,6 +168,7 @@ export interface Database {
           audio_asset: string | null;
           plays: number;
           mantras: string[];
+          tier: string;
           created_at: string;
         };
         Insert: {

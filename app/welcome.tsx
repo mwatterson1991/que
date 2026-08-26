@@ -45,7 +45,14 @@ export default function WelcomeScreen() {
     if (!result.ok) {
       await enterAsGuest();
     }
-    router.replace("/alarms");
+    // First time through, show the three-step pitch
+    const seen = await AsyncStorage.getItem("intro_seen").catch(() => "1");
+    if (!seen) {
+      AsyncStorage.setItem("intro_seen", "1").catch(() => {});
+      router.replace("/intro" as any);
+    } else {
+      router.replace("/alarms");
+    }
   };
 
   return (

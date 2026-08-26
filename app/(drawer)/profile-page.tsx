@@ -1,4 +1,4 @@
-import { useEffect, useState, useMemo } from "react";
+import { useEffect, useState, useMemo, useRef } from "react";
 import { View, Text, Pressable, ScrollView, StyleSheet, useWindowDimensions, Share } from "react-native";
 import { Ionicons } from "@expo/vector-icons";
 import {
@@ -13,7 +13,90 @@ import {
 import { useRouter, useNavigation, useLocalSearchParams } from "expo-router";
 import { DrawerActions } from "@react-navigation/routers";
 import { F, S } from "@/lib/fonts";
-import { useHabits, useHabitLogs, useProfile } from "@/lib/useSupabase";
+import { useHabits, useHabitLogs, useProfile, useScores } from "@/lib/useSupabase";
+
+// Native screenshot module — lands with the next dev build; guarded so
+// the current binary shares text until then.
+let ViewShot: any = null;
+try { ViewShot = require("react-native-view-shot"); } catch {}
+
+// ─── Positivity chart ────────────────────────────────────
+// Your gratitude points over time, drawn like a stock ticker you'd be
+// proud to share. Cumulative, so the line only goes up.
+function PositivityChart({ chartRef }: { chartRef: any }) {
+  const { scores } = useScores();
+  const { width } = useWindowDimensions();
+  const W = width - 40;
+  const H = 180;
+  const padX = 8;
+  const padY = 18;
+
+  const points = useMemo(() => {
+    const days = 30;
+    const byDay = new Map<string, number>();
+    for (const s of scores) {
+      const d = s.recorded_at.slice(0, 10);
+      byDay.set(d, (byDay.get(d) ?? 0) + s.score);
+    }
+    let running = 0;
+    const out: number[] = [];
+    for (let i = days - 1; i >= 0; i--) {
+      const d = new Date();
+      d.setDate(d.getDate() - i);
+      running += byDay.get(d.toLocaleDateString("en-CA")) ?? 0;
+      out.push(running);
+    }
+    return out;
+  }, [scores]);
+
+  const total = points[points.length - 1] ?? 0;
+  const weekGain = total - (points[points.length - 8] ?? 0);
+  const maxVal = Math.max(...points, 1);
+
+  const poly = points
+    .map((v, i) => {
+      const x = padX + (i / (points.length - 1)) * (W - padX * 2);
+      const y = padY + (1 - v / maxVal) * (H - padY * 2);
+      return `${x},${y}`;
+    })
+    .join(" ");
+
+  return (
+    <View ref={chartRef} collapsable={false} style={styles.posCard}>
+      <View style={styles.posHeader}>
+        <View>
+          <Text style={styles.posLabel} maxFontSizeMultiplier={1.3}>POSITIVITY</Text>
+          <Text style={styles.posTotal} maxFontSizeMultiplier={1.2}>{total}</Text>
+        </View>
+        {weekGain > 0 && (
+          <View style={styles.posGain}>
+            <Ionicons name="trending-up" size={14} color="#34C759" />
+            <Text style={styles.posGainText} maxFontSizeMultiplier={1.3}>+{weekGain} this week</Text>
+          </View>
+        )}
+      </View>
+      <Svg width={W} height={H} viewBox={`0 0 ${W} ${H}`}>
+        <Defs>
+          <LinearGradient id="posLine" x1="0" y1="0" x2="1" y2="0">
+            <Stop offset="0%" stopColor="#34C759" stopOpacity="0.5" />
+            <Stop offset="100%" stopColor="#34C759" stopOpacity="1" />
+          </LinearGradient>
+        </Defs>
+        <Polyline
+          points={poly}
+          fill="none"
+          stroke="url(#posLine)"
+          strokeWidth="3"
+          strokeLinecap="round"
+          strokeLinejoin="round"
+        />
+      </Svg>
+      <Text style={styles.posFooter} maxFontSizeMultiplier={1.3}>
+        Last 30 days · Morning Que
+      </Text>
+    </View>
+  );
+}
 
 const TIME_RANGES = ["1W", "1M", "3M", "6M", "1Y"];
 const RANGE_DAYS: Record<string, number> = { "1W": 7, "1M": 31, "3M": 91, "6M": 182, "1Y": 365 };
@@ -223,8 +306,23 @@ export default function ProfileScreen() {
   const { from } = useLocalSearchParams<{ from?: string }>();
   const fromDrawer = from === "drawer";
 
-  // Native share sheet — invite a friend to the app
+  const chartRef = useRef(null);
+
+  // Share your positivity graph like a stock ticker on yourself.
+  // With the view-shot module (next build) this attaches the actual
+  // chart as an image; until then it falls back to text + link.
   const handleShare = async () => {
+    try {
+      if (ViewShot?.captureRef && chartRef.current) {
+        const uri = await ViewShot.captureRef(chartRef, {
+          format: "png",
+          quality: 1,
+          result: "tmpfile",
+        });
+        await Share.share({ url: uri, message: "My mornings, trending up. morningque.netlify.app" });
+        return;
+      }
+    } catch {}
     try {
       await Share.share({
         message:
@@ -296,6 +394,7 @@ export default function ProfileScreen() {
       </View>
 
       {/* Habit chart */}
+      <PositivityChart chartRef={chartRef} />
       <HabitChart />
 
       {/* Stats */}
@@ -329,6 +428,55 @@ export default function ProfileScreen() {
 }
 
 const styles = StyleSheet.create({
+  posCard: {
+    backgroundColor: "#0f0f10",
+    borderRadius: 20,
+    marginHorizontal: 20,
+    marginBottom: 18,
+    paddingTop: 16,
+    paddingBottom: 12,
+    overflow: "hidden",
+  },
+  posHeader: {
+    flexDirection: "row",
+    justifyContent: "space-between",
+    alignItems: "flex-start",
+    paddingHorizontal: 16,
+    marginBottom: 4,
+  },
+  posLabel: {
+    color: "#52525b",
+    fontSize: S.micro,
+    fontFamily: F.semibold,
+    letterSpacing: 2,
+    marginBottom: 4,
+  },
+  posTotal: {
+    color: "#f5f5f7",
+    fontSize: S.display,
+    fontFamily: F.light,
+  },
+  posGain: {
+    flexDirection: "row",
+    alignItems: "center",
+    gap: 5,
+    backgroundColor: "rgba(52,199,89,0.12)",
+    borderRadius: 999,
+    paddingHorizontal: 10,
+    paddingVertical: 5,
+  },
+  posGainText: {
+    color: "#34C759",
+    fontSize: S.caption,
+    fontFamily: F.medium,
+  },
+  posFooter: {
+    color: "#3f3f46",
+    fontSize: S.micro,
+    fontFamily: F.regular,
+    paddingHorizontal: 16,
+    marginTop: 2,
+  },
   container: {
     flex: 1,
     backgroundColor: "#000000",

@@ -40,9 +40,13 @@ function CustomDrawerContent(props: DrawerContentComponentProps) {
           <Ionicons name="search-outline" size={24} color="#f5f5f7" style={styles.navIcon} />
           <Text style={styles.navText}>Sounds</Text>
         </Pressable>
-        <Pressable style={styles.navItem} onPress={() => navigate("/create")} accessibilityRole="button" accessibilityLabel="Create">
-          <Ionicons name="add" size={24} color="#f5f5f7" style={styles.navIcon} />
-          <Text style={styles.navText}>Create</Text>
+        <Pressable style={styles.navItem} onPress={() => navigate("/gratitude")} accessibilityRole="button" accessibilityLabel="Gratitude log">
+          <Ionicons name="heart-outline" size={24} color="#f5f5f7" style={styles.navIcon} />
+          <Text style={styles.navText}>Gratitude</Text>
+        </Pressable>
+        <Pressable style={styles.navItem} onPress={() => navigate("/habit-track")} accessibilityRole="button" accessibilityLabel="Habit tracker">
+          <Ionicons name="checkmark-circle-outline" size={24} color="#f5f5f7" style={styles.navIcon} />
+          <Text style={styles.navText}>Habits</Text>
         </Pressable>
         <Pressable style={styles.navItem} onPress={() => navigate("/profile-page?from=drawer")} accessibilityRole="button" accessibilityLabel="Profile">
           <Ionicons name="person-outline" size={24} color="#f5f5f7" style={styles.navIcon} />
@@ -187,7 +191,7 @@ export default function DrawerLayout() {
           headerRight: () => <SuggestButton />,
         }}
       />
-      <Drawer.Screen name="create" options={{ title: "Create" }} />
+      <Drawer.Screen name="create" options={{ title: "Create", drawerItemStyle: { display: "none" } }} />
       <Drawer.Screen
         name="profile-page"
         options={{ title: "Profile", drawerItemStyle: { display: "none" } }}

@@ -197,10 +197,8 @@ const styles = StyleSheet.create({
   suggestCard: {
     marginTop: 8,
     marginBottom: 8,
-    borderWidth: 1,
-    borderColor: "#1c1c1e",
-    borderStyle: "dashed",
-    borderRadius: 14,
+    backgroundColor: "#1c1c1e",
+    borderRadius: 16,
     overflow: "hidden",
   },
   suggestCardInner: {
@@ -211,14 +209,14 @@ const styles = StyleSheet.create({
     justifyContent: "space-between",
   },
   suggestCardTitle: {
-    color: "#52525b",
-    fontSize: S.caption,
-    fontFamily: F.regular,
+    color: "#f5f5f7",
+    fontSize: S.secondary,
+    fontFamily: F.medium,
     flex: 1,
     marginRight: 8,
   },
   suggestCardSub: {
-    color: "#3f3f46",
+    color: "#a1a1aa",
     fontSize: S.caption,
     fontFamily: F.medium,
   },

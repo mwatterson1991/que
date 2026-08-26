@@ -1,10 +1,16 @@
-import { View, Text, FlatList, Pressable, StyleSheet, ActivityIndicator, Animated } from "react-native";
+import { View, Text, FlatList, Pressable, StyleSheet, ActivityIndicator, Animated, Image } from "react-native";
 import { useRouter, useFocusEffect } from "expo-router";
 import { useCallback, useEffect, useRef } from "react";
 import AsyncStorage from "@react-native-async-storage/async-storage";
 import { useAlarms, useSessions } from "@/lib/useSupabase";
 import { scheduleAlarm, cancelAlarm } from "@/lib/alarmScheduler";
+import { artworkFor } from "@/lib/catalog";
 import { F, S } from "@/lib/fonts";
+
+// Haptics is a native module that lands with the next dev build —
+// guarded so the current binary keeps working without it.
+let Haptics: any = null;
+try { Haptics = require("expo-haptics"); } catch {}
 import type { Database } from "@/lib/database.types";
 
 type Alarm = Database["public"]["Tables"]["alarms"]["Row"];
@@ -15,10 +21,10 @@ type Alarm = Database["public"]["Tables"]["alarms"]["Row"];
 const PRESETS_SEEDED_KEY = "presets_seeded_v1";
 
 const PRESETS: Array<{ label: string; hour: number; minute: number; sessionTitle: string }> = [
-  { label: "Deep Morning Reset", hour: 6, minute: 0, sessionTitle: "Circadian Reset" },
-  { label: "Focus Start", hour: 6, minute: 30, sessionTitle: "Improve Focus" },
-  { label: "Confidence Ritual", hour: 7, minute: 0, sessionTitle: "Morning Confidence Ritual" },
-  { label: "Gratitude Wake", hour: 7, minute: 30, sessionTitle: "Gratitude Flood" },
+  { label: "Calm & Centered Start", hour: 6, minute: 0, sessionTitle: "Calm & Centered Start" },
+  { label: "High Performer Daily Activation", hour: 6, minute: 30, sessionTitle: "High Performer Daily Activation" },
+  { label: "General Morning Mindset", hour: 7, minute: 0, sessionTitle: "General Morning Mindset" },
+  { label: "Dawn Chorus", hour: 7, minute: 30, sessionTitle: "Dawn Chorus" },
 ];
 
 function nextOccurrence(hour: number, minute: number): string {
@@ -40,8 +46,9 @@ function formatTime(iso: string) {
 
 type SessionMap = Record<string, Database["public"]["Tables"]["sessions"]["Row"]>;
 
-// Apple-style pill switch: 51×31 track, 27pt thumb that slides across.
-// The switch alone carries on/off state — row text stays white.
+// Apple-style pill switch: 51×31 track, 27pt thumb. The thumb squishes
+// wider while pressed (like iOS), springs across with a pop, and fires
+// haptic feedback when the native module is available.
 function PillSwitch({
   value,
   onValueChange,
@@ -52,31 +59,54 @@ function PillSwitch({
   accessibilityLabel: string;
 }) {
   const anim = useRef(new Animated.Value(value ? 1 : 0)).current;
+  const squish = useRef(new Animated.Value(0)).current;
 
   useEffect(() => {
-    Animated.timing(anim, {
+    Animated.spring(anim, {
       toValue: value ? 1 : 0,
-      duration: 180,
+      stiffness: 260,
+      damping: 22,
+      mass: 0.8,
       useNativeDriver: false,
     }).start();
   }, [value, anim]);
 
-  const translateX = anim.interpolate({ inputRange: [0, 1], outputRange: [2, 22] });
+  // Thumb stretches from 27 → 33 wide while held
+  const thumbW = squish.interpolate({ inputRange: [0, 1], outputRange: [27, 33] });
+  const translateX = Animated.subtract(
+    anim.interpolate({ inputRange: [0, 1], outputRange: [2, 22] }),
+    Animated.multiply(squish, anim.interpolate({ inputRange: [0, 1], outputRange: [0, 6] })),
+  );
   const trackColor = anim.interpolate({
     inputRange: [0, 1],
     outputRange: ["#39393d", "#34C759"],
   });
 
+  const setSquish = (to: number) =>
+    Animated.spring(squish, {
+      toValue: to,
+      stiffness: 300,
+      damping: 20,
+      useNativeDriver: false,
+    }).start();
+
   return (
     <Pressable
-      onPress={() => onValueChange(!value)}
+      onPressIn={() => setSquish(1)}
+      onPressOut={() => setSquish(0)}
+      onPress={() => {
+        Haptics?.impactAsync?.(Haptics.ImpactFeedbackStyle?.Medium);
+        onValueChange(!value);
+      }}
       hitSlop={10}
       accessibilityRole="switch"
       accessibilityState={{ checked: value }}
       accessibilityLabel={accessibilityLabel}
     >
       <Animated.View style={[styles.switchTrack, { backgroundColor: trackColor }]}>
-        <Animated.View style={[styles.switchThumb, { transform: [{ translateX }] }]} />
+        <Animated.View
+          style={[styles.switchThumb, { width: thumbW, transform: [{ translateX }] }]}
+        />
       </Animated.View>
     </Pressable>
   );
@@ -100,14 +130,18 @@ function AlarmRow({ item, onToggle, sessionMap }: { item: Alarm; onToggle: (id: 
       accessibilityRole="button"
       accessibilityLabel={`Edit ${alarmLabel}`}
     >
+      {session && (
+        <Image
+          source={{ uri: artworkFor(session) }}
+          style={styles.rowArt}
+          resizeMode="cover"
+        />
+      )}
       <View style={styles.rowLeft}>
         <View style={styles.timeRow}>
           <Text style={[styles.time, { color }]} maxFontSizeMultiplier={1.4}>{hour}</Text>
           <Text style={[styles.ampm, { color }]} maxFontSizeMultiplier={1.4}>{ampm}</Text>
         </View>
-        <Text style={[styles.label, { color: dimColor }]}>
-          {item.label || "Alarm"}
-        </Text>
         <Text style={[styles.sublabel, { color: dimColor }]}>
           {soundName} · {duration}
         </Text>
@@ -243,6 +277,13 @@ const styles = StyleSheet.create({
     justifyContent: "space-between",
     alignItems: "center",
     paddingVertical: 12,
+    gap: 14,
+  },
+  rowArt: {
+    width: 52,
+    height: 52,
+    borderRadius: 12,
+    backgroundColor: "#1c1c1e",
   },
   rowLeft: {
     flex: 1,

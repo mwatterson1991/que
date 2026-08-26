@@ -8,7 +8,7 @@ type Session = Database["public"]["Tables"]["sessions"]["Row"];
 // fall back to a flat panel color.
 
 const pex = (id: number) =>
-  `https://images.pexels.com/photos/${id}/pexels-photo-${id}.jpeg?auto=compress&cs=tinysrgb&w=640`;
+  `https://images.pexels.com/photos/${id}/pexels-photo-${id}.jpeg?auto=compress&cs=tinysrgb&w=1200`;
 
 const ARTWORK_BY_ID: Record<string, string> = {
   "local-dawn-birds": pex(302804), // pine forest
@@ -44,6 +44,10 @@ const ARTWORK_BY_CATEGORY: Record<string, string> = {
   Addiction: pex(216798), // autumn path — a new road
   Mindfulness: pex(268134),
   Anxiety: pex(462162), // calm ocean cove
+  "Focus & Productivity": pex(62693), // clean light stripes
+  "Health & Habits": pex(216798), // autumn path
+  "Mental & Emotional": pex(462162), // calm ocean cove
+  "Spiritual / Purpose-driven": pex(268134), // meditation at sunset
   Frequencies: pex(62693), // clean light stripes
   Horoscope: pex(355887), // night sky over trees
   "Positive Words": pex(736230), // pink rose
@@ -85,6 +89,7 @@ const local = (
   audio_asset,
   plays: 0,
   mantras: [],
+  tier: "free",
   created_at: "2026-08-22T00:00:00Z",
 });
 
@@ -97,12 +102,12 @@ export const LOCAL_SESSIONS: Session[] = [
   local("local-theta", "Theta 6 Hz", "Low binaural hum tuned to the theta brain state", "theta-binaural", 120, "Frequencies", "Binaural tone"),
   local("local-freq-alpha", "Alpha 10 Hz", "Bright binaural pulse for relaxed, wakeful focus", "freq-alpha", 120, "Frequencies", "Binaural tone"),
   local("local-freq-delta", "Delta 2 Hz", "Slow binaural pulse that mirrors deep sleep", "freq-delta", 120, "Frequencies", "Binaural tone"),
-  local("local-horo-star", "Morning Star Reading", "A hopeful read on the day the sky is offering you", "horo-star", 32, "Horoscope", "Preview voice"),
-  local("local-horo-cosmic", "Cosmic Check-In", "A steady, unhurried alignment for the day ahead", "horo-cosmic", 30, "Horoscope", "Preview voice"),
-  local("local-horo-moon", "Moon & Momentum", "What you start this morning gathers force today", "horo-moon", 27, "Horoscope", "Preview voice"),
-  local("local-words-affirm", "Morning Affirmations", "Kind, powerful words to begin again", "words-affirm", 33, "Positive Words", "Preview voice"),
-  local("local-words-grace", "Grace for the Morning", "Scripture-inspired comfort for the day ahead", "words-grace", 30, "Positive Words", "Preview voice"),
-  local("local-words-stoic", "Stoic Sunrise", "Marcus Aurelius and Seneca on getting out of bed", "words-stoic", 34, "Positive Words", "Preview voice"),
+  local("local-horo-star", "Morning Star Reading", "A hopeful read on the day the sky is offering you", "horo-star", 38, "Horoscope", "Lily"),
+  local("local-horo-cosmic", "Cosmic Check-In", "A steady, unhurried alignment for the day ahead", "horo-cosmic", 35, "Horoscope", "Lily"),
+  local("local-horo-moon", "Moon & Momentum", "What you start this morning gathers force today", "horo-moon", 32, "Horoscope", "Lily"),
+  local("local-words-affirm", "Morning Affirmations", "Kind, powerful words to begin again", "words-affirm", 39, "Positive Words", "Lily"),
+  local("local-words-grace", "Grace for the Morning", "Scripture-inspired comfort for the day ahead", "words-grace", 37, "Positive Words", "Lily"),
+  local("local-words-stoic", "Stoic Sunrise", "Marcus Aurelius and Seneca on getting out of bed", "words-stoic", 41, "Positive Words", "Lily"),
 ];
 
 // ─── Channels ──────────────────────────────────────────────
@@ -114,6 +119,8 @@ export const LOCAL_SESSIONS: Session[] = [
 
 const HYPNOTHERAPY_CATEGORIES = new Set([
   "Sleep", "Confidence", "Anxiety", "Mindfulness", "Addiction", "General",
+  "Focus & Productivity", "Health & Habits", "Mental & Emotional",
+  "Spiritual / Purpose-driven",
 ]);
 
 export const CHANNEL_ORDER = [

@@ -107,9 +107,6 @@ export default function EditAlarmScreen() {
   const [hourIdx, setHourIdx] = useState(existingHour12 - 1);
   const [minIdx, setMinIdx] = useState(existingDate.getMinutes());
   const [merIdx, setMerIdx] = useState(existingDate.getHours() >= 12 ? 1 : 0);
-  // Collapsed by default — the sound is the hero; tap the time to adjust it
-  const [timeOpen, setTimeOpen] = useState(!existing);
-  const [label, setLabel] = useState(existing?.label || "Alarm");
   const [sessionId, setSessionId] = useState(existing?.mantra_id || "");
   const [soundLabel, setSoundLabel] = useState(() => {
     if (!existing?.mantra_id) return "Choose";
@@ -146,6 +143,9 @@ export default function EditAlarmScreen() {
     const fire = new Date();
     fire.setHours(h, m, 0, 0);
     if (fire.getTime() <= Date.now()) fire.setDate(fire.getDate() + 1);
+
+    // The alarm's label IS its sound — no separate name field
+    const label = sessions.find((s) => s.id === sessionId)?.title ?? "Alarm";
 
     if (existing) {
       // Cancel old notification before rescheduling
@@ -203,7 +203,7 @@ export default function EditAlarmScreen() {
         </Pressable>
       ),
     });
-  }, [navigation, hourIdx, minIdx, merIdx, label, sessionId]);
+  }, [navigation, hourIdx, minIdx, merIdx, sessionId, sessions]);
 
   const selectedSession = sessions.find((s) => s.id === sessionId);
   const timeText = `${String(hourIdx + 1).padStart(2, "0")}:${String(minIdx).padStart(2, "0")} ${MERIDIEM[merIdx]}`;
@@ -246,25 +246,11 @@ export default function EditAlarmScreen() {
           </View>
         </Pressable>
 
-        {/* Time — collapsed row; tap to open the wheel picker */}
-        <Pressable
-          onPress={() => setTimeOpen((v) => !v)}
-          style={styles.timeRow}
-          accessibilityRole="button"
-          accessibilityLabel={`Alarm time ${timeText}. ${timeOpen ? "Collapse" : "Expand"} time picker`}
-          accessibilityState={{ expanded: timeOpen }}
+        {/* Time — the wheel IS the time display */}
+        <View
+          accessible
+          accessibilityLabel={`Alarm time ${timeText}`}
         >
-          <Text style={styles.timeLabel}>Time</Text>
-          <View style={styles.timeRight}>
-            <Text style={styles.timeValue} maxFontSizeMultiplier={1.2}>{timeText}</Text>
-            <Ionicons
-              name={timeOpen ? "chevron-up" : "chevron-down"}
-              size={18}
-              color="#52525b"
-            />
-          </View>
-        </Pressable>
-        {timeOpen && (
           <View style={styles.pickerContainer}>
             <View style={styles.pickerHighlight} />
             <View style={styles.pickerColumns}>
@@ -274,7 +260,7 @@ export default function EditAlarmScreen() {
               <WheelColumn data={MERIDIEM} selected={merIdx} onSelect={setMerIdx} width={48} />
             </View>
           </View>
-        )}
+        </View>
 
         {/* Settings rows */}
         <View style={styles.settingsSection}>
@@ -282,18 +268,6 @@ export default function EditAlarmScreen() {
           <View style={styles.row}>
             <Text style={styles.rowLabel}>Repeat</Text>
             <Text style={styles.rowValue}>Never</Text>
-          </View>
-          <View style={styles.rowSep} />
-
-          {/* Label */}
-          <View style={styles.row}>
-            <Text style={styles.rowLabel}>Label</Text>
-            <TextInput
-              value={label}
-              onChangeText={setLabel}
-              style={styles.rowInput}
-              placeholderTextColor="#52525b"
-            />
           </View>
           <View style={styles.rowSep} />
 

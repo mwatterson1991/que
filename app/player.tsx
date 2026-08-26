@@ -50,6 +50,7 @@ import {
   AmbientSoundId,
 } from "@/lib/ambient";
 import { artworkFor, isHypnotherapy } from "@/lib/catalog";
+import { usePremium, isLocked } from "@/lib/premium";
 
 const { width: SCREEN_W } = Dimensions.get("window");
 const ORB_RADIUS = 38;
@@ -267,6 +268,7 @@ export default function PlayerScreen() {
   const { profile, update: updateProfile } = useProfile();
   const { categories, updateProgress } = useCategories();
   const { prefs } = usePreferences();
+  const { unlocked } = usePremium();
 
   const session = sessions.find((s) => s.id === id) ?? null;
 
@@ -283,6 +285,12 @@ export default function PlayerScreen() {
 
   useEffect(() => {
     if (!session || startedRef.current) return;
+
+    // Premium gate — but never in front of a ringing alarm
+    if (!isAlarmMode && isLocked(session, unlocked)) {
+      router.replace(`/paywall?id=${session.id}` as any);
+      return;
+    }
     startedRef.current = true;
 
     setDuration(session.duration_sec);
@@ -424,6 +432,20 @@ export default function PlayerScreen() {
             >
               <Ionicons name="chevron-back" size={28} color="#f5f5f7" />
             </Pressable>
+            {!completed && (
+              <Pressable
+                style={styles.selectPill}
+                onPress={handleSetAsAlarm}
+                hitSlop={8}
+                accessibilityRole="button"
+                accessibilityLabel={isPickMode ? "Use for this alarm" : "Set as alarm"}
+              >
+                <Ionicons name="checkmark" size={16} color="#0a0a0a" />
+                <Text style={styles.selectPillText}>
+                  {isPickMode ? "Use" : "Set as alarm"}
+                </Text>
+              </Pressable>
+            )}
           </View>
 
           {/* Particle orb */}
@@ -463,6 +485,20 @@ export default function PlayerScreen() {
           >
             <Ionicons name="chevron-back" size={26} color="#f5f5f7" />
           </Pressable>
+          {!completed && (
+            <Pressable
+              style={[styles.selectPill, styles.selectPillOverArt, { top: insets.top + 8 }]}
+              onPress={handleSetAsAlarm}
+              hitSlop={8}
+              accessibilityRole="button"
+              accessibilityLabel={isPickMode ? "Use for this alarm" : "Set as alarm"}
+            >
+              <Ionicons name="checkmark" size={16} color="#0a0a0a" />
+              <Text style={styles.selectPillText}>
+                {isPickMode ? "Use" : "Set as alarm"}
+              </Text>
+            </Pressable>
+          )}
         </View>
       )}
 
@@ -509,26 +545,8 @@ export default function PlayerScreen() {
           </View>
         </View>
 
-        {/* Controls */}
+        {/* Controls — a single, calm play/pause */}
         <View style={styles.controls}>
-          {/* Skip back 10s */}
-          <Pressable
-            style={styles.controlBtn}
-            onPress={() => skip(-10)}
-            hitSlop={8}
-            accessibilityRole="button"
-            accessibilityLabel="Skip back 10 seconds"
-          >
-            <Ionicons
-              name="refresh"
-              size={22}
-              color="#f5f5f7"
-              style={{ transform: [{ scaleX: -1 }] }}
-            />
-            <Text style={styles.skipLabel}>10</Text>
-          </Pressable>
-
-          {/* Play / pause */}
           <Pressable
             style={styles.controlBtn}
             onPress={togglePlay}
@@ -542,36 +560,13 @@ export default function PlayerScreen() {
               style={!playing ? { marginLeft: 3 } : undefined}
             />
           </Pressable>
-
-          {/* Skip forward 10s */}
-          <Pressable
-            style={styles.controlBtn}
-            onPress={() => skip(10)}
-            hitSlop={8}
-            accessibilityRole="button"
-            accessibilityLabel="Skip forward 10 seconds"
-          >
-            <Ionicons name="refresh" size={22} color="#f5f5f7" />
-            <Text style={styles.skipLabel}>10</Text>
-          </Pressable>
         </View>
 
-        {/* Completion / alarm */}
-        {completed ? (
+        {completed && (
           <View style={styles.completedBanner}>
             <Ionicons name="checkmark-circle" size={20} color="#34d399" style={{ marginRight: 8 }} />
             <Text style={styles.completedText}>SESSION COMPLETE</Text>
           </View>
-        ) : (
-          <Pressable
-            style={styles.alarmButton}
-            onPress={handleSetAsAlarm}
-            accessibilityRole="button"
-            accessibilityLabel="Set as alarm"
-          >
-            <Text style={styles.alarmButtonText}>{isPickMode ? "USE FOR THIS ALARM" : "SET AS ALARM"}</Text>
-            <Ionicons name="arrow-forward" size={18} color="#f5f5f7" style={{ marginLeft: 8 }} />
-          </Pressable>
         )}
       </View>
     </View>
@@ -585,6 +580,27 @@ const styles = StyleSheet.create({
   },
 
   // Nav
+  selectPill: {
+    flexDirection: "row",
+    alignItems: "center",
+    gap: 5,
+    backgroundColor: "#f5f5f7",
+    borderRadius: 999,
+    paddingHorizontal: 14,
+    paddingVertical: 8,
+    marginLeft: "auto",
+    marginRight: 16,
+  },
+  selectPillOverArt: {
+    position: "absolute",
+    right: 12,
+    marginRight: 0,
+  },
+  selectPillText: {
+    color: "#0a0a0a",
+    fontSize: S.caption,
+    fontFamily: F.semibold,
+  },
   navBar: {
     flexDirection: "row",
     alignItems: "center",

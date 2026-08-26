@@ -19,8 +19,16 @@
  */
 
 import { readFileSync, writeFileSync, existsSync, mkdirSync } from "node:fs";
+import { createHash } from "node:crypto";
 import { resolve, dirname } from "node:path";
 import { fileURLToPath } from "node:url";
+
+// Deterministic UUID from a script slug so upserts stay idempotent
+// (sessions.id is uuid; the manifest uses human slugs).
+function slugToUuid(slug) {
+  const h = createHash("sha1").update("morningque:" + slug).digest("hex");
+  return `${h.slice(0, 8)}-${h.slice(8, 12)}-5${h.slice(13, 16)}-a${h.slice(17, 20)}-${h.slice(20, 32)}`;
+}
 
 const __dirname = dirname(fileURLToPath(import.meta.url));
 const ROOT = resolve(__dirname, "..");
@@ -247,11 +255,12 @@ async function main() {
       // Upsert the session record
       console.log(`${label}   Upserting session record...`);
       await upsertSession({
-        id: entry.id,
+        id: slugToUuid(entry.id),
         title: entry.title,
         description: entry.description,
         category: entry.category,
-        narrator: "Que",
+        tier: entry.tier ?? "free",
+        narrator: "Brian",
         duration_sec: entry.estimated_duration_sec,
         audio_url: audioUrl,
         audio_asset: null,

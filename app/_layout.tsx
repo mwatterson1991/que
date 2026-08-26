@@ -299,6 +299,23 @@ export default function RootLayout() {
             }}
           />
           <Stack.Screen
+            name="paywall"
+            options={{
+              presentation: "modal",
+              animation: "slide_from_bottom",
+              headerShown: false,
+              contentStyle: { flex: 1, backgroundColor: "#000000" },
+            }}
+          />
+          <Stack.Screen
+            name="intro"
+            options={{
+              animation: "fade",
+              headerShown: false,
+              contentStyle: { flex: 1, backgroundColor: "#000000" },
+            }}
+          />
+          <Stack.Screen
             name="welcome"
             options={{
               animation: "fade",

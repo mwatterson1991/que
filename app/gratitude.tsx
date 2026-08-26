@@ -10,9 +10,10 @@ import {
   Platform,
   ActivityIndicator,
 } from "react-native";
-import { useFocusEffect } from "expo-router";
+import { useFocusEffect, useRouter } from "expo-router";
 import { Ionicons } from "@expo/vector-icons";
 import { useGratitudeEntries } from "@/lib/useSupabase";
+import { useAuth } from "@/lib/auth";
 import { F, S } from "@/lib/fonts";
 
 const TOTAL = 7;
@@ -37,6 +38,8 @@ function dateLabel(dateStr: string): string {
 
 export default function GratitudeScreen() {
   const { entries, loading, refresh, upsert, localDateString } = useGratitudeEntries();
+  const { user } = useAuth();
+  const router = useRouter();
   const today = localDateString();
 
   // Reload whenever screen comes into focus
@@ -101,6 +104,30 @@ export default function GratitudeScreen() {
     );
   }
 
+  // Guests: this is where an account starts earning its keep
+  if (!user) {
+    return (
+      <View style={styles.gateWrap}>
+        <Text style={styles.gateTitle} maxFontSizeMultiplier={1.2}>
+          Today I'm grateful for…
+        </Text>
+        <Text style={styles.gateBody}>
+          Write down seven things each morning and watch your positivity
+          score grow day after day. A free account keeps your entries and
+          your streak safe.
+        </Text>
+        <Pressable
+          style={styles.gateButton}
+          onPress={() => router.push("/auth")}
+          accessibilityRole="button"
+          accessibilityLabel="Create a free account"
+        >
+          <Text style={styles.gateButtonText}>Create a free account</Text>
+        </Pressable>
+      </View>
+    );
+  }
+
   return (
     <KeyboardAvoidingView
       style={{ flex: 1 }}
@@ -115,8 +142,9 @@ export default function GratitudeScreen() {
         {/* ── Header ── */}
         <View style={styles.header}>
           <View style={styles.headerLeft}>
-            <Text style={styles.title}>Gratitude</Text>
-            <Text style={styles.subtitle}>Today I am grateful for</Text>
+            <Text style={styles.title} maxFontSizeMultiplier={1.2}>
+              Today I'm grateful for…
+            </Text>
           </View>
           <View style={styles.counter}>
             {isComplete ? (
@@ -235,10 +263,44 @@ const styles = StyleSheet.create({
   },
   title: {
     color: "#f5f5f7",
-    fontSize: S.display,
+    fontSize: S.heading,
+    lineHeight: 36,
     fontFamily: "Lora",
     fontWeight: "400",
     marginBottom: 4,
+  },
+
+  // Guest gate
+  gateWrap: {
+    flex: 1,
+    backgroundColor: "#000000",
+    justifyContent: "center",
+    paddingHorizontal: 28,
+  },
+  gateTitle: {
+    color: "#f5f5f7",
+    fontSize: S.display,
+    lineHeight: 42,
+    fontFamily: "Lora",
+    marginBottom: 14,
+  },
+  gateBody: {
+    color: "#a1a1aa",
+    fontSize: S.secondary,
+    lineHeight: 23,
+    fontFamily: F.regular,
+    marginBottom: 28,
+  },
+  gateButton: {
+    backgroundColor: "#f5f5f7",
+    borderRadius: 999,
+    paddingVertical: 16,
+    alignItems: "center",
+  },
+  gateButtonText: {
+    color: "#0a0a0a",
+    fontSize: S.body,
+    fontFamily: F.semibold,
   },
   subtitle: {
     color: "#52525b",

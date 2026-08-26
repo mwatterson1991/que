@@ -10,10 +10,12 @@ import {
 import { useRouter, useFocusEffect } from "expo-router";
 import { Ionicons } from "@expo/vector-icons";
 import { useHabits, useHabitLogs } from "@/lib/useSupabase";
+import { useAuth } from "@/lib/auth";
 import { F, S } from "@/lib/fonts";
 
 export default function HabitTrackScreen() {
   const router = useRouter();
+  const { user } = useAuth();
   const { habits, loading: habitsLoading, refresh: refreshHabits } = useHabits();
   const { logs, loading: logsLoading, refresh: refreshLogs, logHabit, removeLog, todayCount } = useHabitLogs(31);
 
@@ -48,6 +50,29 @@ export default function HabitTrackScreen() {
     return (
       <View style={styles.centered}>
         <ActivityIndicator color="#71717a" />
+      </View>
+    );
+  }
+
+  // Guests: habits live on an account so streaks survive reinstalls
+  if (!user) {
+    return (
+      <View style={styles.gateWrap}>
+        <Text style={styles.gateTitle} maxFontSizeMultiplier={1.2}>
+          Small habits, tracked daily.
+        </Text>
+        <Text style={styles.gateBody}>
+          Add the habits that matter and tap them off each morning. A free
+          account keeps your streaks safe across devices.
+        </Text>
+        <Pressable
+          style={styles.gateButton}
+          onPress={() => router.push("/auth")}
+          accessibilityRole="button"
+          accessibilityLabel="Create a free account"
+        >
+          <Text style={styles.gateButtonText}>Create a free account</Text>
+        </Pressable>
       </View>
     );
   }
@@ -114,6 +139,37 @@ export default function HabitTrackScreen() {
 }
 
 const styles = StyleSheet.create({
+  gateWrap: {
+    flex: 1,
+    backgroundColor: "#000000",
+    justifyContent: "center",
+    paddingHorizontal: 28,
+  },
+  gateTitle: {
+    color: "#f5f5f7",
+    fontSize: S.display,
+    lineHeight: 42,
+    fontFamily: "Lora",
+    marginBottom: 14,
+  },
+  gateBody: {
+    color: "#a1a1aa",
+    fontSize: S.secondary,
+    lineHeight: 23,
+    fontFamily: F.regular,
+    marginBottom: 28,
+  },
+  gateButton: {
+    backgroundColor: "#f5f5f7",
+    borderRadius: 999,
+    paddingVertical: 16,
+    alignItems: "center",
+  },
+  gateButtonText: {
+    color: "#0a0a0a",
+    fontSize: S.body,
+    fontFamily: F.semibold,
+  },
   container: {
     flex: 1,
     backgroundColor: "#000000",
