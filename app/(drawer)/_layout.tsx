@@ -32,7 +32,7 @@ function CustomDrawerContent(props: DrawerContentComponentProps) {
           <Ionicons name="alarm-outline" size={24} color="#f5f5f7" style={styles.navIcon} />
           <Text style={styles.navText}>Alarms</Text>
         </Pressable>
-        <Pressable style={styles.navItem} onPress={() => navigate("/")} accessibilityRole="button" accessibilityLabel="Chat">
+        <Pressable style={styles.navItem} onPress={() => navigate("/chat")} accessibilityRole="button" accessibilityLabel="Chat">
           <Ionicons name="chatbubble-outline" size={24} color="#f5f5f7" style={styles.navIcon} />
           <Text style={styles.navText}>Chat</Text>
         </Pressable>
@@ -156,6 +156,10 @@ export default function DrawerLayout() {
     >
       <Drawer.Screen
         name="index"
+        options={{ headerShown: false, drawerItemStyle: { display: "none" } }}
+      />
+      <Drawer.Screen
+        name="chat"
         options={{
           title: "Morning Q",
           headerTitleStyle: {

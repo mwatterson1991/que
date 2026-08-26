@@ -7,6 +7,7 @@ import {
   ScrollView,
   FlatList,
   StyleSheet,
+  Image,
   Platform,
 } from "react-native";
 import { Ionicons } from "@expo/vector-icons";
@@ -14,6 +15,7 @@ import { useLocalSearchParams, useRouter, useFocusEffect, useNavigation } from "
 import { useAlarms, useSessions } from "@/lib/useSupabase";
 import { consumePickedSound } from "@/lib/soundPicker";
 import { scheduleAlarm, cancelAlarm } from "@/lib/alarmScheduler";
+import { artworkFor } from "@/lib/catalog";
 import { F } from "@/lib/fonts";
 
 // ─── Scroll-wheel column ──────────────────────────────────
@@ -105,6 +107,8 @@ export default function EditAlarmScreen() {
   const [hourIdx, setHourIdx] = useState(existingHour12 - 1);
   const [minIdx, setMinIdx] = useState(existingDate.getMinutes());
   const [merIdx, setMerIdx] = useState(existingDate.getHours() >= 12 ? 1 : 0);
+  // Collapsed by default — the sound is the hero; tap the time to adjust it
+  const [timeOpen, setTimeOpen] = useState(!existing);
   const [label, setLabel] = useState(existing?.label || "Alarm");
   const [sessionId, setSessionId] = useState(existing?.mantra_id || "");
   const [soundLabel, setSoundLabel] = useState(() => {
@@ -201,19 +205,76 @@ export default function EditAlarmScreen() {
     });
   }, [navigation, hourIdx, minIdx, merIdx, label, sessionId]);
 
+  const selectedSession = sessions.find((s) => s.id === sessionId);
+  const timeText = `${String(hourIdx + 1).padStart(2, "0")}:${String(minIdx).padStart(2, "0")} ${MERIDIEM[merIdx]}`;
+
   return (
     <View style={styles.container}>
       <ScrollView contentContainerStyle={styles.scroll}>
-        {/* Time picker */}
-        <View style={styles.pickerContainer}>
-          <View style={styles.pickerHighlight} />
-          <View style={styles.pickerColumns}>
-            <WheelColumn data={HOURS} selected={hourIdx} onSelect={setHourIdx} width={48} />
-            <Text style={styles.pickerColon}>:</Text>
-            <WheelColumn data={MINUTES} selected={minIdx} onSelect={setMinIdx} width={48} />
-            <WheelColumn data={MERIDIEM} selected={merIdx} onSelect={setMerIdx} width={48} />
+        {/* Sound — the hero. What you wake up to comes first. */}
+        <Pressable
+          onPress={() => router.push(`/sounds?current=${sessionId}` as any)}
+          style={styles.heroCard}
+          accessibilityRole="button"
+          accessibilityLabel={`Wake-up sound, ${selectedSession?.title ?? "none chosen"}. Change sound`}
+        >
+          {selectedSession ? (
+            <Image
+              source={{ uri: artworkFor(selectedSession) }}
+              style={styles.heroArt}
+              resizeMode="cover"
+            />
+          ) : (
+            <View style={[styles.heroArt, styles.heroArtEmpty]}>
+              <Ionicons name="musical-notes-outline" size={40} color="#3f3f46" />
+            </View>
+          )}
+          <View style={styles.heroOverlay} pointerEvents="none" />
+          <View style={styles.heroTextWrap} pointerEvents="none">
+            <Text style={styles.heroKicker} maxFontSizeMultiplier={1.4}>WAKE UP TO</Text>
+            <Text style={styles.heroTitle} numberOfLines={1} maxFontSizeMultiplier={1.2}>
+              {selectedSession?.title ?? "Choose a sound"}
+            </Text>
+            {selectedSession && (
+              <Text style={styles.heroMeta} maxFontSizeMultiplier={1.4}>
+                {selectedSession.category} · {Math.round(selectedSession.duration_sec / 60)} min
+              </Text>
+            )}
           </View>
-        </View>
+          <View style={styles.heroChip} pointerEvents="none">
+            <Text style={styles.heroChipText}>Change</Text>
+          </View>
+        </Pressable>
+
+        {/* Time — collapsed row; tap to open the wheel picker */}
+        <Pressable
+          onPress={() => setTimeOpen((v) => !v)}
+          style={styles.timeRow}
+          accessibilityRole="button"
+          accessibilityLabel={`Alarm time ${timeText}. ${timeOpen ? "Collapse" : "Expand"} time picker`}
+          accessibilityState={{ expanded: timeOpen }}
+        >
+          <Text style={styles.timeLabel}>Time</Text>
+          <View style={styles.timeRight}>
+            <Text style={styles.timeValue} maxFontSizeMultiplier={1.2}>{timeText}</Text>
+            <Ionicons
+              name={timeOpen ? "chevron-up" : "chevron-down"}
+              size={18}
+              color="#52525b"
+            />
+          </View>
+        </Pressable>
+        {timeOpen && (
+          <View style={styles.pickerContainer}>
+            <View style={styles.pickerHighlight} />
+            <View style={styles.pickerColumns}>
+              <WheelColumn data={HOURS} selected={hourIdx} onSelect={setHourIdx} width={48} />
+              <Text style={styles.pickerColon}>:</Text>
+              <WheelColumn data={MINUTES} selected={minIdx} onSelect={setMinIdx} width={48} />
+              <WheelColumn data={MERIDIEM} selected={merIdx} onSelect={setMerIdx} width={48} />
+            </View>
+          </View>
+        )}
 
         {/* Settings rows */}
         <View style={styles.settingsSection}>
@@ -234,18 +295,6 @@ export default function EditAlarmScreen() {
               placeholderTextColor="#52525b"
             />
           </View>
-          <View style={styles.rowSep} />
-
-          {/* Sound */}
-          <Pressable
-            onPress={() => router.push(`/sounds?current=${sessionId}` as any)}
-            style={styles.row}
-            accessibilityRole="button"
-            accessibilityLabel={`Sound, ${soundLabel}`}
-          >
-            <Text style={styles.rowLabel}>Sound</Text>
-            <Text style={styles.rowValue}>{soundLabel}</Text>
-          </Pressable>
           <View style={styles.rowSep} />
 
           {/* Delete */}
@@ -271,6 +320,88 @@ const styles = StyleSheet.create({
   scroll: {
     paddingHorizontal: 20,
     paddingBottom: 48,
+  },
+
+  // Sound hero
+  heroCard: {
+    height: 190,
+    borderRadius: 18,
+    overflow: "hidden",
+    marginTop: 8,
+    marginBottom: 20,
+    backgroundColor: "#1c1c1e",
+  },
+  heroArt: {
+    ...StyleSheet.absoluteFillObject,
+  },
+  heroArtEmpty: {
+    alignItems: "center",
+    justifyContent: "center",
+  },
+  heroOverlay: {
+    ...StyleSheet.absoluteFillObject,
+    backgroundColor: "rgba(0,0,0,0.38)",
+  },
+  heroTextWrap: {
+    position: "absolute",
+    left: 16,
+    right: 16,
+    bottom: 14,
+  },
+  heroKicker: {
+    color: "rgba(255,255,255,0.65)",
+    fontSize: 11,
+    fontFamily: F.semibold,
+    letterSpacing: 2,
+    marginBottom: 4,
+  },
+  heroTitle: {
+    color: "#ffffff",
+    fontSize: 24,
+    fontFamily: F.bold,
+  },
+  heroMeta: {
+    color: "rgba(255,255,255,0.7)",
+    fontSize: 13,
+    fontFamily: F.regular,
+    marginTop: 3,
+  },
+  heroChip: {
+    position: "absolute",
+    top: 12,
+    right: 12,
+    backgroundColor: "rgba(0,0,0,0.55)",
+    borderRadius: 999,
+    paddingHorizontal: 12,
+    paddingVertical: 6,
+  },
+  heroChipText: {
+    color: "#f5f5f7",
+    fontSize: 12,
+    fontFamily: F.medium,
+  },
+
+  // Time row (collapsed)
+  timeRow: {
+    flexDirection: "row",
+    justifyContent: "space-between",
+    alignItems: "center",
+    paddingVertical: 14,
+  },
+  timeLabel: {
+    color: "#f5f5f7",
+    fontSize: 16,
+    fontFamily: F.medium,
+  },
+  timeRight: {
+    flexDirection: "row",
+    alignItems: "center",
+    gap: 8,
+  },
+  timeValue: {
+    color: "#f5f5f7",
+    fontSize: 28,
+    fontFamily: F.light,
   },
 
   // Picker

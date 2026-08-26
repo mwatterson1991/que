@@ -14,6 +14,12 @@ export const BUNDLED_ASSETS: Record<string, any> = {
   "worry-dissolve": require("../assets/audio/worry-dissolve.aiff"),
   "panic-relief": require("../assets/audio/panic-relief.aiff"),
   "self-worth": require("../assets/audio/self-worth.aiff"),
+  // Naturescape soundscapes (also used by the ambient layer)
+  "ambient-dawn-birds": require("../assets/audio/ambient-dawn-birds.m4a"),
+  "ambient-river": require("../assets/audio/ambient-river.m4a"),
+  "ambient-ocean-waves": require("../assets/audio/ambient-ocean.m4a"),
+  "ambient-rain": require("../assets/audio/ambient-rain.m4a"),
+  "ambient-crickets": require("../assets/audio/ambient-crickets.m4a"),
 };
 
 // ─── Audio playback engine ──────────────────────────────

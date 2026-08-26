@@ -1,6 +1,7 @@
 import { useEffect, useState, useCallback } from "react";
 import AsyncStorage from "@react-native-async-storage/async-storage";
 import { supabase } from "./supabase";
+import { LOCAL_SESSIONS } from "./catalog";
 import { useAuth } from "./auth";
 import type { Database } from "./database.types";
 
@@ -19,7 +20,7 @@ export function useProfile() {
   const [loading, setLoading] = useState(true);
 
   const fetch = useCallback(async () => {
-    if (!user) return;
+    if (!user) { setLoading(false); return; }
     const { data } = await supabase
       .from("profiles")
       .select("*")
@@ -32,7 +33,7 @@ export function useProfile() {
   useEffect(() => { fetch(); }, [fetch]);
 
   const update = async (fields: Database["public"]["Tables"]["profiles"]["Update"]) => {
-    if (!user) return;
+    if (!user) { setLoading(false); return; }
     const { data, error } = await supabase
       .from("profiles")
       .update(fields)
@@ -78,7 +79,7 @@ export function useAlarms() {
       setLoading(false);
       return;
     }
-    if (!user) return;
+    if (!user) { setLoading(false); return; }
     const { data } = await supabase
       .from("alarms")
       .select("*")
@@ -109,7 +110,7 @@ export function useAlarms() {
       setAlarms(next);
       return { data, error: null };
     }
-    if (!user) return;
+    if (!user) { setLoading(false); return; }
     const { data, error } = await supabase
       .from("alarms")
       .insert({ ...alarm, user_id: user.id })
@@ -165,7 +166,7 @@ export function useChatMessages() {
   const [loading, setLoading] = useState(true);
 
   const fetch = useCallback(async () => {
-    if (!user) return;
+    if (!user) { setLoading(false); return; }
     const { data } = await supabase
       .from("chat_messages")
       .select("*")
@@ -178,7 +179,7 @@ export function useChatMessages() {
   useEffect(() => { fetch(); }, [fetch]);
 
   const add = async (role: "user" | "assistant", text: string) => {
-    if (!user) return;
+    if (!user) { setLoading(false); return; }
     const { data } = await supabase
       .from("chat_messages")
       .insert({ user_id: user.id, role, text })
@@ -189,7 +190,7 @@ export function useChatMessages() {
   };
 
   const clear = async () => {
-    if (!user) return;
+    if (!user) { setLoading(false); return; }
     await supabase.from("chat_messages").delete().eq("user_id", user.id);
     setMessages([]);
   };
@@ -300,7 +301,8 @@ export function useSessions() {
       .from("sessions")
       .select("*")
       .order("plays", { ascending: false });
-    setSessions(data ?? []);
+    // Bundled naturescapes are part of the catalog even offline
+    setSessions([...(data ?? []), ...LOCAL_SESSIONS]);
     setLoading(false);
   }, []);
 
@@ -319,7 +321,7 @@ export function useHabits() {
   const [loading, setLoading] = useState(true);
 
   const fetch = useCallback(async () => {
-    if (!user) return;
+    if (!user) { setLoading(false); return; }
     const { data } = await supabase
       .from("habits")
       .select("*")
@@ -333,7 +335,7 @@ export function useHabits() {
   useEffect(() => { fetch(); }, [fetch]);
 
   const add = async (habit: Omit<Database["public"]["Tables"]["habits"]["Insert"], "user_id">) => {
-    if (!user) return;
+    if (!user) { setLoading(false); return; }
     const { data, error } = await supabase
       .from("habits")
       .insert({ ...habit, user_id: user.id })
@@ -372,7 +374,7 @@ export function useHabitLogs(rangedays = 31) {
   const sinceStr = since.toLocaleDateString("en-CA");
 
   const fetch = useCallback(async () => {
-    if (!user) return;
+    if (!user) { setLoading(false); return; }
     const { data } = await supabase
       .from("habit_logs")
       .select("*")
@@ -386,7 +388,7 @@ export function useHabitLogs(rangedays = 31) {
   useEffect(() => { fetch(); }, [fetch]);
 
   const logHabit = async (habit_id: string) => {
-    if (!user) return;
+    if (!user) { setLoading(false); return; }
     const log_date = new Date().toLocaleDateString("en-CA");
     const { data, error } = await supabase
       .from("habit_logs")
@@ -432,7 +434,7 @@ export function useGratitudeEntries() {
   const [loading, setLoading] = useState(true);
 
   const fetch = useCallback(async () => {
-    if (!user) return;
+    if (!user) { setLoading(false); return; }
     const { data } = await supabase
       .from("gratitude_entries")
       .select("*")
@@ -446,7 +448,7 @@ export function useGratitudeEntries() {
   useEffect(() => { fetch(); }, [fetch]);
 
   const upsert = async (entry_number: number, entry_text: string, entry_date: string) => {
-    if (!user) return;
+    if (!user) { setLoading(false); return; }
 
     // Is this a new entry or an edit of an existing one?
     const isNew = !entries.find(

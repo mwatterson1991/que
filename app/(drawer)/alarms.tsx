@@ -1,12 +1,32 @@
 import { View, Text, FlatList, Switch, Pressable, StyleSheet, ActivityIndicator } from "react-native";
 import { useRouter, useFocusEffect } from "expo-router";
-import { useCallback } from "react";
+import { useCallback, useEffect, useRef } from "react";
+import AsyncStorage from "@react-native-async-storage/async-storage";
 import { useAlarms, useSessions } from "@/lib/useSupabase";
 import { scheduleAlarm, cancelAlarm } from "@/lib/alarmScheduler";
 import { F } from "@/lib/fonts";
 import type { Database } from "@/lib/database.types";
 
 type Alarm = Database["public"]["Tables"]["alarms"]["Row"];
+
+// ─── Starter alarms ────────────────────────────────────────
+// Seeded once when the alarms list is empty so the home screen is
+// never blank. All OFF by default — nothing rings until chosen.
+const PRESETS_SEEDED_KEY = "presets_seeded_v1";
+
+const PRESETS: Array<{ label: string; hour: number; minute: number; sessionTitle: string }> = [
+  { label: "Deep Morning Reset", hour: 6, minute: 0, sessionTitle: "Circadian Reset" },
+  { label: "Focus Start", hour: 6, minute: 30, sessionTitle: "Improve Focus" },
+  { label: "Confidence Ritual", hour: 7, minute: 0, sessionTitle: "Morning Confidence Ritual" },
+  { label: "Gratitude Wake", hour: 7, minute: 30, sessionTitle: "Gratitude Flood" },
+];
+
+function nextOccurrence(hour: number, minute: number): string {
+  const fire = new Date();
+  fire.setHours(hour, minute, 0, 0);
+  if (fire.getTime() <= Date.now()) fire.setDate(fire.getDate() + 1);
+  return fire.toISOString();
+}
 
 function formatTime(iso: string) {
   const d = new Date(iso);
@@ -64,9 +84,10 @@ function AlarmRow({ item, onToggle, sessionMap }: { item: Alarm; onToggle: (id: 
 }
 
 export default function AlarmsScreen() {
-  const { alarms, loading, toggle, refresh, remove } = useAlarms();
+  const { alarms, loading, toggle, refresh, remove, add } = useAlarms();
   const { sessions } = useSessions();
   const router = useRouter();
+  const seedingRef = useRef(false);
 
   // Re-fetch every time this screen comes into focus so new/edited alarms appear
   useFocusEffect(
@@ -74,6 +95,29 @@ export default function AlarmsScreen() {
       refresh();
     }, [refresh])
   );
+
+  // Seed starter alarms once so the home screen is never empty
+  useEffect(() => {
+    if (loading || alarms.length > 0 || sessions.length === 0 || seedingRef.current) return;
+    seedingRef.current = true;
+    (async () => {
+      const seeded = await AsyncStorage.getItem(PRESETS_SEEDED_KEY);
+      if (seeded) return;
+      await AsyncStorage.setItem(PRESETS_SEEDED_KEY, "1");
+      for (const p of PRESETS) {
+        const session = sessions.find(
+          (s) => s.title.toLowerCase() === p.sessionTitle.toLowerCase(),
+        );
+        await add({
+          label: p.label,
+          mantra_id: session?.id ?? sessions[0].id,
+          next_fire_at: nextOccurrence(p.hour, p.minute),
+          repeat_days: [],
+          enabled: false,
+        });
+      }
+    })();
+  }, [loading, alarms.length, sessions, add]);
 
   // Toggle: cancel or reschedule the OS notification to match enabled state
   const handleToggle = useCallback(async (id: string, enabled: boolean) => {

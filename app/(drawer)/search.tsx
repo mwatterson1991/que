@@ -1,4 +1,4 @@
-import { useMemo, useState, useEffect, useRef, useCallback } from "react";
+import { useMemo, useState, useEffect, useCallback } from "react";
 import { useRouter, useLocalSearchParams } from "expo-router";
 import {
   View,
@@ -9,20 +9,22 @@ import {
   ScrollView,
   StyleSheet,
   ActivityIndicator,
+  Image,
   Modal,
   KeyboardAvoidingView,
   Platform,
-  Animated,
 } from "react-native";
 import { Ionicons } from "@expo/vector-icons";
 import { F } from "@/lib/fonts";
 import { useSessions } from "@/lib/useSupabase";
 import { useAuth } from "@/lib/auth";
 import { supabase } from "@/lib/supabase";
+import { artworkFor, groupIntoRails } from "@/lib/catalog";
 import type { Session } from "@/lib/types";
 
-const CATEGORIES = ["All", "Sleep", "Confidence", "Addiction", "Anxiety", "Mindfulness"];
 const MAX_CHARS = 280;
+const CARD_W = 150;
+const CARD_H = 150;
 
 // ─── Helpers ──────────────────────────────────────────────
 function formatDuration(sec: number) {
@@ -30,28 +32,46 @@ function formatDuration(sec: number) {
   return `${min} min`;
 }
 
-function formatPlays(plays: number) {
-  return plays.toLocaleString();
-}
-
-// ─── Session row ──────────────────────────────────────────
-function SessionRow({ session }: { session: Session }) {
+// ─── Artwork card ─────────────────────────────────────────
+function SessionCard({ session, wide }: { session: Session; wide?: boolean }) {
   const router = useRouter();
+  const width = wide ? undefined : CARD_W;
   return (
     <Pressable
       onPress={() => router.push(`/player?id=${session.id}` as any)}
-      style={styles.sessionRow}
+      style={[styles.card, wide && styles.cardWide, { width }]}
       accessibilityRole="button"
-      accessibilityLabel={`Play ${session.title}, ${session.narrator}, ${formatDuration(session.duration_sec)}`}
+      accessibilityLabel={`Play ${session.title}, ${formatDuration(session.duration_sec)}`}
     >
-      <Text style={styles.sessionTitle}>{session.title}</Text>
-      <Text style={styles.sessionDescription}>{session.description}</Text>
-      <View style={styles.sessionBottom}>
-        <Text style={styles.sessionNarrator}>{session.narrator}</Text>
-        <Text style={styles.sessionPlays}>{formatPlays(session.plays)}</Text>
-        <Text style={styles.sessionDuration}>{formatDuration(session.duration_sec)}</Text>
-      </View>
+      <Image
+        source={{ uri: artworkFor(session) }}
+        style={[styles.cardArt, wide && styles.cardArtWide]}
+        resizeMode="cover"
+      />
+      <Text style={styles.cardTitle} numberOfLines={1} maxFontSizeMultiplier={1.4}>
+        {session.title}
+      </Text>
+      <Text style={styles.cardMeta} maxFontSizeMultiplier={1.4}>
+        {formatDuration(session.duration_sec)}
+      </Text>
     </Pressable>
+  );
+}
+
+// ─── Category rail ────────────────────────────────────────
+function CategoryRail({ title, sessions }: { title: string; sessions: Session[] }) {
+  return (
+    <View style={styles.rail}>
+      <Text style={styles.railTitle} maxFontSizeMultiplier={1.4}>{title}</Text>
+      <FlatList
+        data={sessions}
+        horizontal
+        keyExtractor={(s) => s.id}
+        showsHorizontalScrollIndicator={false}
+        contentContainerStyle={styles.railContent}
+        renderItem={({ item }) => <SessionCard session={item} />}
+      />
+    </View>
   );
 }
 
@@ -206,7 +226,6 @@ export default function SearchScreen() {
   const params = useLocalSearchParams<{ suggest?: string }>();
 
   const [query, setQuery] = useState("");
-  const [activeCategory, setActiveCategory] = useState("All");
   const [modalVisible, setModalVisible] = useState(false);
 
   // Open modal when header + button sets suggest param
@@ -216,20 +235,24 @@ export default function SearchScreen() {
     }
   }, [params.suggest]);
 
-  const filtered = useMemo(() => {
-    return sessions.filter((s) => {
-      const matchesCategory =
-        activeCategory === "All" || s.category === activeCategory;
-      const matchesQuery =
-        !query ||
-        s.title.toLowerCase().includes(query.toLowerCase()) ||
-        s.description.toLowerCase().includes(query.toLowerCase());
-      return matchesCategory && matchesQuery;
-    });
-  }, [sessions, activeCategory, query]);
+  const rails = useMemo(() => groupIntoRails(sessions), [sessions]);
+
+  const searchResults = useMemo(() => {
+    if (!query) return [];
+    const q = query.toLowerCase();
+    return sessions.filter(
+      (s) =>
+        s.title.toLowerCase().includes(q) ||
+        s.description.toLowerCase().includes(q) ||
+        s.category.toLowerCase().includes(q),
+    );
+  }, [sessions, query]);
 
   const openModal = useCallback(() => setModalVisible(true), []);
   const closeModal = useCallback(() => setModalVisible(false), []);
+
+  // The hypnotherapy library starts after the Naturescapes rail
+  const firstHypnoIndex = rails.findIndex(([cat]) => cat !== "Naturescapes");
 
   return (
     <View style={styles.container}>
@@ -243,57 +266,55 @@ export default function SearchScreen() {
           placeholderTextColor="#52525b"
           style={styles.searchInput}
         />
+        {query.length > 0 && (
+          <Pressable
+            onPress={() => setQuery("")}
+            hitSlop={10}
+            accessibilityRole="button"
+            accessibilityLabel="Clear search"
+          >
+            <Ionicons name="close-circle" size={18} color="#52525b" />
+          </Pressable>
+        )}
       </View>
 
-      {/* Category pills */}
-      <View style={styles.pillWrapper}>
-        <ScrollView
-          horizontal
-          showsHorizontalScrollIndicator={false}
-          contentContainerStyle={styles.pillScroll}
-        >
-          {CATEGORIES.map((cat) => {
-            const active = cat === activeCategory;
-            return (
-              <Pressable
-                key={cat}
-                onPress={() => setActiveCategory(cat)}
-                style={[styles.categoryPill, active && styles.categoryPillActive]}
-                accessibilityRole="button"
-                accessibilityState={{ selected: active }}
-              >
-                <Text
-                  style={[
-                    styles.categoryText,
-                    active && styles.categoryTextActive,
-                  ]}
-                  maxFontSizeMultiplier={1.4}
-                >
-                  {cat}
-                </Text>
-              </Pressable>
-            );
-          })}
-        </ScrollView>
-      </View>
-
-      {/* List */}
       {loading ? (
         <ActivityIndicator color="#f5f5f7" style={{ marginTop: 40 }} />
-      ) : (
+      ) : query ? (
+        // ── Search results: grid of cards ──
         <FlatList
-          data={filtered}
+          data={searchResults}
           keyExtractor={(s) => s.id}
-          renderItem={({ item }) => <SessionRow session={item} />}
-          contentContainerStyle={styles.list}
-          style={{ flex: 1 }}
+          numColumns={2}
+          columnWrapperStyle={styles.gridRow}
+          renderItem={({ item }) => <SessionCard session={item} wide />}
+          contentContainerStyle={styles.grid}
           showsVerticalScrollIndicator={false}
-          nestedScrollEnabled={true}
           ListEmptyComponent={
             <Text style={styles.emptyText}>No sessions match your search.</Text>
           }
           ListFooterComponent={<SuggestCard onPress={openModal} />}
         />
+      ) : (
+        // ── Browse: horizontal rails per channel ──
+        <ScrollView
+          showsVerticalScrollIndicator={false}
+          contentContainerStyle={styles.railsScroll}
+        >
+          {rails.map(([cat, list], i) => (
+            <View key={cat}>
+              {i === firstHypnoIndex && (
+                <Text style={styles.groupLabel} maxFontSizeMultiplier={1.4}>
+                  HYPNOTHERAPY
+                </Text>
+              )}
+              <CategoryRail title={cat} sessions={list} />
+            </View>
+          ))}
+          <View style={styles.suggestWrap}>
+            <SuggestCard onPress={openModal} />
+          </View>
+        </ScrollView>
       )}
 
       {/* Suggestion modal */}
@@ -320,7 +341,7 @@ const styles = StyleSheet.create({
     borderRadius: 12,
     marginHorizontal: 16,
     marginTop: 12,
-    marginBottom: 16,
+    marginBottom: 8,
     paddingHorizontal: 14,
     height: 44,
   },
@@ -332,83 +353,75 @@ const styles = StyleSheet.create({
     fontFamily: F.regular,
   },
 
-  // Category pills
-  pillWrapper: {
-    height: 44,
-    marginBottom: 12,
+  // Rails
+  railsScroll: {
+    paddingTop: 8,
+    paddingBottom: 40,
   },
-  pillScroll: {
-    paddingHorizontal: 16,
-    gap: 8,
-    alignItems: "center",
-    height: 44,
+  rail: {
+    marginBottom: 26,
   },
-  categoryPill: {
-    borderWidth: 1,
-    borderColor: "#3f3f46",
-    borderRadius: 20,
-    paddingHorizontal: 16,
-    paddingVertical: 8,
-    height: 36,
-    justifyContent: "center",
-  },
-  categoryPillActive: {
-    backgroundColor: "#f5f5f7",
-    borderColor: "#f5f5f7",
-  },
-  categoryText: {
-    color: "#a1a1aa",
-    fontSize: 14,
-    fontFamily: F.medium,
-  },
-  categoryTextActive: {
-    color: "#000000",
-    fontFamily: F.medium,
-  },
-
-  // Session rows
-  list: {
-    paddingHorizontal: 20,
-    paddingBottom: 32,
-  },
-  sessionRow: {
-    paddingVertical: 20,
-    borderBottomWidth: StyleSheet.hairlineWidth,
-    borderBottomColor: "#1c1c1e",
-  },
-  sessionTitle: {
+  railTitle: {
     color: "#f5f5f7",
     fontSize: 20,
-    fontFamily: F.medium,
-    marginBottom: 6,
+    fontFamily: F.semibold,
+    paddingHorizontal: 16,
+    marginBottom: 12,
   },
-  sessionDescription: {
-    color: "#71717a",
+  railContent: {
+    paddingHorizontal: 16,
+    gap: 12,
+  },
+  groupLabel: {
+    color: "#52525b",
+    fontSize: 12,
+    fontFamily: F.semibold,
+    letterSpacing: 2,
+    paddingHorizontal: 16,
+    marginBottom: 14,
+    marginTop: 4,
+  },
+
+  // Cards
+  card: {
+    width: CARD_W,
+  },
+  cardWide: {
+    flex: 1,
+    maxWidth: "48%",
+    marginBottom: 20,
+  },
+  cardArt: {
+    width: CARD_W,
+    height: CARD_H,
+    borderRadius: 14,
+    backgroundColor: "#1c1c1e",
+    marginBottom: 8,
+  },
+  cardArtWide: {
+    width: "100%",
+    height: 160,
+  },
+  cardTitle: {
+    color: "#f5f5f7",
     fontSize: 15,
-    fontFamily: F.regular,
-    lineHeight: 21,
-    marginBottom: 16,
+    fontFamily: F.medium,
+    marginBottom: 2,
   },
-  sessionBottom: {
-    flexDirection: "row",
-    alignItems: "center",
-  },
-  sessionNarrator: {
-    color: "#52525b",
-    fontSize: 14,
+  cardMeta: {
+    color: "#71717a",
+    fontSize: 13,
     fontFamily: F.regular,
   },
-  sessionPlays: {
-    color: "#52525b",
-    fontSize: 14,
-    fontFamily: F.regular,
-    marginLeft: 12,
+
+  // Search results grid
+  grid: {
+    paddingHorizontal: 16,
+    paddingTop: 8,
+    paddingBottom: 32,
   },
-  sessionDuration: {
-    color: "#52525b",
-    fontSize: 14,
-    fontFamily: F.regular,
-    marginLeft: "auto",
+  gridRow: {
+    justifyContent: "space-between",
   },
 
   // Empty
@@ -421,8 +434,11 @@ const styles = StyleSheet.create({
   },
 
   // Suggest card (end of list)
+  suggestWrap: {
+    paddingHorizontal: 16,
+  },
   suggestCard: {
-    marginTop: 24,
+    marginTop: 8,
     marginBottom: 8,
     borderWidth: 1,
     borderColor: "#1c1c1e",
