@@ -93,7 +93,7 @@ export default function WelcomeScreen() {
 
         <View>
           <Pressable
-            style={styles.enterButton}
+            style={({ pressed }) => [styles.enterButton, pressed && { transform: [{ scale: 0.98 }] }]}
             onPress={handleEnter}
             disabled={entering}
             accessibilityRole="button"

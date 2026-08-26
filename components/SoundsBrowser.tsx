@@ -46,7 +46,12 @@ function SessionCard({
   return (
     <Pressable
       onPress={() => onPress(session)}
-      style={[styles.card, wide && styles.cardWide, { width }]}
+      style={({ pressed }) => [
+        styles.card,
+        wide && styles.cardWide,
+        { width },
+        pressed && { transform: [{ scale: 0.97 }], opacity: 0.9 },
+      ]}
       accessibilityRole="button"
       accessibilityState={selected !== undefined ? { selected } : undefined}
       accessibilityLabel={`${session.title}, ${formatDuration(session.duration_sec)}${locked ? ", premium" : ""}`}
@@ -284,6 +289,8 @@ const styles = StyleSheet.create({
     borderRadius: 14,
     backgroundColor: "#1c1c1e",
     marginBottom: 8,
+    borderWidth: StyleSheet.hairlineWidth,
+    borderColor: "rgba(255,255,255,0.10)",
   },
   cardArtWide: {
     width: "100%",

@@ -300,6 +300,8 @@ const styles = StyleSheet.create({
     height: 52,
     borderRadius: 12,
     backgroundColor: "#1c1c1e",
+    borderWidth: StyleSheet.hairlineWidth,
+    borderColor: "rgba(255,255,255,0.10)",
   },
   rowLeft: {
     flex: 1,

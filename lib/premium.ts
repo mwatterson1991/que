@@ -3,10 +3,15 @@ import AsyncStorage from "@react-native-async-storage/async-storage";
 
 // ─── Premium gating (experiment) ───────────────────────────
 // When PAYWALL_ENABLED is on, premium-tier sessions route to the
-// paywall instead of playing. Real App Store billing replaces
-// unlock() before launch — flip PAYWALL_ENABLED off if submitting
-// without working purchases (App Review rejects dead paywalls).
-export const PAYWALL_ENABLED = true;
+// paywall instead of playing.
+//
+// OFF for v1 submission: the Paid Apps Agreement is unsigned (needs
+// Michael's banking + tax info in App Store Connect → Business), so
+// real purchases can't exist yet and App Review rejects dead paywalls.
+// Everything ships free at launch. To relaunch the experiment: sign the
+// agreement, create the subscription products, wire a purchases SDK,
+// then flip this to true.
+export const PAYWALL_ENABLED = false;
 
 export const PRICE_MONTHLY = "$9.99";
 export const PRICE_YEARLY = "$59.99";
