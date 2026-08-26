@@ -55,14 +55,36 @@ const ARTWORK_BY_CATEGORY: Record<string, string> = {
 
 const ARTWORK_FALLBACK = pex(371633);
 
+// Scenic pool for the hypnotherapy library — every session gets its own
+// photo, assigned by a stable hash of its title so it never shuffles.
+const HYPNO_POOL = [
+  pex(417074), // alpine sunrise lake
+  pex(371633), // bright mountain lake
+  pex(268533), // lone tree under stars
+  pex(462162), // calm ocean cove
+  pex(216798), // autumn path
+  pex(1287145), // moon over snowy peaks
+  pex(268134), // meditation at sunset
+  pex(355887), // night sky over trees
+  pex(949587), // warm bokeh
+  pex(1257860), // milky way
+];
+
+function stableIndex(text: string, mod: number): number {
+  let h = 0;
+  for (let i = 0; i < text.length; i++) h = (h * 31 + text.charCodeAt(i)) >>> 0;
+  return h % mod;
+}
+
 /** Artwork URL for a session card / player hero. */
 export function artworkFor(session: Pick<Session, "id" | "title" | "category">): string {
-  return (
-    ARTWORK_BY_ID[session.id] ??
-    ARTWORK_BY_TITLE[session.title.toLowerCase()] ??
-    ARTWORK_BY_CATEGORY[session.category] ??
-    ARTWORK_FALLBACK
-  );
+  const direct =
+    ARTWORK_BY_ID[session.id] ?? ARTWORK_BY_TITLE[session.title.toLowerCase()];
+  if (direct) return direct;
+  if (channelFor(session as any) === "Hypnotherapy") {
+    return HYPNO_POOL[stableIndex(session.title, HYPNO_POOL.length)];
+  }
+  return ARTWORK_BY_CATEGORY[session.category] ?? ARTWORK_FALLBACK;
 }
 
 // ─── Local sessions ────────────────────────────────────────

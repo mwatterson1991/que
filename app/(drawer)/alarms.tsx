@@ -156,10 +156,26 @@ function AlarmRow({ item, onToggle, sessionMap }: { item: Alarm; onToggle: (id: 
 }
 
 export default function AlarmsScreen() {
-  const { alarms, loading, toggle, refresh, remove, add } = useAlarms();
+  const { alarms, loading, toggle, refresh, remove, add, update } = useAlarms();
   const { sessions } = useSessions();
   const router = useRouter();
   const seedingRef = useRef(false);
+  const healedRef = useRef(false);
+
+  // Heal alarms whose session left the catalog (e.g. replaced audio):
+  // re-point them at a free session so rows never show "Default".
+  useEffect(() => {
+    if (healedRef.current || loading || sessions.length === 0 || alarms.length === 0) return;
+    const orphans = alarms.filter((a) => !sessions.some((s) => s.id === a.mantra_id));
+    if (orphans.length === 0) return;
+    healedRef.current = true;
+    const fallback = sessions.find((s) => s.tier === "free") ?? sessions[0];
+    (async () => {
+      for (const o of orphans) {
+        await update(o.id, { mantra_id: fallback.id, label: fallback.title });
+      }
+    })();
+  }, [loading, alarms, sessions, update]);
 
   // Re-fetch every time this screen comes into focus so new/edited alarms appear
   useFocusEffect(

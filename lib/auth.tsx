@@ -47,9 +47,13 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       setLoading(false);
     });
 
-    // Listen for auth changes
+    // Listen for auth changes. INITIAL_SESSION is ignored — the
+    // Promise.all above resolves it together with the guest flag;
+    // letting it through here races ahead of the flag read and
+    // bounces guests to the welcome screen on every cold start.
     const { data: { subscription } } = supabase.auth.onAuthStateChange(
-      (_event, session) => {
+      (event, session) => {
+        if (event === "INITIAL_SESSION") return;
         setSession(session);
         if (session) {
           // A real account supersedes guest mode
