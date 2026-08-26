@@ -14,7 +14,7 @@ import {
 } from "react-native";
 import { Ionicons } from "@expo/vector-icons";
 import { parseAlarmUtterance } from "@/lib/parseAlarm";
-import { F } from "@/lib/fonts";
+import { F, S } from "@/lib/fonts";
 import { useChatMessages, useAlarms } from "@/lib/useSupabase";
 import { useAuth } from "@/lib/auth";
 import type { Database } from "@/lib/database.types";
@@ -266,13 +266,13 @@ const styles = StyleSheet.create({
   },
   suggestionTitle: {
     color: "#f5f5f7",
-    fontSize: 14,
+    fontSize: S.caption,
     fontFamily: F.semibold,
     marginBottom: 2,
   },
   suggestionSubtitle: {
     color: "#71717a",
-    fontSize: 12,
+    fontSize: S.micro,
     fontFamily: F.regular,
   },
 
@@ -297,7 +297,7 @@ const styles = StyleSheet.create({
     backgroundColor: "transparent",
   },
   bubbleText: {
-    fontSize: 16,
+    fontSize: S.body,
     lineHeight: 22,
     fontFamily: F.regular,
   },
@@ -339,7 +339,7 @@ const styles = StyleSheet.create({
   textInput: {
     flex: 1,
     color: "#f5f5f7",
-    fontSize: 16,
+    fontSize: S.body,
     fontFamily: F.regular,
     maxHeight: 120,
     paddingHorizontal: 4,

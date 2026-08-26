@@ -4,7 +4,7 @@ import { useCallback, useEffect, useRef } from "react";
 import AsyncStorage from "@react-native-async-storage/async-storage";
 import { useAlarms, useSessions } from "@/lib/useSupabase";
 import { scheduleAlarm, cancelAlarm } from "@/lib/alarmScheduler";
-import { F } from "@/lib/fonts";
+import { F, S } from "@/lib/fonts";
 import type { Database } from "@/lib/database.types";
 
 type Alarm = Database["public"]["Tables"]["alarms"]["Row"];
@@ -252,24 +252,24 @@ const styles = StyleSheet.create({
     alignItems: "baseline",
   },
   time: {
-    fontSize: 56,
+    fontSize: S.clock,
     fontFamily: F.light,
     letterSpacing: -2,
   },
   ampm: {
-    fontSize: 24,
+    fontSize: S.title,
     fontFamily: F.light,
     marginLeft: 2,
   },
   label: {
     color: "#71717a",
-    fontSize: 15,
+    fontSize: S.secondary,
     marginTop: -2,
     fontFamily: F.regular,
   },
   sublabel: {
     color: "#71717a",
-    fontSize: 13,
+    fontSize: S.caption,
     marginTop: 2,
     fontFamily: F.regular,
   },
@@ -279,7 +279,7 @@ const styles = StyleSheet.create({
   },
   emptyText: {
     color: "#52525b",
-    fontSize: 15,
+    fontSize: S.secondary,
     textAlign: "center",
     fontFamily: F.regular,
   },

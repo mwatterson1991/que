@@ -5,7 +5,7 @@ import { useSafeAreaInsets } from "react-native-safe-area-context";
 import { Video, ResizeMode } from "expo-av";
 import AsyncStorage from "@react-native-async-storage/async-storage";
 import { Svg, Defs, LinearGradient, Stop, Rect } from "react-native-svg";
-import { F } from "@/lib/fonts";
+import { F, S } from "@/lib/fonts";
 import { ensureGuestSession } from "@/lib/guestAuth";
 import { useAuth } from "@/lib/auth";
 
@@ -126,7 +126,7 @@ const styles = StyleSheet.create({
   },
   wordmark: {
     fontFamily: "Lora",
-    fontSize: 22,
+    fontSize: S.title,
     color: "#f5f5f7",
     textAlign: "center",
   },
@@ -137,7 +137,7 @@ const styles = StyleSheet.create({
   },
   headline: {
     fontFamily: "Lora",
-    fontSize: 44,
+    fontSize: S.hero,
     lineHeight: 52,
     color: "#f5f5f7",
   },
@@ -150,7 +150,7 @@ const styles = StyleSheet.create({
   },
   enterText: {
     color: "#0a0a0a",
-    fontSize: 17,
+    fontSize: S.body,
     fontFamily: F.semibold,
     letterSpacing: 0.3,
   },
@@ -160,7 +160,7 @@ const styles = StyleSheet.create({
   },
   loginText: {
     color: "rgba(255,255,255,0.6)",
-    fontSize: 13,
+    fontSize: S.caption,
     fontFamily: F.regular,
   },
 });

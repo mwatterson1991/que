@@ -1,6 +1,6 @@
 import { View, Text, Pressable, FlatList, StyleSheet } from "react-native";
 import { useRouter } from "expo-router";
-import { F } from "@/lib/fonts";
+import { F, S } from "@/lib/fonts";
 
 const OPTIONS = [
   {
@@ -71,13 +71,13 @@ const styles = StyleSheet.create({
   },
   rowTitle: {
     color: "#f5f5f7",
-    fontSize: 20,
+    fontSize: S.title,
     fontFamily: F.medium,
     marginBottom: 6,
   },
   rowSubtitle: {
     color: "#71717a",
-    fontSize: 15,
+    fontSize: S.secondary,
     fontFamily: F.regular,
     lineHeight: 21,
   },

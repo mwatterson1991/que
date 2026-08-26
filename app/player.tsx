@@ -26,7 +26,7 @@ import Animated, {
   SharedValue,
 } from "react-native-reanimated";
 import { AVPlaybackStatus } from "expo-av";
-import { F } from "@/lib/fonts";
+import { F, S } from "@/lib/fonts";
 import { useSessions, useActivity, useProfile, useCategories, usePreferences } from "@/lib/useSupabase";
 import { setPickedSound } from "@/lib/soundPicker";
 import {
@@ -637,7 +637,7 @@ const styles = StyleSheet.create({
     overflow: "hidden",
   },
   mantraText: {
-    fontSize: 24,
+    fontSize: S.title,
     lineHeight: 34,
     fontFamily: F.regular,
     paddingHorizontal: 24,
@@ -677,7 +677,7 @@ const styles = StyleSheet.create({
   sessionTitle: {
     flex: 1,
     color: "#f5f5f7",
-    fontSize: 22,
+    fontSize: S.title,
     fontFamily: F.bold,
   },
   menuButton: {
@@ -686,7 +686,7 @@ const styles = StyleSheet.create({
   },
   narrator: {
     color: "#71717a",
-    fontSize: 15,
+    fontSize: S.secondary,
     fontFamily: F.regular,
     marginBottom: 16,
   },
@@ -717,7 +717,7 @@ const styles = StyleSheet.create({
   },
   timeText: {
     color: "#71717a",
-    fontSize: 12,
+    fontSize: S.micro,
     fontFamily: F.regular,
   },
 
@@ -737,7 +737,7 @@ const styles = StyleSheet.create({
   },
   skipLabel: {
     color: "#71717a",
-    fontSize: 10,
+    fontSize: S.micro,
     fontFamily: F.medium,
     marginTop: 2,
   },
@@ -754,7 +754,7 @@ const styles = StyleSheet.create({
   },
   alarmButtonText: {
     color: "#f5f5f7",
-    fontSize: 15,
+    fontSize: S.secondary,
     fontFamily: F.bold,
     letterSpacing: 1.5,
   },
@@ -768,7 +768,7 @@ const styles = StyleSheet.create({
   },
   completedText: {
     color: "#34d399",
-    fontSize: 15,
+    fontSize: S.secondary,
     fontFamily: F.bold,
     letterSpacing: 1.5,
   },

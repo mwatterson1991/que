@@ -10,7 +10,7 @@ import {
 import { useRouter, useNavigation } from "expo-router";
 import { Ionicons } from "@expo/vector-icons";
 import { useHabits } from "@/lib/useSupabase";
-import { F } from "@/lib/fonts";
+import { F, S } from "@/lib/fonts";
 
 const PRESET_COLORS = [
   "#FF6B35", // orange
@@ -60,7 +60,7 @@ function Stepper({
 const stepperStyles = StyleSheet.create({
   row: { flexDirection: "row", alignItems: "center", gap: 16 },
   btn: { padding: 4 },
-  value: { color: "#f5f5f7", fontSize: 17, fontFamily: F.regular, minWidth: 28, textAlign: "center" },
+  value: { color: "#f5f5f7", fontSize: S.body, fontFamily: F.regular, minWidth: 28, textAlign: "center" },
 });
 
 export default function HabitAddScreen() {
@@ -195,7 +195,7 @@ const styles = StyleSheet.create({
   },
   label: {
     color: "#f5f5f7",
-    fontSize: 17,
+    fontSize: S.body,
     fontFamily: F.regular,
   },
   labelGroup: {
@@ -204,14 +204,14 @@ const styles = StyleSheet.create({
   },
   labelSub: {
     color: "#52525b",
-    fontSize: 12,
+    fontSize: S.micro,
     fontFamily: F.regular,
     marginTop: 2,
   },
   input: {
     flex: 1,
     color: "#f5f5f7",
-    fontSize: 17,
+    fontSize: S.body,
     fontFamily: F.regular,
     textAlign: "right",
     marginLeft: 16,

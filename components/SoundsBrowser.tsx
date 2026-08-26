@@ -11,7 +11,7 @@ import {
   Image,
 } from "react-native";
 import { Ionicons } from "@expo/vector-icons";
-import { F } from "@/lib/fonts";
+import { F, S } from "@/lib/fonts";
 import { useSessions } from "@/lib/useSupabase";
 import { artworkFor, groupIntoRails, channelArtwork } from "@/lib/catalog";
 import type { Session } from "@/lib/types";
@@ -222,7 +222,7 @@ const styles = StyleSheet.create({
   searchInput: {
     flex: 1,
     color: "#f5f5f7",
-    fontSize: 16,
+    fontSize: S.body,
     marginLeft: 10,
     fontFamily: F.regular,
   },
@@ -237,7 +237,7 @@ const styles = StyleSheet.create({
   },
   railTitle: {
     color: "#f5f5f7",
-    fontSize: 20,
+    fontSize: S.title,
     fontFamily: F.semibold,
     paddingHorizontal: 16,
     marginBottom: 12,
@@ -280,13 +280,13 @@ const styles = StyleSheet.create({
   },
   cardTitle: {
     color: "#f5f5f7",
-    fontSize: 15,
+    fontSize: S.secondary,
     fontFamily: F.medium,
     marginBottom: 2,
   },
   cardMeta: {
     color: "#71717a",
-    fontSize: 13,
+    fontSize: S.caption,
     fontFamily: F.regular,
   },
 
@@ -304,7 +304,7 @@ const styles = StyleSheet.create({
   },
   comingSoonText: {
     color: "#f5f5f7",
-    fontSize: 12,
+    fontSize: S.micro,
     fontFamily: F.semibold,
     letterSpacing: 1,
     backgroundColor: "rgba(0,0,0,0.55)",
@@ -326,7 +326,7 @@ const styles = StyleSheet.create({
 
   emptyText: {
     color: "#52525b",
-    fontSize: 15,
+    fontSize: S.secondary,
     textAlign: "center",
     marginTop: 40,
     fontFamily: F.regular,

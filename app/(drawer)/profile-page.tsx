@@ -12,7 +12,7 @@ import {
 } from "react-native-svg";
 import { useRouter, useNavigation, useLocalSearchParams } from "expo-router";
 import { DrawerActions } from "@react-navigation/routers";
-import { F } from "@/lib/fonts";
+import { F, S } from "@/lib/fonts";
 import { useHabits, useHabitLogs, useProfile } from "@/lib/useSupabase";
 
 const TIME_RANGES = ["1W", "1M", "3M", "6M", "1Y"];
@@ -348,13 +348,13 @@ const styles = StyleSheet.create({
   },
   scoreValue: {
     color: "#f5f5f7",
-    fontSize: 50,
+    fontSize: S.clock,
     fontFamily: F.light,
     letterSpacing: -2,
   },
   scoreDelta: {
     color: "#22c55e",
-    fontSize: 18,
+    fontSize: S.body,
     fontFamily: F.medium,
   },
 
@@ -379,7 +379,7 @@ const styles = StyleSheet.create({
   },
   labelText: {
     color: "#52525b",
-    fontSize: 11,
+    fontSize: S.micro,
     fontFamily: F.medium,
   },
   rangePills: {
@@ -399,7 +399,7 @@ const styles = StyleSheet.create({
   },
   rangePillText: {
     color: "#52525b",
-    fontSize: 13,
+    fontSize: S.caption,
     fontFamily: F.semibold,
   },
   rangePillTextActive: {
@@ -423,12 +423,12 @@ const styles = StyleSheet.create({
   },
   legendLabel: {
     color: "#a1a1aa",
-    fontSize: 12,
+    fontSize: S.micro,
     fontFamily: F.regular,
   },
   chartEmpty: {
     color: "#3f3f46",
-    fontSize: 13,
+    fontSize: S.caption,
     fontFamily: F.regular,
     textAlign: "center",
     marginTop: 12,
@@ -446,12 +446,12 @@ const styles = StyleSheet.create({
   },
   statValue: {
     color: "#f5f5f7",
-    fontSize: 28,
+    fontSize: S.heading,
     fontFamily: F.light,
   },
   statLabel: {
     color: "#71717a",
-    fontSize: 11,
+    fontSize: S.micro,
     fontFamily: F.semibold,
     letterSpacing: 1,
     marginTop: 2,
@@ -465,7 +465,7 @@ const styles = StyleSheet.create({
   },
   sectionTitle: {
     color: "#71717a",
-    fontSize: 13,
+    fontSize: S.caption,
     fontFamily: F.semibold,
     letterSpacing: 1.5,
     marginBottom: 12,
@@ -483,12 +483,12 @@ const styles = StyleSheet.create({
   },
   catName: {
     color: "#f5f5f7",
-    fontSize: 16,
+    fontSize: S.body,
     fontFamily: F.medium,
   },
   catMeta: {
     color: "#52525b",
-    fontSize: 13,
+    fontSize: S.caption,
     fontFamily: F.regular,
   },
   progressTrack: {
@@ -513,13 +513,13 @@ const styles = StyleSheet.create({
   },
   activityTitle: {
     color: "#f5f5f7",
-    fontSize: 16,
+    fontSize: S.body,
     fontFamily: F.medium,
     flex: 1,
   },
   activityDate: {
     color: "#71717a",
-    fontSize: 14,
+    fontSize: S.caption,
     marginLeft: 12,
     fontFamily: F.regular,
   },
@@ -535,7 +535,7 @@ const styles = StyleSheet.create({
   },
   shareText: {
     color: "#f5f5f7",
-    fontSize: 15,
+    fontSize: S.secondary,
     fontFamily: F.bold,
     letterSpacing: 1.5,
   },

@@ -4,7 +4,7 @@ import { useSafeAreaInsets } from "react-native-safe-area-context";
 import { Ionicons } from "@expo/vector-icons";
 import { useState, useEffect, useRef } from "react";
 import { Audio } from "expo-av";
-import { F } from "@/lib/fonts";
+import { F, S } from "@/lib/fonts";
 import { usePreferences } from "@/lib/useSupabase";
 import {
   AMBIENT_SOUNDS,
@@ -195,12 +195,12 @@ const styles = StyleSheet.create({
   },
   headerTitle: {
     color: "#f5f5f7",
-    fontSize: 18,
+    fontSize: S.body,
     fontFamily: F.bold,
   },
   subtitle: {
     color: "#71717a",
-    fontSize: 14,
+    fontSize: S.caption,
     fontFamily: F.regular,
     lineHeight: 20,
     paddingHorizontal: 20,
@@ -243,7 +243,7 @@ const styles = StyleSheet.create({
   },
   rowLabel: {
     color: "#f5f5f7",
-    fontSize: 16,
+    fontSize: S.body,
     fontFamily: F.medium,
   },
   rowLabelActive: {
@@ -251,7 +251,7 @@ const styles = StyleSheet.create({
   },
   rowDesc: {
     color: "#71717a",
-    fontSize: 13,
+    fontSize: S.caption,
     fontFamily: F.regular,
     marginTop: 2,
   },

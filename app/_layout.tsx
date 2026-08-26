@@ -1,4 +1,5 @@
 import { useCallback, useEffect, useRef, useState } from "react";
+import { F, S } from "@/lib/fonts";
 import { Alert, Text, TextInput, Pressable, Platform } from "react-native";
 import { Ionicons } from "@expo/vector-icons";
 import { Stack, useRouter, useSegments } from "expo-router";
@@ -39,7 +40,7 @@ const applyDefaultFont = (Component: any) => {
   Component.defaultProps = Component.defaultProps || {};
   const existing = Component.defaultProps.style;
   Component.defaultProps.style = [
-    { fontFamily: "Switzer-Regular" },
+    { fontFamily: F.regular },
     existing,
   ];
 };
@@ -188,20 +189,16 @@ const HEADER_BASE = {
   headerStyle: { backgroundColor: "#000000" },
   headerTintColor: "#f5f5f7",
   headerShadowVisible: false,
-  headerTitleStyle: { fontFamily: "Switzer-Semibold", fontSize: 17 },
+  headerTitleStyle: { fontFamily: F.semibold, fontSize: S.body },
 } as const;
 
 export default function RootLayout() {
   const [fontsLoaded] = useFonts({
-    "Switzer-Thin": require("../assets/fonts/Switzer-Thin.otf"),
-    "Switzer-Extralight": require("../assets/fonts/Switzer-Extralight.otf"),
     "Switzer-Light": require("../assets/fonts/Switzer-Light.otf"),
     "Switzer-Regular": require("../assets/fonts/Switzer-Regular.otf"),
     "Switzer-Medium": require("../assets/fonts/Switzer-Medium.otf"),
     "Switzer-Semibold": require("../assets/fonts/Switzer-Semibold.otf"),
     "Switzer-Bold": require("../assets/fonts/Switzer-Bold.otf"),
-    "Switzer-Extrabold": require("../assets/fonts/Switzer-Extrabold.otf"),
-    "Switzer-Black": require("../assets/fonts/Switzer-Black.otf"),
     "Lora": require("../assets/fonts/Lora-Variable.ttf"),
   });
 

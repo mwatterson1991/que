@@ -8,7 +8,7 @@ import {
   DrawerContentScrollView,
   type DrawerContentComponentProps,
 } from "@react-navigation/drawer";
-import { F } from "@/lib/fonts";
+import { F, S } from "@/lib/fonts";
 import { useAuth } from "@/lib/auth";
 
 function CustomDrawerContent(props: DrawerContentComponentProps) {
@@ -148,7 +148,7 @@ export default function DrawerLayout() {
         headerTintColor: "#f5f5f7",
         headerTitleStyle: {
           fontFamily: F.semibold,
-          fontSize: 17,
+          fontSize: S.body,
         },
         drawerStyle: { backgroundColor: "#000000", width: 280 },
         sceneContainerStyle: { flex: 1, backgroundColor: "#000000" },
@@ -164,7 +164,7 @@ export default function DrawerLayout() {
           title: "Morning Q",
           headerTitleStyle: {
             fontFamily: "Lora",
-            fontSize: 21,
+            fontSize: S.title,
             fontWeight: "400",
             color: "#f5f5f7",
           },
@@ -188,7 +188,6 @@ export default function DrawerLayout() {
         }}
       />
       <Drawer.Screen name="create" options={{ title: "Create" }} />
-      <Drawer.Screen name="profile" options={{ title: "Profile", drawerItemStyle: { display: "none" } }} />
       <Drawer.Screen
         name="profile-page"
         options={{ title: "Profile", drawerItemStyle: { display: "none" } }}
@@ -217,7 +216,7 @@ const styles = StyleSheet.create({
   },
   navText: {
     color: "#f5f5f7",
-    fontSize: 24,
+    fontSize: S.title,
     fontFamily: F.medium,
   },
   bottomSection: {
@@ -226,7 +225,7 @@ const styles = StyleSheet.create({
   },
   bottomText: {
     color: "#71717a",
-    fontSize: 14,
+    fontSize: S.caption,
     lineHeight: 20,
     marginBottom: 16,
     fontFamily: F.regular,
@@ -239,7 +238,7 @@ const styles = StyleSheet.create({
   },
   signUpText: {
     color: "#000000",
-    fontSize: 16,
+    fontSize: S.body,
     fontFamily: F.semibold,
   },
 });

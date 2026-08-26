@@ -16,7 +16,7 @@ import { useAlarms, useSessions } from "@/lib/useSupabase";
 import { consumePickedSound } from "@/lib/soundPicker";
 import { scheduleAlarm, cancelAlarm } from "@/lib/alarmScheduler";
 import { artworkFor } from "@/lib/catalog";
-import { F } from "@/lib/fonts";
+import { F, S } from "@/lib/fonts";
 
 // ─── Scroll-wheel column ──────────────────────────────────
 const ITEM_H = 40;
@@ -67,7 +67,7 @@ function WheelColumn({
             <View style={{ height: ITEM_H, justifyContent: "center", alignItems: "center" }}>
               <Text
                 style={{
-                  fontSize: 22,
+                  fontSize: S.title,
                   fontFamily: F.regular,
                   color: isSelected ? "#f5f5f7" : "#48484a",
                 }}
@@ -199,7 +199,7 @@ export default function EditAlarmScreen() {
       title: existing ? "Edit Alarm" : "New Alarm",
       headerRight: () => (
         <Pressable onPress={save} accessibilityRole="button" accessibilityLabel="Save alarm">
-          <Text style={{ color: "#f5f5f7", fontSize: 17, fontFamily: F.medium }}>Save</Text>
+          <Text style={{ color: "#f5f5f7", fontSize: S.body, fontFamily: F.medium }}>Save</Text>
         </Pressable>
       ),
     });
@@ -350,19 +350,19 @@ const styles = StyleSheet.create({
   },
   heroKicker: {
     color: "rgba(255,255,255,0.65)",
-    fontSize: 12,
+    fontSize: S.micro,
     fontFamily: F.semibold,
     letterSpacing: 2,
     marginBottom: 4,
   },
   heroTitle: {
     color: "#ffffff",
-    fontSize: 27,
+    fontSize: S.heading,
     fontFamily: F.bold,
   },
   heroMeta: {
     color: "rgba(255,255,255,0.7)",
-    fontSize: 14,
+    fontSize: S.caption,
     fontFamily: F.regular,
     marginTop: 3,
   },
@@ -377,7 +377,7 @@ const styles = StyleSheet.create({
   },
   heroChipText: {
     color: "#f5f5f7",
-    fontSize: 12,
+    fontSize: S.micro,
     fontFamily: F.medium,
   },
 
@@ -390,7 +390,7 @@ const styles = StyleSheet.create({
   },
   timeLabel: {
     color: "#f5f5f7",
-    fontSize: 18,
+    fontSize: S.body,
     fontFamily: F.medium,
   },
   timeRight: {
@@ -400,7 +400,7 @@ const styles = StyleSheet.create({
   },
   timeValue: {
     color: "#f5f5f7",
-    fontSize: 34,
+    fontSize: S.display,
     fontFamily: F.light,
   },
 
@@ -424,7 +424,7 @@ const styles = StyleSheet.create({
     alignItems: "center",
   },
   pickerColon: {
-    fontSize: 22,
+    fontSize: S.title,
     fontFamily: F.regular,
     color: "#f5f5f7",
     marginBottom: 2,
@@ -446,12 +446,12 @@ const styles = StyleSheet.create({
   },
   rowLabel: {
     color: "#f5f5f7",
-    fontSize: 17,
+    fontSize: S.body,
     fontFamily: F.medium,
   },
   rowValue: {
     color: "#71717a",
-    fontSize: 17,
+    fontSize: S.body,
     fontFamily: F.regular,
   },
   rowRight: {
@@ -461,7 +461,7 @@ const styles = StyleSheet.create({
   },
   rowInput: {
     color: "#71717a",
-    fontSize: 17,
+    fontSize: S.body,
     fontFamily: F.regular,
     textAlign: "right",
     flex: 1,
@@ -469,7 +469,7 @@ const styles = StyleSheet.create({
   },
   deleteText: {
     color: "#ff3b30",
-    fontSize: 17,
+    fontSize: S.body,
     fontFamily: F.regular,
   },
 });

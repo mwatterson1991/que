@@ -11,7 +11,7 @@ import {
   Platform,
 } from "react-native";
 import { Ionicons } from "@expo/vector-icons";
-import { F } from "@/lib/fonts";
+import { F, S } from "@/lib/fonts";
 import { useAuth } from "@/lib/auth";
 import { supabase } from "@/lib/supabase";
 import SoundsBrowser from "@/components/SoundsBrowser";
@@ -212,14 +212,14 @@ const styles = StyleSheet.create({
   },
   suggestCardTitle: {
     color: "#52525b",
-    fontSize: 14,
+    fontSize: S.caption,
     fontFamily: F.regular,
     flex: 1,
     marginRight: 8,
   },
   suggestCardSub: {
     color: "#3f3f46",
-    fontSize: 14,
+    fontSize: S.caption,
     fontFamily: F.medium,
   },
 
@@ -245,7 +245,7 @@ const styles = StyleSheet.create({
   },
   modalTitle: {
     flex: 1,
-    fontSize: 18,
+    fontSize: S.body,
     fontFamily: F.semibold,
     color: "#f5f5f7",
   },
@@ -265,7 +265,7 @@ const styles = StyleSheet.create({
     paddingHorizontal: 16,
     paddingVertical: 16,
     color: "#f5f5f7",
-    fontSize: 16,
+    fontSize: S.body,
     fontFamily: F.regular,
     lineHeight: 24,
     minHeight: 120,
@@ -273,7 +273,7 @@ const styles = StyleSheet.create({
   },
   charCount: {
     color: "#3f3f46",
-    fontSize: 12,
+    fontSize: S.micro,
     fontFamily: F.regular,
     textAlign: "right",
     marginTop: 8,
@@ -290,7 +290,7 @@ const styles = StyleSheet.create({
     backgroundColor: "#1c1c1e",
   },
   submitText: {
-    fontSize: 16,
+    fontSize: S.body,
     fontFamily: F.semibold,
     color: "#000000",
   },
@@ -306,11 +306,11 @@ const styles = StyleSheet.create({
     gap: 12,
   },
   successIcon: {
-    fontSize: 32,
+    fontSize: S.display,
     color: "#4cd964",
   },
   successText: {
-    fontSize: 17,
+    fontSize: S.body,
     fontFamily: F.medium,
     color: "#f5f5f7",
   },

@@ -12,7 +12,7 @@ import {
 import { Ionicons } from "@expo/vector-icons";
 import { useRouter } from "expo-router";
 import { useAuth } from "@/lib/auth";
-import { F } from "@/lib/fonts";
+import { F, S } from "@/lib/fonts";
 
 const PHRASES = [
   "Your mind is trainable.",
@@ -251,7 +251,7 @@ const styles = StyleSheet.create({
   },
   logoText: {
     fontFamily: "Lora",
-    fontSize: 32,
+    fontSize: S.display,
     fontWeight: "400",
     color: "#f5f5f7",
     marginBottom: 12,
@@ -262,7 +262,7 @@ const styles = StyleSheet.create({
     justifyContent: "center",
   },
   taglineText: {
-    fontSize: 16,
+    fontSize: S.body,
     fontFamily: F.regular,
     color: "#f5f5f7",
   },
@@ -292,7 +292,7 @@ const styles = StyleSheet.create({
     height: 58,
   },
   primaryButtonText: {
-    fontSize: 17,
+    fontSize: S.body,
     fontFamily: F.semibold,
     color: "#000000",
   },
@@ -307,12 +307,12 @@ const styles = StyleSheet.create({
     borderColor: "#2c2c2e",
   },
   darkButtonText: {
-    fontSize: 17,
+    fontSize: S.body,
     fontFamily: F.semibold,
     color: "#f5f5f7",
   },
   legalText: {
-    fontSize: 12,
+    fontSize: S.micro,
     fontFamily: F.regular,
     color: "#3f3f46",
     textAlign: "center",
@@ -326,7 +326,7 @@ const styles = StyleSheet.create({
     paddingHorizontal: 24,
   },
   formTitle: {
-    fontSize: 28,
+    fontSize: S.heading,
     fontFamily: F.bold,
     color: "#f5f5f7",
     marginBottom: 28,
@@ -341,7 +341,7 @@ const styles = StyleSheet.create({
     paddingHorizontal: 16,
     paddingVertical: 16,
     color: "#f5f5f7",
-    fontSize: 16,
+    fontSize: S.body,
     fontFamily: F.regular,
     marginBottom: 14,
     borderWidth: 1,
@@ -356,13 +356,13 @@ const styles = StyleSheet.create({
     marginTop: 8,
   },
   submitText: {
-    fontSize: 17,
+    fontSize: S.body,
     fontFamily: F.semibold,
     color: "#000000",
   },
   switchText: {
     color: "#71717a",
-    fontSize: 15,
+    fontSize: S.secondary,
     fontFamily: F.regular,
     textAlign: "center",
     marginTop: 20,

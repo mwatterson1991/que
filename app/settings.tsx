@@ -2,7 +2,7 @@ import { View, Text, Pressable, ScrollView, Switch, Alert, StyleSheet } from "re
 import { Ionicons } from "@expo/vector-icons";
 import { useRouter } from "expo-router";
 import { useState, useEffect } from "react";
-import { F } from "@/lib/fonts";
+import { F, S } from "@/lib/fonts";
 import { useAuth } from "@/lib/auth";
 import { useProfile, usePreferences } from "@/lib/useSupabase";
 import { supabase } from "@/lib/supabase";
@@ -268,7 +268,7 @@ const styles = StyleSheet.create({
   // Sections
   sectionTitle: {
     color: "#71717a",
-    fontSize: 13,
+    fontSize: S.caption,
     fontFamily: F.semibold,
     letterSpacing: 1.5,
     marginBottom: 8,
@@ -287,7 +287,7 @@ const styles = StyleSheet.create({
   },
   rowLabel: {
     color: "#f5f5f7",
-    fontSize: 16,
+    fontSize: S.body,
     fontFamily: F.regular,
     flex: 1,
   },
@@ -298,7 +298,7 @@ const styles = StyleSheet.create({
   },
   rowValue: {
     color: "#71717a",
-    fontSize: 15,
+    fontSize: S.secondary,
     fontFamily: F.regular,
   },
   rowSep: {
@@ -315,14 +315,14 @@ const styles = StyleSheet.create({
   },
   signOutText: {
     color: "#ff3b30",
-    fontSize: 16,
+    fontSize: S.body,
     fontFamily: F.medium,
   },
 
   // Version
   version: {
     color: "#52525b",
-    fontSize: 13,
+    fontSize: S.caption,
     fontFamily: F.regular,
     textAlign: "center",
     marginTop: 20,

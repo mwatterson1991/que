@@ -22,7 +22,7 @@ import {
   getPendingAlarms,
   SchedulableAlarm,
 } from "@/lib/alarmScheduler";
-import { F } from "@/lib/fonts";
+import { F, S } from "@/lib/fonts";
 
 // Dummy session ID — deep-sleep session from the seed data
 // Change to any valid session ID from your Supabase sessions table
@@ -212,14 +212,14 @@ const styles = StyleSheet.create({
   sectionHeader: { flexDirection: "row", justifyContent: "space-between", alignItems: "center" },
   sectionTitle: {
     color: "#52525b",
-    fontSize: 12,
+    fontSize: S.micro,
     fontFamily: F.semibold,
     letterSpacing: 1.2,
     marginBottom: 12,
   },
   hint: {
     color: "#52525b",
-    fontSize: 13,
+    fontSize: S.caption,
     fontFamily: F.regular,
     lineHeight: 19,
     marginBottom: 16,
@@ -227,7 +227,7 @@ const styles = StyleSheet.create({
 
   statusRow: { flexDirection: "row", alignItems: "center", gap: 10, marginBottom: 12 },
   statusDot: { width: 10, height: 10, borderRadius: 5 },
-  statusText: { color: "#f5f5f7", fontSize: 15, fontFamily: F.regular },
+  statusText: { color: "#f5f5f7", fontSize: S.secondary, fontFamily: F.regular },
 
   button: {
     backgroundColor: "#1c1c1e",
@@ -235,7 +235,7 @@ const styles = StyleSheet.create({
     paddingVertical: 12,
     alignItems: "center",
   },
-  buttonText: { color: "#f5f5f7", fontSize: 15, fontFamily: F.medium },
+  buttonText: { color: "#f5f5f7", fontSize: S.secondary, fontFamily: F.medium },
 
   buttonGrid: { flexDirection: "row", flexWrap: "wrap", gap: 10 },
   testButton: {
@@ -247,9 +247,9 @@ const styles = StyleSheet.create({
     alignItems: "center",
     justifyContent: "center",
   },
-  testButtonText: { color: "#f5f5f7", fontSize: 16, fontFamily: F.medium },
+  testButtonText: { color: "#f5f5f7", fontSize: S.body, fontFamily: F.medium },
 
-  refreshLink: { color: "#3B82F6", fontSize: 13, fontFamily: F.regular },
+  refreshLink: { color: "#3B82F6", fontSize: S.caption, fontFamily: F.regular },
 
   pendingRow: {
     flexDirection: "row",
@@ -258,21 +258,21 @@ const styles = StyleSheet.create({
     borderBottomWidth: StyleSheet.hairlineWidth,
     borderBottomColor: "#1c1c1e",
   },
-  pendingTitle: { color: "#f5f5f7", fontSize: 14, fontFamily: F.regular, flex: 1 },
-  pendingTime: { color: "#52525b", fontSize: 14, fontFamily: F.regular },
+  pendingTitle: { color: "#f5f5f7", fontSize: S.caption, fontFamily: F.regular, flex: 1 },
+  pendingTime: { color: "#52525b", fontSize: S.caption, fontFamily: F.regular },
 
   clearButton: {
     marginTop: 16,
     paddingVertical: 12,
     alignItems: "center",
   },
-  clearButtonText: { color: "#ff3b30", fontSize: 15, fontFamily: F.regular },
+  clearButtonText: { color: "#ff3b30", fontSize: S.secondary, fontFamily: F.regular },
 
-  emptyText: { color: "#3f3f46", fontSize: 14, fontFamily: F.regular },
+  emptyText: { color: "#3f3f46", fontSize: S.caption, fontFamily: F.regular },
 
   checkLine: {
     color: "#4cd964",
-    fontSize: 13,
+    fontSize: S.caption,
     fontFamily: F.regular,
     lineHeight: 22,
   },

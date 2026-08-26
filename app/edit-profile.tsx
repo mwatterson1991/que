@@ -1,7 +1,7 @@
 import { useState, useEffect } from "react";
 import { View, Text, TextInput, Pressable, ScrollView, Alert, StyleSheet } from "react-native";
 import { useRouter, useNavigation } from "expo-router";
-import { F } from "@/lib/fonts";
+import { F, S } from "@/lib/fonts";
 import { useProfile } from "@/lib/useSupabase";
 
 export default function EditProfileScreen() {
@@ -42,7 +42,7 @@ export default function EditProfileScreen() {
     navigation.setOptions({
       headerRight: () => (
         <Pressable onPress={save}>
-          <Text style={{ color: "#f5f5f7", fontSize: 17, fontFamily: F.medium }}>Save</Text>
+          <Text style={{ color: "#f5f5f7", fontSize: S.body, fontFamily: F.medium }}>Save</Text>
         </Pressable>
       ),
     });
@@ -117,14 +117,14 @@ const styles = StyleSheet.create({
   },
   label: {
     color: "#71717a",
-    fontSize: 15,
+    fontSize: S.secondary,
     fontFamily: F.regular,
     width: 110,
   },
   input: {
     flex: 1,
     color: "#f5f5f7",
-    fontSize: 16,
+    fontSize: S.body,
     fontFamily: F.regular,
     textAlign: "right",
   },

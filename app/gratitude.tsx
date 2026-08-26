@@ -13,7 +13,7 @@ import {
 import { useFocusEffect } from "expo-router";
 import { Ionicons } from "@expo/vector-icons";
 import { useGratitudeEntries } from "@/lib/useSupabase";
-import { F } from "@/lib/fonts";
+import { F, S } from "@/lib/fonts";
 
 const TOTAL = 7;
 
@@ -235,14 +235,14 @@ const styles = StyleSheet.create({
   },
   title: {
     color: "#f5f5f7",
-    fontSize: 34,
+    fontSize: S.display,
     fontFamily: "Lora",
     fontWeight: "400",
     marginBottom: 4,
   },
   subtitle: {
     color: "#52525b",
-    fontSize: 15,
+    fontSize: S.secondary,
     fontFamily: F.regular,
   },
   counter: {
@@ -252,17 +252,17 @@ const styles = StyleSheet.create({
     minWidth: 40,
   },
   counterText: {
-    fontSize: 16,
+    fontSize: S.body,
   },
   counterNum: {
     color: "#f5f5f7",
     fontFamily: F.medium,
-    fontSize: 16,
+    fontSize: S.body,
   },
   counterDenom: {
     color: "#3f3f46",
     fontFamily: F.regular,
-    fontSize: 16,
+    fontSize: S.body,
   },
 
   // Entry rows
@@ -279,7 +279,7 @@ const styles = StyleSheet.create({
   entryNumber: {
     width: 28,
     color: "#3f3f46",
-    fontSize: 15,
+    fontSize: S.secondary,
     fontFamily: F.regular,
   },
   entryNumberSaved: {
@@ -288,7 +288,7 @@ const styles = StyleSheet.create({
   entryInput: {
     flex: 1,
     color: "#71717a",
-    fontSize: 17,
+    fontSize: S.body,
     fontFamily: F.regular,
     paddingVertical: 0,
   },
@@ -299,7 +299,7 @@ const styles = StyleSheet.create({
   // Completion
   completeText: {
     color: "#4cd964",
-    fontSize: 14,
+    fontSize: S.caption,
     fontFamily: F.regular,
     marginTop: 20,
     marginBottom: 8,
@@ -319,7 +319,7 @@ const styles = StyleSheet.create({
   },
   historyDateLabel: {
     color: "#52525b",
-    fontSize: 13,
+    fontSize: S.caption,
     fontFamily: F.medium,
     textTransform: "uppercase",
     letterSpacing: 0.8,
@@ -335,13 +335,13 @@ const styles = StyleSheet.create({
   historyNumber: {
     width: 28,
     color: "#3f3f46",
-    fontSize: 15,
+    fontSize: S.secondary,
     fontFamily: F.regular,
   },
   historyText: {
     flex: 1,
     color: "#52525b",
-    fontSize: 17,
+    fontSize: S.body,
     fontFamily: F.regular,
     lineHeight: 24,
   },

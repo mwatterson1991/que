@@ -30,7 +30,7 @@ import { supabase } from "@/lib/supabase";
 import { useAlarms } from "@/lib/useSupabase";
 import { scheduleAlarm } from "@/lib/alarmScheduler";
 import { requestAlarmPermissions } from "@/lib/alarmScheduler";
-import { F } from "@/lib/fonts";
+import { F, S } from "@/lib/fonts";
 
 const { width: SW } = Dimensions.get("window");
 
@@ -83,7 +83,7 @@ function WheelColumn({
             <View style={{ height: ITEM_H, justifyContent: "center", alignItems: "center" }}>
               <Text
                 style={{
-                  fontSize: 22,
+                  fontSize: S.title,
                   fontFamily: isSel ? F.medium : F.regular,
                   color: isSel ? "#f5f5f7" : "#48484a",
                 }}
@@ -522,12 +522,12 @@ const styles = StyleSheet.create({
   },
   backText: {
     color: "#f5f5f7",
-    fontSize: 22,
+    fontSize: S.title,
     fontFamily: F.light,
   },
   logoText: {
     fontFamily: "Lora",
-    fontSize: 20,
+    fontSize: S.title,
     color: "#f5f5f7",
   },
 
@@ -559,21 +559,21 @@ const styles = StyleSheet.create({
     paddingTop: 12,
   },
   stepEyebrow: {
-    fontSize: 11,
+    fontSize: S.micro,
     fontFamily: F.semibold,
     color: "#52525b",
     letterSpacing: 1.5,
     marginBottom: 12,
   },
   stepTitle: {
-    fontSize: 34,
+    fontSize: S.display,
     fontFamily: F.bold,
     color: "#f5f5f7",
     lineHeight: 40,
     marginBottom: 12,
   },
   stepSubtitle: {
-    fontSize: 16,
+    fontSize: S.body,
     fontFamily: F.regular,
     color: "#71717a",
     lineHeight: 24,
@@ -599,12 +599,12 @@ const styles = StyleSheet.create({
     backgroundColor: "#111118",
   },
   goalIcon: {
-    fontSize: 24,
+    fontSize: S.title,
     width: 32,
     textAlign: "center",
   },
   goalLabel: {
-    fontSize: 16,
+    fontSize: S.body,
     fontFamily: F.medium,
     color: "#71717a",
     flex: 1,
@@ -613,7 +613,7 @@ const styles = StyleSheet.create({
     color: "#f5f5f7",
   },
   goalDescription: {
-    fontSize: 13,
+    fontSize: S.caption,
     fontFamily: F.regular,
     color: "#3f3f46",
   },
@@ -639,14 +639,14 @@ const styles = StyleSheet.create({
     gap: 4,
   },
   pickerColon: {
-    fontSize: 22,
+    fontSize: S.title,
     fontFamily: F.regular,
     color: "#f5f5f7",
     marginBottom: 2,
   },
   pickerCaption: {
     textAlign: "center",
-    fontSize: 14,
+    fontSize: S.caption,
     fontFamily: F.regular,
     color: "#52525b",
     marginTop: 4,
@@ -663,17 +663,17 @@ const styles = StyleSheet.create({
     marginBottom: 24,
   },
   permissionIcon: {
-    fontSize: 36,
+    fontSize: S.display,
     marginBottom: 12,
   },
   permissionCardTitle: {
-    fontSize: 18,
+    fontSize: S.body,
     fontFamily: F.semibold,
     color: "#f5f5f7",
     marginBottom: 10,
   },
   permissionCardBody: {
-    fontSize: 14,
+    fontSize: S.caption,
     fontFamily: F.regular,
     color: "#71717a",
     lineHeight: 22,
@@ -687,7 +687,7 @@ const styles = StyleSheet.create({
     justifyContent: "center",
   },
   grantButtonText: {
-    fontSize: 17,
+    fontSize: S.body,
     fontFamily: F.semibold,
     color: "#000000",
   },
@@ -697,7 +697,7 @@ const styles = StyleSheet.create({
     justifyContent: "center",
   },
   grantedText: {
-    fontSize: 16,
+    fontSize: S.body,
     fontFamily: F.medium,
     color: "#4cd964",
   },
@@ -722,17 +722,17 @@ const styles = StyleSheet.create({
     backgroundColor: "#1c1c1e",
   },
   summaryLabel: {
-    fontSize: 16,
+    fontSize: S.body,
     fontFamily: F.regular,
     color: "#71717a",
   },
   summaryValue: {
-    fontSize: 16,
+    fontSize: S.body,
     fontFamily: F.medium,
     color: "#f5f5f7",
   },
   doneBody: {
-    fontSize: 15,
+    fontSize: S.secondary,
     fontFamily: F.regular,
     color: "#52525b",
     lineHeight: 24,
@@ -755,7 +755,7 @@ const styles = StyleSheet.create({
     opacity: 0.5,
   },
   ctaText: {
-    fontSize: 17,
+    fontSize: S.body,
     fontFamily: F.semibold,
     color: "#000000",
   },

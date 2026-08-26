@@ -10,7 +10,7 @@ import {
 import { useRouter, useFocusEffect } from "expo-router";
 import { Ionicons } from "@expo/vector-icons";
 import { useHabits, useHabitLogs } from "@/lib/useSupabase";
-import { F } from "@/lib/fonts";
+import { F, S } from "@/lib/fonts";
 
 export default function HabitTrackScreen() {
   const router = useRouter();
@@ -143,12 +143,12 @@ const styles = StyleSheet.create({
   },
   habitTitle: {
     color: "#f5f5f7",
-    fontSize: 17,
+    fontSize: S.body,
     fontFamily: F.regular,
   },
   habitMeta: {
     color: "#52525b",
-    fontSize: 13,
+    fontSize: S.caption,
     fontFamily: F.regular,
     marginTop: 2,
   },
@@ -168,12 +168,12 @@ const styles = StyleSheet.create({
   },
   addText: {
     color: "#3B82F6",
-    fontSize: 17,
+    fontSize: S.body,
     fontFamily: F.regular,
   },
   emptyText: {
     color: "#52525b",
-    fontSize: 15,
+    fontSize: S.secondary,
     fontFamily: F.regular,
     textAlign: "center",
     marginTop: 48,
