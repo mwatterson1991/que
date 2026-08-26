@@ -49,7 +49,7 @@ export default function HabitTrackScreen() {
   if (loading) {
     return (
       <View style={styles.centered}>
-        <ActivityIndicator color="#71717a" />
+        <ActivityIndicator color="#8b8b93" />
       </View>
     );
   }
@@ -102,6 +102,9 @@ export default function HabitTrackScreen() {
                 onPress={() => handleDotPress(item.id, item.times_per_day)}
                 hitSlop={12}
                 style={styles.dotWrap}
+                accessibilityRole="checkbox"
+                accessibilityState={{ checked: complete }}
+                accessibilityLabel={`${item.title}, ${count} of ${item.times_per_day} today`}
               >
                 <View
                   style={[
@@ -127,6 +130,8 @@ export default function HabitTrackScreen() {
             <Pressable
               style={styles.addRow}
               onPress={() => router.push("/habit-add" as any)}
+              accessibilityRole="button"
+              accessibilityLabel="Add habit"
             >
               <Ionicons name="add-circle" size={22} color="#3B82F6" style={{ marginRight: 10 }} />
               <Text style={styles.addText}>Add habit</Text>

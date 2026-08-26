@@ -41,7 +41,7 @@ export default function EditProfileScreen() {
   useEffect(() => {
     navigation.setOptions({
       headerRight: () => (
-        <Pressable onPress={save}>
+        <Pressable onPress={save} accessibilityRole="button" accessibilityLabel="Save profile">
           <Text style={{ color: "#f5f5f7", fontSize: S.body, fontFamily: F.medium }}>Save</Text>
         </Pressable>
       ),
@@ -116,7 +116,7 @@ const styles = StyleSheet.create({
     paddingVertical: 14,
   },
   label: {
-    color: "#71717a",
+    color: "#8b8b93",
     fontSize: S.secondary,
     fontFamily: F.regular,
     width: 110,

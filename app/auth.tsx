@@ -134,17 +134,26 @@ export default function AuthScreen() {
   if (mode === "landing") {
     return (
       <View style={styles.container}>
+        <Pressable
+          onPress={() => (router.canGoBack() ? router.back() : router.replace("/welcome" as any))}
+          style={styles.closeButton}
+          hitSlop={16}
+          accessibilityRole="button"
+          accessibilityLabel="Back"
+        >
+          <Ionicons name="arrow-back" size={24} color="#f5f5f7" />
+        </Pressable>
         <View style={styles.center}>
           <Text style={styles.logoText}>Morning Que</Text>
           <CyclingTagline />
         </View>
 
         <View style={styles.bottomSheet}>
-          <Pressable style={styles.primaryButton} onPress={() => setMode("signup")}>
+          <Pressable style={styles.primaryButton} onPress={() => setMode("signup")} accessibilityRole="button" accessibilityLabel="Create account">
             <Text style={styles.primaryButtonText}>Create account</Text>
           </Pressable>
 
-          <Pressable style={styles.darkButton} onPress={() => setMode("login")}>
+          <Pressable style={styles.darkButton} onPress={() => setMode("login")} accessibilityRole="button" accessibilityLabel="Log in">
             <Text style={styles.darkButtonText}>Log in</Text>
           </Pressable>
 
@@ -164,7 +173,7 @@ export default function AuthScreen() {
       behavior={Platform.OS === "ios" ? "padding" : undefined}
       style={styles.container}
     >
-      <Pressable onPress={() => setMode("landing")} style={styles.closeButton} hitSlop={16}>
+      <Pressable onPress={() => setMode("landing")} style={styles.closeButton} hitSlop={16} accessibilityRole="button" accessibilityLabel="Back">
         <Ionicons name="arrow-back" size={24} color="#f5f5f7" />
       </Pressable>
 
@@ -267,13 +276,13 @@ const styles = StyleSheet.create({
     color: "#f5f5f7",
   },
   cursor: {
-    color: "#71717a",
+    color: "#8b8b93",
     fontWeight: "300",
   },
 
   // Bottom sheet (landing)
   bottomSheet: {
-    backgroundColor: "#0f0f13",
+    backgroundColor: "#000000",
     borderTopLeftRadius: 28,
     borderTopRightRadius: 28,
     borderTopWidth: 1,
@@ -361,7 +370,7 @@ const styles = StyleSheet.create({
     color: "#000000",
   },
   switchText: {
-    color: "#71717a",
+    color: "#8b8b93",
     fontSize: S.secondary,
     fontFamily: F.regular,
     textAlign: "center",

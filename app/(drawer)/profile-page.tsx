@@ -13,7 +13,7 @@ import {
 import { useRouter, useNavigation, useLocalSearchParams } from "expo-router";
 import { DrawerActions } from "@react-navigation/routers";
 import { F, S } from "@/lib/fonts";
-import { useHabits, useHabitLogs, useProfile, useScores } from "@/lib/useSupabase";
+import { useHabits, useHabitLogs, useProfile, useScores, useActivity } from "@/lib/useSupabase";
 
 // Native screenshot module — lands with the next dev build; guarded so
 // the current binary shares text until then.
@@ -62,7 +62,13 @@ function PositivityChart({ chartRef }: { chartRef: any }) {
     .join(" ");
 
   return (
-    <View ref={chartRef} collapsable={false} style={styles.posCard}>
+    <View
+      ref={chartRef}
+      collapsable={false}
+      style={styles.posCard}
+      accessible
+      accessibilityLabel={`Positivity score ${total}${weekGain > 0 ? `, up ${weekGain} this week` : ""}, last 30 days`}
+    >
       <View style={styles.posHeader}>
         <View>
           <Text style={styles.posLabel} maxFontSizeMultiplier={1.3}>POSITIVITY</Text>
@@ -289,17 +295,6 @@ function HabitChart() {
 }
 
 // ─── Screen ──────────────────────────────────────────────
-// ─── Placeholder stats (to be wired later) ───────────────
-const STATS = [
-  { value: "—", label: "DAY STREAK" },
-  { value: "—", label: "SESSIONS" },
-  { value: "—", label: "HABITS" },
-];
-const RECENT = [
-  { title: "Morning Confidence Ritual", date: "Today" },
-  { title: "Deep Sleep Induction", date: "Yesterday" },
-];
-
 export default function ProfileScreen() {
   const router = useRouter();
   const navigation = useNavigation();
@@ -307,6 +302,7 @@ export default function ProfileScreen() {
   const fromDrawer = from === "drawer";
 
   const chartRef = useRef(null);
+  const { activity } = useActivity();
 
   // Share your positivity graph like a stock ticker on yourself.
   // With the view-shot module (next build) this attaches the actual
@@ -413,15 +409,21 @@ export default function ProfileScreen() {
         </View>
       </View>
 
-      {/* Recent Activity */}
-      <View style={styles.sectionSep} />
-      <Text style={styles.sectionTitle}>RECENT ACTIVITY</Text>
-      {RECENT.map((item, i) => (
-        <View key={i} style={styles.activityRow}>
-          <Text style={styles.activityTitle}>{item.title}</Text>
-          <Text style={styles.activityDate}>{item.date}</Text>
-        </View>
-      ))}
+      {/* Recent Activity — real sessions from the activity log */}
+      {activity.length > 0 && (
+        <>
+          <View style={styles.sectionSep} />
+          <Text style={styles.sectionTitle}>RECENT ACTIVITY</Text>
+          {activity.slice(0, 5).map((item) => (
+            <View key={item.id} style={styles.activityRow}>
+              <Text style={styles.activityTitle}>{item.title}</Text>
+              <Text style={styles.activityDate}>
+                {new Date(item.completed_at).toLocaleDateString("en-US", { month: "short", day: "numeric" })}
+              </Text>
+            </View>
+          ))}
+        </>
+      )}
     </ScrollView>
     </View>
   );
@@ -598,7 +600,7 @@ const styles = StyleSheet.create({
     fontFamily: F.light,
   },
   statLabel: {
-    color: "#71717a",
+    color: "#8b8b93",
     fontSize: S.micro,
     fontFamily: F.semibold,
     letterSpacing: 1,
@@ -612,7 +614,7 @@ const styles = StyleSheet.create({
     marginVertical: 20,
   },
   sectionTitle: {
-    color: "#71717a",
+    color: "#8b8b93",
     fontSize: S.caption,
     fontFamily: F.semibold,
     letterSpacing: 1.5,
@@ -666,7 +668,7 @@ const styles = StyleSheet.create({
     flex: 1,
   },
   activityDate: {
-    color: "#71717a",
+    color: "#8b8b93",
     fontSize: S.caption,
     marginLeft: 12,
     fontFamily: F.regular,

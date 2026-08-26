@@ -42,6 +42,8 @@ function Stepper({
         onPress={() => onChange(Math.max(min, value - 1))}
         hitSlop={8}
         style={stepperStyles.btn}
+        accessibilityRole="button"
+        accessibilityLabel="Decrease"
       >
         <Ionicons name="remove" size={18} color={value <= min ? "#3f3f46" : "#f5f5f7"} />
       </Pressable>
@@ -50,6 +52,8 @@ function Stepper({
         onPress={() => onChange(Math.min(max, value + 1))}
         hitSlop={8}
         style={stepperStyles.btn}
+        accessibilityRole="button"
+        accessibilityLabel="Increase"
       >
         <Ionicons name="add" size={18} color={value >= max ? "#3f3f46" : "#f5f5f7"} />
       </Pressable>
@@ -87,7 +91,7 @@ export default function HabitAddScreen() {
   useEffect(() => {
     navigation.setOptions({
       headerRight: () => (
-        <Pressable onPress={save} disabled={!canSave} style={{ marginRight: 4, padding: 4 }}>
+        <Pressable onPress={save} disabled={!canSave} style={{ marginRight: 4, padding: 4 }} accessibilityRole="button" accessibilityLabel="Save habit" accessibilityState={{ disabled: !canSave }}>
           <Ionicons name="checkmark" size={24} color={canSave ? "#f5f5f7" : "#3f3f46"} />
         </Pressable>
       ),
@@ -107,7 +111,7 @@ export default function HabitAddScreen() {
           value={title}
           onChangeText={setTitle}
           placeholder="Enter habit title"
-          placeholderTextColor="#3f3f46"
+          placeholderTextColor="#52525b"
           style={styles.input}
           autoFocus
           returnKeyType="done"
@@ -144,7 +148,7 @@ export default function HabitAddScreen() {
       <View style={styles.sep} />
 
       {/* Color */}
-      <Pressable style={styles.row} onPress={() => setShowColorPicker((v) => !v)}>
+      <Pressable style={styles.row} onPress={() => setShowColorPicker((v) => !v)} accessibilityRole="button" accessibilityLabel="Choose color">
         <Text style={styles.label}>Color</Text>
         <View style={[styles.colorDot, { backgroundColor: color }]} />
       </Pressable>

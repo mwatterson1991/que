@@ -27,11 +27,13 @@ function WheelColumn({
   selected,
   onSelect,
   width = 50,
+  label = "Value",
 }: {
   data: string[];
   selected: number;
   onSelect: (index: number) => void;
   width?: number;
+  label?: string;
 }) {
   const listRef = useRef<FlatList<string>>(null);
 
@@ -45,7 +47,21 @@ function WheelColumn({
   );
 
   return (
-    <View style={{ height: ITEM_H * VISIBLE, overflow: "hidden", width }}>
+    <View
+      style={{ height: ITEM_H * VISIBLE, overflow: "hidden", width }}
+      accessible
+      accessibilityRole="adjustable"
+      accessibilityLabel={label}
+      accessibilityValue={{ text: data[selected] }}
+      accessibilityActions={[{ name: "increment" }, { name: "decrement" }]}
+      onAccessibilityAction={(e) => {
+        if (e.nativeEvent.actionName === "increment") {
+          onSelect(Math.min(selected + 1, data.length - 1));
+        } else if (e.nativeEvent.actionName === "decrement") {
+          onSelect(Math.max(selected - 1, 0));
+        }
+      }}
+    >
       <FlatList
         ref={listRef}
         data={data}
@@ -254,23 +270,16 @@ export default function EditAlarmScreen() {
           <View style={styles.pickerContainer}>
             <View style={styles.pickerHighlight} />
             <View style={styles.pickerColumns}>
-              <WheelColumn data={HOURS} selected={hourIdx} onSelect={setHourIdx} width={48} />
+              <WheelColumn data={HOURS} selected={hourIdx} onSelect={setHourIdx} width={48} label="Hour" />
               <Text style={styles.pickerColon}>:</Text>
-              <WheelColumn data={MINUTES} selected={minIdx} onSelect={setMinIdx} width={48} />
-              <WheelColumn data={MERIDIEM} selected={merIdx} onSelect={setMerIdx} width={48} />
+              <WheelColumn data={MINUTES} selected={minIdx} onSelect={setMinIdx} width={48} label="Minute" />
+              <WheelColumn data={MERIDIEM} selected={merIdx} onSelect={setMerIdx} width={48} label="AM or PM" />
             </View>
           </View>
         </View>
 
         {/* Settings rows */}
         <View style={styles.settingsSection}>
-          {/* Repeat */}
-          <View style={styles.row}>
-            <Text style={styles.rowLabel}>Repeat</Text>
-            <Text style={styles.rowValue}>Never</Text>
-          </View>
-          <View style={styles.rowSep} />
-
           {/* Delete */}
           <Pressable
             onPress={deleteAlarm}
@@ -424,7 +433,7 @@ const styles = StyleSheet.create({
     fontFamily: F.medium,
   },
   rowValue: {
-    color: "#71717a",
+    color: "#8b8b93",
     fontSize: S.body,
     fontFamily: F.regular,
   },
@@ -434,7 +443,7 @@ const styles = StyleSheet.create({
     gap: 6,
   },
   rowInput: {
-    color: "#71717a",
+    color: "#8b8b93",
     fontSize: S.body,
     fontFamily: F.regular,
     textAlign: "right",

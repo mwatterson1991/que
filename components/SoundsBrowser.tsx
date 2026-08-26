@@ -144,7 +144,7 @@ export default function SoundsBrowser({
     <View style={styles.container}>
       {/* Search bar */}
       <View style={styles.searchBar}>
-        <Ionicons name="search" size={18} color="#71717a" />
+        <Ionicons name="search" size={18} color="#8b8b93" />
         <TextInput
           value={query}
           onChangeText={setQuery}
@@ -325,7 +325,7 @@ const styles = StyleSheet.create({
     marginBottom: 2,
   },
   cardMeta: {
-    color: "#71717a",
+    color: "#8b8b93",
     fontSize: S.caption,
     fontFamily: F.regular,
   },
@@ -365,7 +365,7 @@ const styles = StyleSheet.create({
   },
 
   emptyText: {
-    color: "#52525b",
+    color: "#a1a1aa",
     fontSize: S.secondary,
     textAlign: "center",
     marginTop: 40,

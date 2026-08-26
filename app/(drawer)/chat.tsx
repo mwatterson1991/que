@@ -119,7 +119,7 @@ export default function ChatScreen() {
       {/* ---------- MESSAGES or EMPTY STATE ---------- */}
       {loading ? (
         <View style={{ flex: 1, justifyContent: "center", alignItems: "center" }}>
-          <ActivityIndicator color="#71717a" />
+          <ActivityIndicator color="#8b8b93" />
         </View>
       ) : hasMessages ? (
         <FlatList
@@ -153,11 +153,6 @@ export default function ChatScreen() {
         />
       ) : (
         <View style={styles.emptyState}>
-          {/* Floating mic button — above suggestions */}
-          <Pressable style={styles.floatingMic}>
-            <Ionicons name="mic" size={26} color="#000" />
-          </Pressable>
-
           {/* Suggestion chips */}
           <View style={styles.suggestionsWrapper}>
             <ScrollView
@@ -170,6 +165,8 @@ export default function ChatScreen() {
                   key={i}
                   onPress={() => send(`${s.title} ${s.subtitle}`)}
                   style={styles.suggestionChip}
+                  accessibilityRole="button"
+                  accessibilityLabel={`${s.title} ${s.subtitle}`}
                 >
                   <Text style={styles.suggestionTitle}>{s.title}</Text>
                   <Text style={styles.suggestionSubtitle}>{s.subtitle}</Text>
@@ -186,14 +183,11 @@ export default function ChatScreen() {
           style={styles.inputBar}
           onPress={() => inputRef.current?.focus()}
         >
-          <Pressable style={styles.plusButton}>
-            <Ionicons name="add" size={22} color="#a1a1aa" />
-          </Pressable>
           <TextInput
             ref={inputRef}
             value={draft}
             onChangeText={setDraft}
-            placeholder="Ask Morning Q"
+            placeholder="Ask Morning Que"
             placeholderTextColor="#52525b"
             multiline
             style={styles.textInput}
@@ -201,7 +195,7 @@ export default function ChatScreen() {
             blurOnSubmit={false}
           />
           {draft.trim().length > 0 ? (
-            <Pressable onPress={() => send()} style={styles.sendButton}>
+            <Pressable onPress={() => send()} style={styles.sendButton} accessibilityRole="button" accessibilityLabel="Send message">
               <Ionicons name="arrow-up" size={16} color="#000" />
             </Pressable>
           ) : (
@@ -257,7 +251,7 @@ const styles = StyleSheet.create({
     height: 64,
   },
   suggestionChip: {
-    backgroundColor: "#15151c",
+    backgroundColor: "#141416",
     borderWidth: 1,
     borderColor: "#27272a",
     borderRadius: 16,
@@ -271,7 +265,7 @@ const styles = StyleSheet.create({
     marginBottom: 2,
   },
   suggestionSubtitle: {
-    color: "#71717a",
+    color: "#8b8b93",
     fontSize: S.micro,
     fontFamily: F.regular,
   },
@@ -319,7 +313,7 @@ const styles = StyleSheet.create({
   inputBar: {
     flexDirection: "row",
     alignItems: "center",
-    backgroundColor: "#1c1c24",
+    backgroundColor: "#1c1c1e",
     borderRadius: 14,
     borderWidth: 1,
     borderColor: "#27272a",

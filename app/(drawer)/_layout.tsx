@@ -164,7 +164,7 @@ export default function DrawerLayout() {
       <Drawer.Screen
         name="chat"
         options={{
-          title: "Morning Q",
+          title: "Morning Que",
           headerTitleStyle: {
             fontFamily: "Lora",
             fontSize: S.title,
@@ -172,6 +172,7 @@ export default function DrawerLayout() {
             color: "#f5f5f7",
           },
           headerLeft: () => <HamburgerButton />,
+          headerRight: () => <ProfileButton />,
         }}
       />
       <Drawer.Screen
@@ -190,7 +191,6 @@ export default function DrawerLayout() {
           headerRight: () => <SuggestButton />,
         }}
       />
-      <Drawer.Screen name="create" options={{ title: "Create", drawerItemStyle: { display: "none" } }} />
       <Drawer.Screen
         name="profile-page"
         options={{ title: "Profile", drawerItemStyle: { display: "none" } }}
@@ -227,7 +227,7 @@ const styles = StyleSheet.create({
     paddingBottom: 40,
   },
   bottomText: {
-    color: "#71717a",
+    color: "#8b8b93",
     fontSize: S.caption,
     lineHeight: 20,
     marginBottom: 16,

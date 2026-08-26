@@ -1,4 +1,4 @@
-import { View, Text, Pressable, ScrollView, Switch, Alert, StyleSheet } from "react-native";
+import { View, Text, Pressable, ScrollView, Switch, Alert, StyleSheet, Linking } from "react-native";
 import { Ionicons } from "@expo/vector-icons";
 import { useRouter } from "expo-router";
 import { useState, useEffect } from "react";
@@ -23,6 +23,7 @@ function SettingsRow({ icon, label, value, hasToggle, toggleValue, onToggle, onP
     <Pressable
       onPress={onPress}
       style={styles.row}
+      accessible={!hasToggle}
       accessibilityRole={hasToggle ? undefined : "button"}
       accessibilityLabel={hasToggle ? undefined : value ? `${label}, ${value}` : label}
     >
@@ -106,12 +107,6 @@ export default function SettingsScreen() {
         value={displayEmail}
         onPress={() => router.push("/edit-email" as any)}
       />
-      <View style={styles.rowSep} />
-      <SettingsRow
-        icon="shield-checkmark-outline"
-        label="Privacy"
-        onPress={() => Alert.alert("Privacy", "Privacy settings coming soon.")}
-      />
 
       {/* Preferences */}
       <Text style={styles.sectionTitle}>PREFERENCES</Text>
@@ -130,24 +125,9 @@ export default function SettingsScreen() {
         toggleValue={haptics}
         onToggle={toggleHaptics}
       />
-      <View style={styles.rowSep} />
-      <SettingsRow
-        icon="moon-outline"
-        label="Dark Mode"
-        hasToggle
-        toggleValue={darkMode}
-        onToggle={toggleDarkMode}
-      />
 
       {/* App */}
       <Text style={styles.sectionTitle}>APP</Text>
-      <SettingsRow
-        icon="volume-high-outline"
-        label="Default Sound"
-        value="Focus"
-        onPress={() => router.push("/sounds" as any)}
-      />
-      <View style={styles.rowSep} />
       <SettingsRow
         icon="water-outline"
         label="Ambient Sound"
@@ -162,21 +142,10 @@ export default function SettingsScreen() {
           )
         }
       />
-      <View style={styles.rowSep} />
-      <SettingsRow
-        icon="time-outline"
-        label="Default Duration"
-        value="10 min"
-        onPress={() => Alert.alert("Duration", "Duration picker coming soon.")}
-      />
-      <View style={styles.rowSep} />
-      <SettingsRow
-        icon="cloud-outline"
-        label="Data & Storage"
-        onPress={() => Alert.alert("Data & Storage", "Storage management coming soon.")}
-      />
 
-      {/* Developer */}
+      {/* Developer — hidden in release builds */}
+      {__DEV__ && (
+        <>
       <Text style={styles.sectionTitle}>DEVELOPER</Text>
       <SettingsRow
         icon="bug-outline"
@@ -208,30 +177,27 @@ export default function SettingsScreen() {
         }
       />
 
+        </>
+      )}
+
       {/* Support */}
       <Text style={styles.sectionTitle}>SUPPORT</Text>
       <SettingsRow
-        icon="help-circle-outline"
-        label="Help Center"
-        onPress={() => Alert.alert("Help Center", "Help center coming soon.")}
-      />
-      <View style={styles.rowSep} />
-      <SettingsRow
         icon="chatbox-outline"
         label="Send Feedback"
-        onPress={() => Alert.alert("Feedback", "Feedback form coming soon.")}
+        onPress={() => Linking.openURL("mailto:michaelgwatterson@gmail.com?subject=Morning%20Que%20feedback")}
       />
       <View style={styles.rowSep} />
       <SettingsRow
-        icon="document-text-outline"
-        label="Terms of Service"
-        onPress={() => Alert.alert("Terms", "Terms of service coming soon.")}
+        icon="help-circle-outline"
+        label="Support"
+        onPress={() => Linking.openURL("https://mwatterson1991.github.io/morningque-site/support.html")}
       />
       <View style={styles.rowSep} />
       <SettingsRow
         icon="lock-closed-outline"
         label="Privacy Policy"
-        onPress={() => Alert.alert("Privacy", "Privacy policy coming soon.")}
+        onPress={() => Linking.openURL("https://mwatterson1991.github.io/morningque-site/privacy.html")}
       />
 
       {/* Sign out */}
@@ -242,14 +208,14 @@ export default function SettingsScreen() {
           { text: "Cancel", style: "cancel" },
           { text: "Sign Out", style: "destructive", onPress: async () => {
             await signOut();
-            router.replace("/auth");
+            router.replace("/welcome" as any);
           }},
         ])}
       >
         <Text style={styles.signOutText}>Sign Out</Text>
       </Pressable>
 
-      <Text style={styles.version}>Morning Q v1.0.0</Text>
+      <Text style={styles.version}>Morning Que v1.0.0</Text>
     </ScrollView>
   );
 }
@@ -267,7 +233,7 @@ const styles = StyleSheet.create({
 
   // Sections
   sectionTitle: {
-    color: "#71717a",
+    color: "#8b8b93",
     fontSize: S.caption,
     fontFamily: F.semibold,
     letterSpacing: 1.5,
@@ -297,7 +263,7 @@ const styles = StyleSheet.create({
     gap: 6,
   },
   rowValue: {
-    color: "#71717a",
+    color: "#8b8b93",
     fontSize: S.secondary,
     fontFamily: F.regular,
   },

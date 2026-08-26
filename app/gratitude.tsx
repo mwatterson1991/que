@@ -99,7 +99,7 @@ export default function GratitudeScreen() {
   if (loading) {
     return (
       <View style={styles.centered}>
-        <ActivityIndicator color="#71717a" />
+        <ActivityIndicator color="#8b8b93" />
       </View>
     );
   }
@@ -187,7 +187,7 @@ export default function GratitudeScreen() {
                   onBlur={() => handleBlur(n)}
                   onSubmitEditing={() => handleSubmit(n)}
                   placeholder={saved ? "" : "Write something…"}
-                  placeholderTextColor="#3f3f46"
+                  placeholderTextColor="#52525b"
                   returnKeyType={n < TOTAL ? "next" : "done"}
                   blurOnSubmit={n === TOTAL}
                   editable={true}
@@ -340,7 +340,7 @@ const styles = StyleSheet.create({
   },
   entryNumber: {
     width: 28,
-    color: "#3f3f46",
+    color: "#8b8b93",
     fontSize: S.secondary,
     fontFamily: F.regular,
   },
@@ -349,7 +349,7 @@ const styles = StyleSheet.create({
   },
   entryInput: {
     flex: 1,
-    color: "#71717a",
+    color: "#8b8b93",
     fontSize: S.body,
     fontFamily: F.regular,
     paddingVertical: 0,
@@ -402,7 +402,7 @@ const styles = StyleSheet.create({
   },
   historyText: {
     flex: 1,
-    color: "#52525b",
+    color: "#a1a1aa",
     fontSize: S.body,
     fontFamily: F.regular,
     lineHeight: 24,

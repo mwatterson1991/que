@@ -38,7 +38,8 @@ export default function PaywallScreen() {
           text: "Unlock",
           onPress: async () => {
             await unlock();
-            router.back();
+            if (id) router.replace(`/player?id=${id}` as any);
+            else router.back();
           },
         },
       ],
@@ -215,7 +216,7 @@ const styles = StyleSheet.create({
     fontFamily: F.semibold,
   },
   planSub: {
-    color: "#71717a",
+    color: "#8b8b93",
     fontSize: S.caption,
     fontFamily: F.regular,
     marginTop: 2,

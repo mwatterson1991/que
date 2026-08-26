@@ -78,6 +78,7 @@ function MarqueeRow({
         {[...images, ...images].map((uri, i) => (
           <Image
             key={i}
+            accessible={false}
             source={{ uri }}
             style={{ width: TILE, height: TILE, borderRadius: 16, marginRight: GAP, backgroundColor: "#1c1c1e" }}
           />

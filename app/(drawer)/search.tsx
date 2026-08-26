@@ -109,7 +109,7 @@ function SuggestionModal({
             accessibilityRole="button"
             accessibilityLabel="Close"
           >
-            <Ionicons name="close" size={22} color="#71717a" />
+            <Ionicons name="close" size={22} color="#8b8b93" />
           </Pressable>
         </View>
 
@@ -124,7 +124,7 @@ function SuggestionModal({
               value={text}
               onChangeText={(t) => setText(t.slice(0, MAX_CHARS))}
               placeholder="e.g. A 5-min session for handling Monday mornings"
-              placeholderTextColor="#3f3f46"
+              placeholderTextColor="#52525b"
               style={styles.modalInput}
               multiline
               autoFocus

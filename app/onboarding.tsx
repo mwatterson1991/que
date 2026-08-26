@@ -495,6 +495,22 @@ export default function OnboardingScreen() {
         >
           <Text style={styles.ctaText}>{ctaLabel()}</Text>
         </Pressable>
+        <Pressable
+          onPress={async () => {
+            try {
+              await supabase.auth.updateUser({ data: { onboarded: true } });
+            } catch {}
+            router.replace("/alarms" as any);
+          }}
+          hitSlop={10}
+          style={{ alignItems: "center", paddingTop: 14 }}
+          accessibilityRole="button"
+          accessibilityLabel="Skip onboarding for now"
+        >
+          <Text style={{ color: "rgba(255,255,255,0.45)", fontSize: S.caption, fontFamily: F.regular }}>
+            Skip for now
+          </Text>
+        </Pressable>
       </View>
     </View>
   );
@@ -575,7 +591,7 @@ const styles = StyleSheet.create({
   stepSubtitle: {
     fontSize: S.body,
     fontFamily: F.regular,
-    color: "#71717a",
+    color: "#8b8b93",
     lineHeight: 24,
     marginBottom: 32,
   },
@@ -606,7 +622,7 @@ const styles = StyleSheet.create({
   goalLabel: {
     fontSize: S.body,
     fontFamily: F.medium,
-    color: "#71717a",
+    color: "#8b8b93",
     flex: 1,
   },
   goalLabelSelected: {
@@ -675,7 +691,7 @@ const styles = StyleSheet.create({
   permissionCardBody: {
     fontSize: S.caption,
     fontFamily: F.regular,
-    color: "#71717a",
+    color: "#8b8b93",
     lineHeight: 22,
     textAlign: "center",
   },
@@ -724,7 +740,7 @@ const styles = StyleSheet.create({
   summaryLabel: {
     fontSize: S.body,
     fontFamily: F.regular,
-    color: "#71717a",
+    color: "#8b8b93",
   },
   summaryValue: {
     fontSize: S.body,

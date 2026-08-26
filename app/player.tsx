@@ -461,6 +461,7 @@ export default function PlayerScreen() {
               source={{ uri: artworkFor(session) }}
               style={StyleSheet.absoluteFill}
               resizeMode="cover"
+              accessibilityLabel={`${session.title} artwork`}
             />
           )}
           {/* Fade the artwork into the black bottom sheet */}
@@ -516,7 +517,7 @@ export default function PlayerScreen() {
             accessibilityRole="button"
             accessibilityLabel="Session details"
           >
-            <Ionicons name="ellipsis-horizontal" size={22} color="#71717a" />
+            <Ionicons name="ellipsis-horizontal" size={22} color="#8b8b93" />
           </Pressable>
         </View>
         <Text style={styles.narrator}>{session?.narrator}</Text>
@@ -662,7 +663,7 @@ const styles = StyleSheet.create({
     color: "#f5f5f7",
   },
   mantraDim: {
-    color: "#1e1e20",
+    color: "#3a3a3d",
   },
   fadeTop: {
     position: "absolute",
@@ -701,7 +702,7 @@ const styles = StyleSheet.create({
     paddingVertical: 4,
   },
   narrator: {
-    color: "#71717a",
+    color: "#8b8b93",
     fontSize: S.secondary,
     fontFamily: F.regular,
     marginBottom: 16,
@@ -732,7 +733,7 @@ const styles = StyleSheet.create({
     marginTop: 4,
   },
   timeText: {
-    color: "#71717a",
+    color: "#8b8b93",
     fontSize: S.micro,
     fontFamily: F.regular,
   },
@@ -752,7 +753,7 @@ const styles = StyleSheet.create({
     justifyContent: "center",
   },
   skipLabel: {
-    color: "#71717a",
+    color: "#8b8b93",
     fontSize: S.micro,
     fontFamily: F.medium,
     marginTop: 2,

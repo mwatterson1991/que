@@ -146,7 +146,7 @@ function AmbientRow({
           <Ionicons
             name={entry.icon as any}
             size={20}
-            color={isSelected ? "#f5f5f7" : "#71717a"}
+            color={isSelected ? "#f5f5f7" : "#8b8b93"}
           />
         </View>
         <View style={styles.rowText}>
@@ -199,7 +199,7 @@ const styles = StyleSheet.create({
     fontFamily: F.bold,
   },
   subtitle: {
-    color: "#71717a",
+    color: "#8b8b93",
     fontSize: S.caption,
     fontFamily: F.regular,
     lineHeight: 20,
@@ -250,7 +250,7 @@ const styles = StyleSheet.create({
     color: "#FF5500",
   },
   rowDesc: {
-    color: "#71717a",
+    color: "#8b8b93",
     fontSize: S.caption,
     fontFamily: F.regular,
     marginTop: 2,

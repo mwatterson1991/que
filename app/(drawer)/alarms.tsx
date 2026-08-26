@@ -115,7 +115,7 @@ function PillSwitch({
 function AlarmRow({ item, onToggle, sessionMap }: { item: Alarm; onToggle: (id: string, enabled: boolean) => void; sessionMap: SessionMap }) {
   const { hour, ampm } = formatTime(item.next_fire_at);
   const color = "#f5f5f7";
-  const dimColor = "#71717a";
+  const dimColor = "#8b8b93";
   const router = useRouter();
   const session = sessionMap[item.mantra_id];
   const soundName = session?.title || "Default";
@@ -135,6 +135,7 @@ function AlarmRow({ item, onToggle, sessionMap }: { item: Alarm; onToggle: (id: 
           source={{ uri: artworkFor(session) }}
           style={styles.rowArt}
           resizeMode="cover"
+          accessible={false}
         />
       )}
       <View style={styles.rowLeft}>
@@ -235,7 +236,7 @@ export default function AlarmsScreen() {
 
         {loading ? (
           <View style={styles.emptyState}>
-            <ActivityIndicator color="#71717a" />
+            <ActivityIndicator color="#8b8b93" />
           </View>
         ) : alarms.length === 0 ? (
           <View style={styles.emptyState}>
@@ -321,13 +322,13 @@ const styles = StyleSheet.create({
     marginLeft: 2,
   },
   label: {
-    color: "#71717a",
+    color: "#8b8b93",
     fontSize: S.secondary,
     marginTop: -2,
     fontFamily: F.regular,
   },
   sublabel: {
-    color: "#71717a",
+    color: "#8b8b93",
     fontSize: S.caption,
     marginTop: 2,
     fontFamily: F.regular,
@@ -337,7 +338,7 @@ const styles = StyleSheet.create({
     alignItems: "center",
   },
   emptyText: {
-    color: "#52525b",
+    color: "#a1a1aa",
     fontSize: S.secondary,
     textAlign: "center",
     fontFamily: F.regular,
