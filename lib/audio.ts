@@ -21,6 +21,16 @@ export const BUNDLED_ASSETS: Record<string, any> = {
   "ambient-ocean-waves": require("../assets/audio/ambient-ocean.m4a"),
   "ambient-rain": require("../assets/audio/ambient-rain.m4a"),
   "ambient-crickets": require("../assets/audio/ambient-crickets.m4a"),
+  // Frequencies
+  "freq-alpha": require("../assets/audio/freq-alpha.m4a"),
+  "freq-delta": require("../assets/audio/freq-delta.m4a"),
+  // Horoscope + Positive Words (placeholder voice — regenerate via ElevenLabs)
+  "horo-star": require("../assets/audio/horo-star.m4a"),
+  "horo-cosmic": require("../assets/audio/horo-cosmic.m4a"),
+  "horo-moon": require("../assets/audio/horo-moon.m4a"),
+  "words-affirm": require("../assets/audio/words-affirm.m4a"),
+  "words-grace": require("../assets/audio/words-grace.m4a"),
+  "words-stoic": require("../assets/audio/words-stoic.m4a"),
 };
 
 // ─── Audio playback engine ──────────────────────────────

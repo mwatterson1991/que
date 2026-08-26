@@ -1,5 +1,5 @@
 import { useEffect, useState, useMemo } from "react";
-import { View, Text, Pressable, ScrollView, StyleSheet, useWindowDimensions } from "react-native";
+import { View, Text, Pressable, ScrollView, StyleSheet, useWindowDimensions, Share } from "react-native";
 import { Ionicons } from "@expo/vector-icons";
 import {
   Svg,
@@ -222,6 +222,16 @@ export default function ProfileScreen() {
   const navigation = useNavigation();
   const { from } = useLocalSearchParams<{ from?: string }>();
   const fromDrawer = from === "drawer";
+
+  // Native share sheet — invite a friend to the app
+  const handleShare = async () => {
+    try {
+      await Share.share({
+        message:
+          "I've been waking up with Morning Que — alarms that ease you awake with nature sound and guided sessions. Fall in love with your mornings: https://morningque.netlify.app",
+      });
+    } catch {}
+  };
   const { profile } = useProfile();
   const { habits } = useHabits();
 
@@ -251,7 +261,11 @@ export default function ProfileScreen() {
         ),
       headerRight: () => (
         <View style={{ flexDirection: "row", alignItems: "center", gap: 16, marginRight: 4 }}>
-          <Pressable accessibilityRole="button" accessibilityLabel="Share">
+          <Pressable
+            onPress={handleShare}
+            accessibilityRole="button"
+            accessibilityLabel="Share"
+          >
             <Ionicons name="share-outline" size={22} color="#f5f5f7" />
           </Pressable>
           <Pressable

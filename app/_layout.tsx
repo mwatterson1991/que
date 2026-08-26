@@ -243,16 +243,6 @@ export default function RootLayout() {
             options={{ contentStyle: { flex: 1, backgroundColor: "#000000" } }}
           />
           <Stack.Screen
-            name="profile-page"
-            options={{
-              animation: "default",
-              headerShown: true,
-              title: "Profile",
-              ...HEADER_BASE,
-              contentStyle: { flex: 1, backgroundColor: "#000000" },
-            }}
-          />
-          <Stack.Screen
             name="settings"
             options={{
               animation: "default",

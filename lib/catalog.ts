@@ -16,6 +16,15 @@ const ARTWORK_BY_ID: Record<string, string> = {
   "local-ocean-waves": pex(1032650), // sunset beach waves
   "local-rain": pex(807598), // raindrops on leaves
   "local-crickets": pex(1257860), // milky way
+  "local-theta": pex(62693), // clean light stripes
+  "local-freq-alpha": pex(949587), // warm bokeh
+  "local-freq-delta": pex(268533), // lone tree under stars
+  "local-horo-star": pex(1257860), // milky way
+  "local-horo-cosmic": pex(355887), // night sky over trees
+  "local-horo-moon": pex(1287145), // moon over snowy peaks
+  "local-words-affirm": pex(736230), // pink rose
+  "local-words-grace": pex(268134), // meditation at sunset
+  "local-words-stoic": pex(216798), // autumn path
 };
 
 const ARTWORK_BY_TITLE: Record<string, string> = {
@@ -63,12 +72,14 @@ const local = (
   description: string,
   audio_asset: string,
   duration_sec: number,
+  category = "Naturescapes",
+  narrator = "Field recording",
 ): Session => ({
   id,
   title,
   description,
-  category: "Naturescapes",
-  narrator: "Field recording",
+  category,
+  narrator,
   duration_sec,
   audio_url: null,
   audio_asset,
@@ -83,7 +94,15 @@ export const LOCAL_SESSIONS: Session[] = [
   local("local-ocean-waves", "Ocean Waves", "Waves breaking on a rocky Chilean shore", "ambient-ocean-waves", 148),
   local("local-rain", "Rain on Leaves", "Soft rain falling through a forest canopy", "ambient-rain", 150),
   local("local-crickets", "Night Crickets", "Warm evening crickets under a clear sky", "ambient-crickets", 80),
-  local("local-theta", "Theta 6 Hz", "Low binaural hum tuned to the theta brain state", "theta-binaural", 120),
+  local("local-theta", "Theta 6 Hz", "Low binaural hum tuned to the theta brain state", "theta-binaural", 120, "Frequencies", "Binaural tone"),
+  local("local-freq-alpha", "Alpha 10 Hz", "Bright binaural pulse for relaxed, wakeful focus", "freq-alpha", 120, "Frequencies", "Binaural tone"),
+  local("local-freq-delta", "Delta 2 Hz", "Slow binaural pulse that mirrors deep sleep", "freq-delta", 120, "Frequencies", "Binaural tone"),
+  local("local-horo-star", "Morning Star Reading", "A hopeful read on the day the sky is offering you", "horo-star", 32, "Horoscope", "Preview voice"),
+  local("local-horo-cosmic", "Cosmic Check-In", "A steady, unhurried alignment for the day ahead", "horo-cosmic", 30, "Horoscope", "Preview voice"),
+  local("local-horo-moon", "Moon & Momentum", "What you start this morning gathers force today", "horo-moon", 27, "Horoscope", "Preview voice"),
+  local("local-words-affirm", "Morning Affirmations", "Kind, powerful words to begin again", "words-affirm", 33, "Positive Words", "Preview voice"),
+  local("local-words-grace", "Grace for the Morning", "Scripture-inspired comfort for the day ahead", "words-grace", 30, "Positive Words", "Preview voice"),
+  local("local-words-stoic", "Stoic Sunrise", "Marcus Aurelius and Seneca on getting out of bed", "words-stoic", 34, "Positive Words", "Preview voice"),
 ];
 
 // ─── Channels ──────────────────────────────────────────────

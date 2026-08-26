@@ -189,6 +189,10 @@ export default function DrawerLayout() {
       />
       <Drawer.Screen name="create" options={{ title: "Create" }} />
       <Drawer.Screen name="profile" options={{ title: "Profile", drawerItemStyle: { display: "none" } }} />
+      <Drawer.Screen
+        name="profile-page"
+        options={{ title: "Profile", drawerItemStyle: { display: "none" } }}
+      />
     </Drawer>
   );
 }

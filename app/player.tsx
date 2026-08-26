@@ -257,8 +257,9 @@ function MantraTeleprompter({
 
 // ─── Screen ──────────────────────────────────────────────
 export default function PlayerScreen() {
-  const { id, alarm } = useLocalSearchParams<{ id: string; alarm?: string }>();
+  const { id, alarm, pick } = useLocalSearchParams<{ id: string; alarm?: string; pick?: string }>();
   const isAlarmMode = alarm === "1";
+  const isPickMode = pick === "1";
   const router = useRouter();
   const insets = useSafeAreaInsets();
   const { sessions } = useSessions();
@@ -392,7 +393,13 @@ export default function PlayerScreen() {
 
   const handleSetAsAlarm = () => {
     if (session) setPickedSound(session.id);
-    router.push("/edit-alarm" as any);
+    if (isPickMode) {
+      // Came from the alarm editor's picker: pop player + picker
+      router.back();
+      router.back();
+    } else {
+      router.push("/edit-alarm" as any);
+    }
   };
 
   const displayElapsed = scrubbing ? Math.floor(scrubPos * duration) : elapsed;
@@ -562,7 +569,7 @@ export default function PlayerScreen() {
             accessibilityRole="button"
             accessibilityLabel="Set as alarm"
           >
-            <Text style={styles.alarmButtonText}>SET AS ALARM</Text>
+            <Text style={styles.alarmButtonText}>{isPickMode ? "USE FOR THIS ALARM" : "SET AS ALARM"}</Text>
             <Ionicons name="arrow-forward" size={18} color="#f5f5f7" style={{ marginLeft: 8 }} />
           </Pressable>
         )}
