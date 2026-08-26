@@ -62,6 +62,16 @@ All 31 April PRs are closed with notes explaining where their work went.
 
 ## Run journal
 
+## 2026-08-26 (launch-prep sprint 2)
+- Brian (ElevenLabs) narrates all 18 sessions in Supabase; Lily narrates horoscope + positive words; robot voices deleted. ~25k/90k chars left.
+- ASC record renamed: Morning Que · Wake Up With Purpose · com.michaelwatterson.que · Apple ID 6751096101 · Health & Fitness/Productivity.
+- SDK 51 → 53 on branch sdk-53 (react 19 / RN 0.79); dev build compiling.
+- Paywall OFF for v1 (Paid Apps Agreement unsigned — Michael's banking/tax step). Trader status (EU DSA) also pending, Michael-only.
+- Fixed guest cold-start race that bounced users to welcome; alarms self-heal orphaned sounds.
+- Remaining for submission: Michael signs Paid Apps Agreement (only if pursuing payments), age-rating questionnaire, content rights; then production build + upload + screenshots refresh.
+
+
+
 ## 2026-08-22 (Claude Code session — the big catch-up)
 - **Task:** Full inventory + consolidation after 3-month gap
 - **Summary:** Committed May local work (PR #32). Triaged all 31 April PRs: closed every one with notes; salvaged alarm audio reliability, background audio, ambient subsystem, entitlements/capabilities, EAS config, App Store content, scripts + TTS pipeline into PR #33 (typecheck clean; fixed a latent transport-controls bug in alarm mode). Locked name as Morning Que. Generated 3/18 session audios (ElevenLabs quota exhausted). Set EAS env vars, started first cloud iOS build. Privacy/support pages rebranded and staged in ~/morningque-site awaiting hosting decision.
