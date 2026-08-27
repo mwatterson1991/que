@@ -59,7 +59,6 @@
           "enableBackgroundRemoteNotifications": true
         }
       ],
-      "expo-speech-recognition",
       "expo-font",
       "expo-asset",
       "expo-splash-screen",
