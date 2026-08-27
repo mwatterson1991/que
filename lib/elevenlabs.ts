@@ -1,4 +1,4 @@
-import * as FileSystem from "expo-file-system";
+import * as FileSystem from "expo-file-system/legacy";
 
 // ─── Config ────────────────────────────────────────────────
 const API_KEY = process.env.EXPO_PUBLIC_ELEVENLABS_API_KEY ?? "";

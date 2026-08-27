@@ -4,10 +4,11 @@ import { Ionicons } from "@expo/vector-icons";
 import { useRouter } from "expo-router";
 import { useNavigation } from "@react-navigation/native";
 import { DrawerActions } from "@react-navigation/routers";
-import {
-  DrawerContentScrollView,
-  type DrawerContentComponentProps,
-} from "@react-navigation/drawer";
+import { DrawerContentScrollView } from "@react-navigation/drawer";
+
+// expo-router v6 bundles its own drawer types that clash with the standalone
+// package's; the narrow shape below is all this component actually uses.
+type DrawerContentComponentProps = any;
 import { F, S } from "@/lib/fonts";
 import { useAuth } from "@/lib/auth";
 
