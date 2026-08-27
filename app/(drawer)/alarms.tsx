@@ -79,7 +79,7 @@ function PillSwitch({
   );
   const trackColor = anim.interpolate({
     inputRange: [0, 1],
-    outputRange: ["#39393d", "#34C759"],
+    outputRange: ["rgba(120,120,128,0.28)", "#34C759"],
   });
 
   const setSquish = (to: number) =>
@@ -241,7 +241,7 @@ export default function AlarmsScreen() {
         ) : alarms.length === 0 ? (
           <View style={styles.emptyState}>
             <Text style={styles.emptyText}>
-              No alarms yet. Use the chat or tap + to create one.
+              No alarms yet. Tap + to create one.
             </Text>
           </View>
         ) : (
@@ -266,6 +266,9 @@ const styles = StyleSheet.create({
     height: 31,
     borderRadius: 999,
     justifyContent: "center",
+    // Glass: translucent fill with a light-catching top edge
+    borderWidth: StyleSheet.hairlineWidth,
+    borderColor: "rgba(255,255,255,0.22)",
   },
   switchThumb: {
     width: 27,
@@ -273,8 +276,8 @@ const styles = StyleSheet.create({
     borderRadius: 999,
     backgroundColor: "#ffffff",
     shadowColor: "#000",
-    shadowOpacity: 0.25,
-    shadowRadius: 3,
+    shadowOpacity: 0.3,
+    shadowRadius: 4,
     shadowOffset: { width: 0, height: 2 },
   },
   container: {
@@ -297,9 +300,10 @@ const styles = StyleSheet.create({
     gap: 14,
   },
   rowArt: {
-    width: 52,
-    height: 52,
-    borderRadius: 12,
+    // Full cell height — the artwork IS the alarm's identity
+    width: 84,
+    height: 84,
+    borderRadius: 16,
     backgroundColor: "#1c1c1e",
     borderWidth: StyleSheet.hairlineWidth,
     borderColor: "rgba(255,255,255,0.10)",

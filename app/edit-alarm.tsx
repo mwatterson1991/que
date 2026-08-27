@@ -230,36 +230,49 @@ export default function EditAlarmScreen() {
         {/* Sound — the hero. What you wake up to comes first. */}
         <Pressable
           onPress={() => router.push(`/sounds?current=${sessionId}` as any)}
-          style={styles.heroCard}
+          style={({ pressed }) => [
+            styles.heroCard,
+            !selectedSession && styles.heroCardEmpty,
+            pressed && { transform: [{ scale: 0.98 }], opacity: 0.92 },
+          ]}
           accessibilityRole="button"
-          accessibilityLabel={`Wake-up sound, ${selectedSession?.title ?? "none chosen"}. Change sound`}
+          accessibilityLabel={
+            selectedSession
+              ? `Wake-up sound, ${selectedSession.title}. Change sound`
+              : "Choose sound"
+          }
         >
           {selectedSession ? (
-            <Image
-              source={{ uri: artworkFor(selectedSession) }}
-              style={styles.heroArt}
-              resizeMode="cover"
-            />
+            <>
+              <Image
+                source={{ uri: artworkFor(selectedSession) }}
+                style={styles.heroArt}
+                resizeMode="cover"
+              />
+              <View style={styles.heroOverlay} pointerEvents="none" />
+              <View style={styles.heroTextWrap} pointerEvents="none">
+                <Text style={styles.heroKicker} maxFontSizeMultiplier={1.4}>WAKE UP TO</Text>
+                <Text style={styles.heroTitle} numberOfLines={1} maxFontSizeMultiplier={1.2}>
+                  {selectedSession.title}
+                </Text>
+                <Text style={styles.heroMeta} maxFontSizeMultiplier={1.4}>
+                  {selectedSession.category} · {Math.round(selectedSession.duration_sec / 60)} min
+                </Text>
+              </View>
+              <View style={styles.heroChip} pointerEvents="none">
+                <Text style={styles.heroChipText}>Change</Text>
+              </View>
+            </>
           ) : (
-            <View style={[styles.heroArt, styles.heroArtEmpty]}>
-              <Ionicons name="musical-notes-outline" size={40} color="#3f3f46" />
+            // Before a sound is picked, the card IS the button: a quiet
+            // glass slab with one clear action in the middle.
+            <View style={styles.chooseWrap} pointerEvents="none">
+              <Ionicons name="add" size={22} color="#f5f5f7" />
+              <Text style={styles.chooseText} maxFontSizeMultiplier={1.2}>
+                Choose sound
+              </Text>
             </View>
           )}
-          <View style={styles.heroOverlay} pointerEvents="none" />
-          <View style={styles.heroTextWrap} pointerEvents="none">
-            <Text style={styles.heroKicker} maxFontSizeMultiplier={1.4}>WAKE UP TO</Text>
-            <Text style={styles.heroTitle} numberOfLines={1} maxFontSizeMultiplier={1.2}>
-              {selectedSession?.title ?? "Choose a sound"}
-            </Text>
-            {selectedSession && (
-              <Text style={styles.heroMeta} maxFontSizeMultiplier={1.4}>
-                {selectedSession.category} · {Math.round(selectedSession.duration_sec / 60)} min
-              </Text>
-            )}
-          </View>
-          <View style={styles.heroChip} pointerEvents="none">
-            <Text style={styles.heroChipText}>Change</Text>
-          </View>
         </Pressable>
 
         {/* Time — the wheel IS the time display */}
@@ -278,18 +291,19 @@ export default function EditAlarmScreen() {
           </View>
         </View>
 
-        {/* Settings rows */}
-        <View style={styles.settingsSection}>
-          {/* Delete */}
-          <Pressable
-            onPress={deleteAlarm}
-            style={styles.row}
-            accessibilityRole="button"
-            accessibilityLabel="Delete alarm"
-          >
-            <Text style={styles.deleteText}>Delete Alarm</Text>
-          </Pressable>
-        </View>
+        {/* Delete — only when editing an existing alarm */}
+        {id ? (
+          <View style={styles.settingsSection}>
+            <Pressable
+              onPress={deleteAlarm}
+              style={styles.row}
+              accessibilityRole="button"
+              accessibilityLabel="Delete alarm"
+            >
+              <Text style={styles.deleteText}>Delete Alarm</Text>
+            </Pressable>
+          </View>
+        ) : null}
       </ScrollView>
     </View>
   );
@@ -317,9 +331,23 @@ const styles = StyleSheet.create({
   heroArt: {
     ...StyleSheet.absoluteFillObject,
   },
-  heroArtEmpty: {
+  heroCardEmpty: {
+    backgroundColor: "rgba(255,255,255,0.06)",
+    borderWidth: StyleSheet.hairlineWidth,
+    borderColor: "rgba(255,255,255,0.16)",
     alignItems: "center",
     justifyContent: "center",
+  },
+  chooseWrap: {
+    flexDirection: "row",
+    alignItems: "center",
+    gap: 8,
+  },
+  chooseText: {
+    color: "#f5f5f7",
+    fontSize: S.body,
+    fontFamily: F.semibold,
+    letterSpacing: 0.2,
   },
   heroOverlay: {
     ...StyleSheet.absoluteFillObject,

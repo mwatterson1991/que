@@ -196,6 +196,8 @@ const HEADER_BASE = {
   headerTintColor: "#f5f5f7",
   headerShadowVisible: false,
   headerTitleStyle: { fontFamily: F.semibold, fontSize: S.body },
+  // Chevron only — never the previous screen's route name
+  headerBackButtonDisplayMode: "minimal",
 } as const;
 
 export default function RootLayout() {

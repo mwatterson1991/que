@@ -32,25 +32,21 @@ function CustomDrawerContent(props: DrawerContentComponentProps) {
           <Ionicons name="alarm-outline" size={24} color="#f5f5f7" style={styles.navIcon} />
           <Text style={styles.navText}>Alarms</Text>
         </Pressable>
-        <Pressable style={styles.navItem} onPress={() => navigate("/chat")} accessibilityRole="button" accessibilityLabel="Chat">
-          <Ionicons name="chatbubble-outline" size={24} color="#f5f5f7" style={styles.navIcon} />
-          <Text style={styles.navText}>Chat</Text>
-        </Pressable>
         <Pressable style={styles.navItem} onPress={() => navigate("/search")} accessibilityRole="button" accessibilityLabel="Sounds">
           <Ionicons name="search-outline" size={24} color="#f5f5f7" style={styles.navIcon} />
           <Text style={styles.navText}>Sounds</Text>
         </Pressable>
-        <Pressable style={styles.navItem} onPress={() => navigate("/gratitude")} accessibilityRole="button" accessibilityLabel="Gratitude log">
-          <Ionicons name="heart-outline" size={24} color="#f5f5f7" style={styles.navIcon} />
+        <Pressable style={styles.navItem} onPress={() => navigate("/gratitude")} accessibilityRole="button" accessibilityLabel="Gratitude journal">
+          <Ionicons name="create-outline" size={24} color="#f5f5f7" style={styles.navIcon} />
           <Text style={styles.navText}>Gratitude</Text>
         </Pressable>
         <Pressable style={styles.navItem} onPress={() => navigate("/habit-track")} accessibilityRole="button" accessibilityLabel="Habit tracker">
           <Ionicons name="checkmark-circle-outline" size={24} color="#f5f5f7" style={styles.navIcon} />
-          <Text style={styles.navText}>Habits</Text>
+          <Text style={styles.navText}>Track</Text>
         </Pressable>
-        <Pressable style={styles.navItem} onPress={() => navigate("/profile-page?from=drawer")} accessibilityRole="button" accessibilityLabel="Profile">
+        <Pressable style={styles.navItem} onPress={() => navigate("/profile-page?from=drawer")} accessibilityRole="button" accessibilityLabel="You">
           <Ionicons name="person-outline" size={24} color="#f5f5f7" style={styles.navIcon} />
-          <Text style={styles.navText}>Profile</Text>
+          <Text style={styles.navText}>You</Text>
         </Pressable>
       </DrawerContentScrollView>
 
@@ -123,20 +119,6 @@ function HamburgerButton() {
   );
 }
 
-function ProfileButton() {
-  const router = useRouter();
-  return (
-    <Pressable onPress={() => router.push("/profile-page" as any)} accessibilityRole="button" accessibilityLabel="Profile">
-      <Ionicons
-        name="person-outline"
-        size={20}
-        color="#f5f5f7"
-        style={{ marginRight: 16 }}
-      />
-    </Pressable>
-  );
-}
-
 export default function DrawerLayout() {
   return (
     <Drawer
@@ -161,10 +143,12 @@ export default function DrawerLayout() {
         name="index"
         options={{ headerShown: false, drawerItemStyle: { display: "none" } }}
       />
+      {/* Chat is parked for now — reachable by route only, not in the menu */}
       <Drawer.Screen
         name="chat"
         options={{
           title: "Morning Que",
+          drawerItemStyle: { display: "none" },
           headerTitleStyle: {
             fontFamily: "Lora",
             fontSize: S.title,
@@ -172,7 +156,6 @@ export default function DrawerLayout() {
             color: "#f5f5f7",
           },
           headerLeft: () => <HamburgerButton />,
-          headerRight: () => <ProfileButton />,
         }}
       />
       <Drawer.Screen
@@ -193,7 +176,7 @@ export default function DrawerLayout() {
       />
       <Drawer.Screen
         name="profile-page"
-        options={{ title: "Profile", drawerItemStyle: { display: "none" } }}
+        options={{ title: "You", drawerItemStyle: { display: "none" } }}
       />
     </Drawer>
   );

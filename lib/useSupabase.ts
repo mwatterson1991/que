@@ -315,12 +315,42 @@ export function useSessions() {
 type Habit = Database["public"]["Tables"]["habits"]["Row"];
 type HabitLog = Database["public"]["Tables"]["habit_logs"]["Row"];
 
+// Guest habits/logs/gratitude live on-device, same idea as guest alarms.
+const GUEST_HABITS_KEY = "guest_habits";
+const GUEST_HABIT_LOGS_KEY = "guest_habit_logs";
+const GUEST_GRATITUDE_KEY = "guest_gratitude";
+
+async function readGuestList<T>(key: string): Promise<T[]> {
+  try {
+    const raw = await AsyncStorage.getItem(key);
+    return raw ? (JSON.parse(raw) as T[]) : [];
+  } catch {
+    return [];
+  }
+}
+
+async function writeGuestList<T>(key: string, list: T[]): Promise<void> {
+  try {
+    await AsyncStorage.setItem(key, JSON.stringify(list));
+  } catch {}
+}
+
+function guestId(prefix: string) {
+  return `${prefix}-${Date.now()}-${Math.random().toString(36).slice(2, 8)}`;
+}
+
 export function useHabits() {
-  const { user } = useAuth();
+  const { user, isGuest } = useAuth();
   const [habits, setHabits] = useState<Habit[]>([]);
   const [loading, setLoading] = useState(true);
 
   const fetch = useCallback(async () => {
+    if (isGuest) {
+      const list = await readGuestList<Habit>(GUEST_HABITS_KEY);
+      setHabits(list.filter((h) => !h.archived));
+      setLoading(false);
+      return;
+    }
     if (!user) { setLoading(false); return; }
     const { data } = await supabase
       .from("habits")
@@ -330,11 +360,24 @@ export function useHabits() {
       .order("created_at", { ascending: true });
     setHabits(data ?? []);
     setLoading(false);
-  }, [user]);
+  }, [user, isGuest]);
 
   useEffect(() => { fetch(); }, [fetch]);
 
   const add = async (habit: Omit<Database["public"]["Tables"]["habits"]["Insert"], "user_id">) => {
+    if (isGuest) {
+      const data = {
+        archived: false,
+        created_at: new Date().toISOString(),
+        ...habit,
+        id: guestId("guest-habit"),
+        user_id: "guest",
+      } as Habit;
+      const next = [...(await readGuestList<Habit>(GUEST_HABITS_KEY)), data];
+      await writeGuestList(GUEST_HABITS_KEY, next);
+      setHabits(next.filter((h) => !h.archived));
+      return { data, error: null };
+    }
     if (!user) { setLoading(false); return; }
     const { data, error } = await supabase
       .from("habits")
@@ -346,6 +389,16 @@ export function useHabits() {
   };
 
   const update = async (id: string, fields: Database["public"]["Tables"]["habits"]["Update"]) => {
+    if (isGuest) {
+      const list = await readGuestList<Habit>(GUEST_HABITS_KEY);
+      const idx = list.findIndex((h) => h.id === id);
+      if (idx === -1) return { data: null, error: { message: "Habit not found" } };
+      const data = { ...list[idx], ...fields } as Habit;
+      list[idx] = data;
+      await writeGuestList(GUEST_HABITS_KEY, list);
+      setHabits(list.filter((h) => !h.archived));
+      return { data, error: null };
+    }
     const { data, error } = await supabase
       .from("habits")
       .update(fields)
@@ -365,7 +418,7 @@ export function useHabits() {
 }
 
 export function useHabitLogs(rangedays = 31) {
-  const { user } = useAuth();
+  const { user, isGuest } = useAuth();
   const [logs, setLogs] = useState<HabitLog[]>([]);
   const [loading, setLoading] = useState(true);
 
@@ -374,6 +427,12 @@ export function useHabitLogs(rangedays = 31) {
   const sinceStr = since.toLocaleDateString("en-CA");
 
   const fetch = useCallback(async () => {
+    if (isGuest) {
+      const list = await readGuestList<HabitLog>(GUEST_HABIT_LOGS_KEY);
+      setLogs(list.filter((l) => l.log_date >= sinceStr));
+      setLoading(false);
+      return;
+    }
     if (!user) { setLoading(false); return; }
     const { data } = await supabase
       .from("habit_logs")
@@ -383,11 +442,24 @@ export function useHabitLogs(rangedays = 31) {
       .order("logged_at", { ascending: true });
     setLogs(data ?? []);
     setLoading(false);
-  }, [user, sinceStr]);
+  }, [user, isGuest, sinceStr]);
 
   useEffect(() => { fetch(); }, [fetch]);
 
   const logHabit = async (habit_id: string) => {
+    if (isGuest) {
+      const data = {
+        id: guestId("guest-log"),
+        habit_id,
+        user_id: "guest",
+        log_date: new Date().toLocaleDateString("en-CA"),
+        logged_at: new Date().toISOString(),
+      } as HabitLog;
+      const next = [...(await readGuestList<HabitLog>(GUEST_HABIT_LOGS_KEY)), data];
+      await writeGuestList(GUEST_HABIT_LOGS_KEY, next);
+      setLogs((prev) => [...prev, data]);
+      return { data, error: null };
+    }
     if (!user) { setLoading(false); return; }
     const log_date = new Date().toLocaleDateString("en-CA");
     const { data, error } = await supabase
@@ -400,6 +472,12 @@ export function useHabitLogs(rangedays = 31) {
   };
 
   const removeLog = async (id: string) => {
+    if (isGuest) {
+      const list = (await readGuestList<HabitLog>(GUEST_HABIT_LOGS_KEY)).filter((l) => l.id !== id);
+      await writeGuestList(GUEST_HABIT_LOGS_KEY, list);
+      setLogs((prev) => prev.filter((l) => l.id !== id));
+      return;
+    }
     await supabase.from("habit_logs").delete().eq("id", id);
     setLogs((prev) => prev.filter((l) => l.id !== id));
   };
@@ -428,12 +506,25 @@ function localDateString(date = new Date()) {
   return date.toLocaleDateString("en-CA");
 }
 
+function sortGratitude(list: GratitudeEntry[]) {
+  return [...list].sort((a, b) => {
+    if (a.entry_date !== b.entry_date) return b.entry_date.localeCompare(a.entry_date);
+    return a.entry_number - b.entry_number;
+  });
+}
+
 export function useGratitudeEntries() {
-  const { user } = useAuth();
+  const { user, isGuest } = useAuth();
   const [entries, setEntries] = useState<GratitudeEntry[]>([]);
   const [loading, setLoading] = useState(true);
 
   const fetch = useCallback(async () => {
+    if (isGuest) {
+      const list = await readGuestList<GratitudeEntry>(GUEST_GRATITUDE_KEY);
+      setEntries(sortGratitude(list));
+      setLoading(false);
+      return;
+    }
     if (!user) { setLoading(false); return; }
     const { data } = await supabase
       .from("gratitude_entries")
@@ -443,11 +534,29 @@ export function useGratitudeEntries() {
       .order("entry_number", { ascending: true });
     setEntries(data ?? []);
     setLoading(false);
-  }, [user]);
+  }, [user, isGuest]);
 
   useEffect(() => { fetch(); }, [fetch]);
 
   const upsert = async (entry_number: number, entry_text: string, entry_date: string) => {
+    if (isGuest) {
+      const list = await readGuestList<GratitudeEntry>(GUEST_GRATITUDE_KEY);
+      const filtered = list.filter(
+        (e) => !(e.entry_date === entry_date && e.entry_number === entry_number)
+      );
+      const data = {
+        id: `guest-${entry_date}-${entry_number}`,
+        user_id: "guest",
+        entry_text,
+        entry_number,
+        entry_date,
+        created_at: new Date().toISOString(),
+      } as GratitudeEntry;
+      const next = sortGratitude([...filtered, data]);
+      await writeGuestList(GUEST_GRATITUDE_KEY, next);
+      setEntries(next);
+      return { data, error: null };
+    }
     if (!user) { setLoading(false); return; }
 
     // Is this a new entry or an edit of an existing one?

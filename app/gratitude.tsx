@@ -38,7 +38,7 @@ function dateLabel(dateStr: string): string {
 
 export default function GratitudeScreen() {
   const { entries, loading, refresh, upsert, localDateString } = useGratitudeEntries();
-  const { user } = useAuth();
+  const { user, isGuest } = useAuth();
   const router = useRouter();
   const today = localDateString();
 
@@ -104,8 +104,8 @@ export default function GratitudeScreen() {
     );
   }
 
-  // Guests: this is where an account starts earning its keep
-  if (!user) {
+  // No session at all (shouldn't happen behind the welcome gate)
+  if (!user && !isGuest) {
     return (
       <View style={styles.gateWrap}>
         <Text style={styles.gateTitle} maxFontSizeMultiplier={1.2}>
@@ -203,6 +203,21 @@ export default function GratitudeScreen() {
           <Text style={styles.completeText}>
             Day complete — well done.
           </Text>
+        )}
+
+        {/* ── Soft account nudge for guests ── */}
+        {isGuest && savedCount > 0 && (
+          <Pressable
+            onPress={() => router.push("/auth")}
+            style={styles.syncNudge}
+            accessibilityRole="button"
+            accessibilityLabel="Create a free account to keep your entries safe"
+          >
+            <Text style={styles.syncNudgeText}>
+              Your entries live on this phone. Create a free account to keep
+              them safe.
+            </Text>
+          </Pressable>
         )}
 
         {/* ── History ── */}
@@ -356,6 +371,19 @@ const styles = StyleSheet.create({
   },
   entryInputSaved: {
     color: "#f5f5f7",
+  },
+
+  syncNudge: {
+    marginTop: 24,
+    paddingVertical: 4,
+  },
+  syncNudgeText: {
+    color: "#52525b",
+    fontSize: S.caption,
+    lineHeight: 19,
+    fontFamily: F.regular,
+    textDecorationLine: "underline",
+    textDecorationColor: "#2c2c2e",
   },
 
   // Completion

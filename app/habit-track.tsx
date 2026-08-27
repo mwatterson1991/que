@@ -15,7 +15,7 @@ import { F, S } from "@/lib/fonts";
 
 export default function HabitTrackScreen() {
   const router = useRouter();
-  const { user } = useAuth();
+  const { user, isGuest } = useAuth();
   const { habits, loading: habitsLoading, refresh: refreshHabits } = useHabits();
   const { logs, loading: logsLoading, refresh: refreshLogs, logHabit, removeLog, todayCount } = useHabitLogs(31);
 
@@ -54,8 +54,8 @@ export default function HabitTrackScreen() {
     );
   }
 
-  // Guests: habits live on an account so streaks survive reinstalls
-  if (!user) {
+  // No session at all (shouldn't happen behind the welcome gate)
+  if (!user && !isGuest) {
     return (
       <View style={styles.gateWrap}>
         <Text style={styles.gateTitle} maxFontSizeMultiplier={1.2}>
