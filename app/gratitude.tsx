@@ -15,6 +15,7 @@ import { Ionicons } from "@expo/vector-icons";
 import { useGratitudeEntries } from "@/lib/useSupabase";
 import { useAuth } from "@/lib/auth";
 import { F, S } from "@/lib/fonts";
+import AuroraBackground from "@/components/AuroraBackground";
 
 const TOTAL = 7;
 
@@ -129,6 +130,8 @@ export default function GratitudeScreen() {
   }
 
   return (
+    <View style={{ flex: 1 }}>
+      <AuroraBackground dim={0.5} />
     <KeyboardAvoidingView
       style={{ flex: 1 }}
       behavior={Platform.OS === "ios" ? "padding" : undefined}
@@ -245,13 +248,14 @@ export default function GratitudeScreen() {
         )}
       </ScrollView>
     </KeyboardAvoidingView>
+    </View>
   );
 }
 
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    backgroundColor: "#000000",
+    backgroundColor: "transparent",
   },
   scroll: {
     paddingHorizontal: 24,
@@ -260,7 +264,7 @@ const styles = StyleSheet.create({
   },
   centered: {
     flex: 1,
-    backgroundColor: "#000000",
+    backgroundColor: "#020805",
     alignItems: "center",
     justifyContent: "center",
   },

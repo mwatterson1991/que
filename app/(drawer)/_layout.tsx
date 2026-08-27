@@ -124,7 +124,7 @@ export default function DrawerLayout() {
       drawerContent={(props) => <CustomDrawerContent {...props} />}
       screenOptions={{
         headerStyle: {
-          backgroundColor: "#000000",
+          backgroundColor: "#020805",
           elevation: 0,
           shadowOpacity: 0,
           borderBottomWidth: 0,
@@ -134,7 +134,7 @@ export default function DrawerLayout() {
           fontFamily: F.semibold,
           fontSize: S.body,
         },
-        drawerStyle: { backgroundColor: "#000000", width: 280 },
+        drawerStyle: { backgroundColor: "#04120b", width: 280 },
       }}
     >
       <Drawer.Screen
@@ -183,7 +183,7 @@ export default function DrawerLayout() {
 const styles = StyleSheet.create({
   drawer: {
     flex: 1,
-    backgroundColor: "#000000",
+    backgroundColor: "#04120b",
     paddingTop: 60,
   },
   scrollContent: {

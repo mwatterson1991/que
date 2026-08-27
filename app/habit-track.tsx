@@ -12,6 +12,7 @@ import { Ionicons } from "@expo/vector-icons";
 import { useHabits, useHabitLogs } from "@/lib/useSupabase";
 import { useAuth } from "@/lib/auth";
 import { F, S } from "@/lib/fonts";
+import AuroraBackground from "@/components/AuroraBackground";
 
 export default function HabitTrackScreen() {
   const router = useRouter();
@@ -79,6 +80,7 @@ export default function HabitTrackScreen() {
 
   return (
     <View style={styles.container}>
+      <AuroraBackground dim={0.5} />
       <FlatList
         data={habits}
         keyExtractor={(h) => h.id}
@@ -177,7 +179,7 @@ const styles = StyleSheet.create({
   },
   container: {
     flex: 1,
-    backgroundColor: "#000000",
+    backgroundColor: "#020805",
   },
   centered: {
     flex: 1,

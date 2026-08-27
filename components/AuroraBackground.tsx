@@ -89,7 +89,8 @@ function Blob({
   );
 }
 
-export default function AuroraBackground() {
+export default function AuroraBackground({ dim = 1 }: { dim?: number }) {
+  // dim < 1 quiets the glow for text-heavy screens (journal, tracker)
   const { width: w, height: h } = useWindowDimensions();
 
   return (
@@ -105,6 +106,7 @@ export default function AuroraBackground() {
         driftY={h * 0.08}
         scaleTo={1.25}
         duration={9000}
+        opacity={dim}
       />
       {/* Deep teal counterweight — lower right, slower */}
       <Blob
@@ -118,6 +120,7 @@ export default function AuroraBackground() {
         scaleTo={1.3}
         duration={13000}
         delay={1200}
+        opacity={dim}
       />
       {/* Bright lime accent — small, wandering, gives the "alive" flicker */}
       <Blob
@@ -131,7 +134,7 @@ export default function AuroraBackground() {
         scaleTo={1.45}
         duration={11000}
         delay={600}
-        opacity={0.55}
+        opacity={0.55 * dim}
       />
       {/* Soft top-and-bottom vignette so headers and edges stay legible */}
       <Svg width={w} height={h} style={StyleSheet.absoluteFill}>

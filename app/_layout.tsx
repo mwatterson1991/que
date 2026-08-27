@@ -192,7 +192,7 @@ function HeaderBackButton() {
 
 // ─── Shared header config ────────────────────────────────
 const HEADER_BASE = {
-  headerStyle: { backgroundColor: "#000000" },
+  headerStyle: { backgroundColor: "#020805" },
   headerTintColor: "#f5f5f7",
   headerShadowVisible: false,
   headerTitleStyle: { fontFamily: F.semibold, fontSize: S.body },
