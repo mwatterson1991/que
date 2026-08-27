@@ -19,7 +19,7 @@ export interface TTSOptions {
 // ─── Synthesize speech → local file URI ────────────────────
 /**
  * Calls ElevenLabs TTS, writes the audio to a temp cache file,
- * and returns a file:// URI that expo-av can play directly.
+ * and returns a file:// URI that expo-audio can play directly.
  */
 export async function synthesizeSpeech(
   text: string,

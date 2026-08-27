@@ -2,7 +2,7 @@ import { useState, useEffect, useRef } from "react";
 import { View, Text, Pressable, StyleSheet, ActivityIndicator } from "react-native";
 import { useRouter } from "expo-router";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
-import { Video, ResizeMode } from "expo-av";
+import { VideoView, useVideoPlayer } from "expo-video";
 import AsyncStorage from "@react-native-async-storage/async-storage";
 import { Svg, Defs, LinearGradient, Stop, Rect } from "react-native-svg";
 import { F, S } from "@/lib/fonts";
@@ -26,6 +26,13 @@ export default function WelcomeScreen() {
   const [entering, setEntering] = useState(false);
   const [videoIndex] = useState(() => Math.floor(Math.random() * HERO_VIDEOS.length));
   const countedRef = useRef(false);
+
+  // Autoplaying, looping, muted hero footage (was shouldPlay/isLooping/isMuted before expo-video)
+  const heroPlayer = useVideoPlayer(HERO_VIDEOS[videoIndex], (player) => {
+    player.loop = true;
+    player.muted = true;
+    player.play();
+  });
 
   useEffect(() => {
     if (countedRef.current) return;
@@ -57,13 +64,11 @@ export default function WelcomeScreen() {
 
   return (
     <View style={styles.container}>
-      <Video
-        source={{ uri: HERO_VIDEOS[videoIndex] }}
+      <VideoView
+        player={heroPlayer}
         style={StyleSheet.absoluteFill}
-        resizeMode={ResizeMode.COVER}
-        shouldPlay
-        isLooping
-        isMuted
+        contentFit="cover"
+        nativeControls={false}
       />
 
       {/* Scrim — darkens footage so the type reads, like the site's hero */}
