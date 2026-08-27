@@ -16,6 +16,8 @@ import { F, S } from "@/lib/fonts";
 import { useSessions } from "@/lib/useSupabase";
 import { artworkFor, groupIntoRails, channelArtwork } from "@/lib/catalog";
 import { usePremium, isLocked } from "@/lib/premium";
+import { Glass } from "@/components/Glass";
+import AuroraBackground from "@/components/AuroraBackground";
 import type { Session } from "@/lib/types";
 
 // One browser, two jobs: the drawer's Sounds screen (tap → player) and
@@ -142,8 +144,9 @@ export default function SoundsBrowser({
 
   return (
     <View style={styles.container}>
+      <AuroraBackground dim={0.8} />
       {/* Search bar */}
-      <View style={styles.searchBar}>
+      <Glass style={styles.searchBar}>
         <Ionicons name="search" size={18} color="#8b8b93" />
         <TextInput
           value={query}
@@ -162,7 +165,7 @@ export default function SoundsBrowser({
             <Ionicons name="close-circle" size={18} color="#52525b" />
           </Pressable>
         )}
-      </View>
+      </Glass>
 
       {loading ? (
         <ActivityIndicator color="#f5f5f7" style={{ marginTop: 40 }} />
@@ -231,15 +234,15 @@ export default function SoundsBrowser({
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    backgroundColor: "#000000",
+    backgroundColor: "transparent",
   },
 
   // Search bar
   searchBar: {
     flexDirection: "row",
     alignItems: "center",
-    backgroundColor: "#1c1c1e",
-    borderRadius: 12,
+    borderRadius: 14,
+    overflow: "hidden",
     marginHorizontal: 16,
     marginTop: 12,
     marginBottom: 8,

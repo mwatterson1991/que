@@ -12,6 +12,7 @@ import {
 } from "react-native-svg";
 import { useRouter, useNavigation, useLocalSearchParams } from "expo-router";
 import { F, S } from "@/lib/fonts";
+import AuroraBackground from "@/components/AuroraBackground";
 import { useHabits, useHabitLogs, useProfile, useScores, useActivity } from "@/lib/useSupabase";
 
 // Native screenshot module — lands with the next dev build; guarded so
@@ -375,6 +376,7 @@ export default function ProfileScreen() {
 
   return (
     <View style={styles.container}>
+    <AuroraBackground dim={0.5} />
     <ScrollView
       style={{ flex: 1 }}
       contentContainerStyle={styles.scroll}
@@ -480,7 +482,7 @@ const styles = StyleSheet.create({
   },
   container: {
     flex: 1,
-    backgroundColor: "#000000",
+    backgroundColor: "#020805",
   },
   scroll: {
     paddingHorizontal: 20,
