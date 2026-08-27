@@ -15,6 +15,7 @@
     "@react-navigation/drawer": "^7.3.9",
     "@supabase/supabase-js": "^2.45.0",
     "expo": "^53.0.0",
+    "expo-asset": "~11.1.7",
     "expo-av": "~15.1.7",
     "expo-constants": "~17.1.8",
     "expo-dev-client": "~5.2.4",
