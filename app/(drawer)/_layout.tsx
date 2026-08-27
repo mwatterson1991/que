@@ -1,13 +1,12 @@
-import { View, Text, Pressable, StyleSheet } from "react-native";
+import { View, Text, Pressable, StyleSheet, ScrollView } from "react-native";
 import { Drawer } from "expo-router/drawer";
 import { Ionicons } from "@expo/vector-icons";
-import { useRouter } from "expo-router";
-import { useNavigation } from "@react-navigation/native";
-import { DrawerActions } from "@react-navigation/routers";
-import {
-  DrawerContentScrollView,
-  type DrawerContentComponentProps,
-} from "@react-navigation/drawer";
+import { useRouter, useNavigation } from "expo-router";
+
+
+// expo-router v6 bundles its own drawer types that clash with the standalone
+// package's; the narrow shape below is all this component actually uses.
+type DrawerContentComponentProps = any;
 import { F, S } from "@/lib/fonts";
 import { useAuth } from "@/lib/auth";
 
@@ -23,8 +22,7 @@ function CustomDrawerContent(props: DrawerContentComponentProps) {
   return (
     <View style={styles.drawer}>
       {/* Nav links */}
-      <DrawerContentScrollView
-        {...props}
+      <ScrollView
         contentContainerStyle={styles.scrollContent}
         scrollEnabled={false}
       >
@@ -48,7 +46,7 @@ function CustomDrawerContent(props: DrawerContentComponentProps) {
           <Ionicons name="person-outline" size={24} color="#f5f5f7" style={styles.navIcon} />
           <Text style={styles.navText}>You</Text>
         </Pressable>
-      </DrawerContentScrollView>
+      </ScrollView>
 
       {/* Bottom section */}
       <View style={styles.bottomSection}>
@@ -109,7 +107,7 @@ function HamburgerButton() {
   const navigation = useNavigation();
   return (
     <Pressable
-      onPress={() => navigation.dispatch(DrawerActions.openDrawer())}
+      onPress={() => (navigation as any).openDrawer()}
       style={{ marginLeft: 16, padding: 4 }}
       accessibilityRole="button"
       accessibilityLabel="Open menu"

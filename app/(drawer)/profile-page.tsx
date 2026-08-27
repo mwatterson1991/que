@@ -11,7 +11,6 @@ import {
   Circle,
 } from "react-native-svg";
 import { useRouter, useNavigation, useLocalSearchParams } from "expo-router";
-import { DrawerActions } from "@react-navigation/routers";
 import { F, S } from "@/lib/fonts";
 import { useHabits, useHabitLogs, useProfile, useScores, useActivity } from "@/lib/useSupabase";
 
@@ -335,7 +334,7 @@ export default function ProfileScreen() {
         fromDrawer ? (
           // Came from nav tray → re-open the drawer
           <Pressable
-            onPress={() => navigation.dispatch(DrawerActions.openDrawer())}
+            onPress={() => (navigation as any).openDrawer()}
             style={{ marginLeft: 4, padding: 4 }}
             accessibilityRole="button"
             accessibilityLabel="Open menu"

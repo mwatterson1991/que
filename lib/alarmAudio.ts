@@ -1,11 +1,14 @@
-import { Audio, AVPlaybackStatus } from "expo-av";
+import { createAudioPlayer, AudioPlayer } from "expo-audio";
 import {
   resolveSource,
   configureAudio,
   stopSession,
   adoptSession,
+  setPlayerStatusCallback,
+  releasePlayer,
   PlaybackSource,
   BUNDLED_ASSETS,
+  SessionStatusCallback,
 } from "./audio";
 
 // ─── Constants ─────────────────────────────────────────────
@@ -16,25 +19,57 @@ const PRELOAD_TIMEOUT_MS = 10_000; // give up preloading after 10s
 const DEFAULT_FALLBACK_KEY = "morning-confidence"; // bundled asset used when primary fails
 
 // ─── State ─────────────────────────────────────────────────
-let alarmSound: Audio.Sound | null = null;
+let alarmPlayer: AudioPlayer | null = null;
 let fadeInterval: ReturnType<typeof setInterval> | null = null;
-let preloadedSound: Audio.Sound | null = null;
+let preloadedPlayer: AudioPlayer | null = null;
 let preloadedSourceKey: string | null = null;
+
+// ─── Loading helper ────────────────────────────────────────
+
+/**
+ * Wait until a player has finished loading its source, or the timeout
+ * elapses. The old Sound.createAsync resolved/rejected on load completion;
+ * expo-audio loads in the background, so we poll `isLoaded` to recreate
+ * the same "loaded or failed" decision point.
+ */
+function waitForLoaded(player: AudioPlayer, timeoutMs: number): Promise<boolean> {
+  return new Promise((resolve) => {
+    const started = Date.now();
+    const poll = setInterval(() => {
+      let loaded = false;
+      try {
+        loaded = player.isLoaded;
+      } catch {
+        // Player was released while we waited
+        clearInterval(poll);
+        resolve(false);
+        return;
+      }
+      if (loaded) {
+        clearInterval(poll);
+        resolve(true);
+      } else if (Date.now() - started >= timeoutMs) {
+        clearInterval(poll);
+        resolve(false);
+      }
+    }, 100);
+  });
+}
 
 // ─── Volume fade-in ────────────────────────────────────────
 
 /** Gradually raise volume from 0 → 1 over FADE_DURATION_MS. */
-function startVolumeFade(sound: Audio.Sound): void {
+function startVolumeFade(player: AudioPlayer): void {
   let step = 0;
   clearFadeInterval();
 
-  fadeInterval = setInterval(async () => {
+  fadeInterval = setInterval(() => {
     step++;
     const volume = Math.min(1, step / FADE_STEPS);
     try {
-      await sound.setVolumeAsync(volume);
+      player.volume = volume;
     } catch {
-      // Sound may have been unloaded — stop fading
+      // Player may have been released — stop fading
       clearFadeInterval();
     }
     if (step >= FADE_STEPS) {
@@ -68,32 +103,28 @@ export async function preloadAlarmAudio(
   const sourceKey = source.type === "url" ? source.uri : source.key;
 
   // Already preloaded this source
-  if (preloadedSound && preloadedSourceKey === sourceKey) return true;
+  if (preloadedPlayer && preloadedSourceKey === sourceKey) return true;
 
   // Clean up any previous preload
   await clearPreload();
 
   try {
     await configureAudio();
-    const avSource =
+    const audioSource =
       source.type === "url" ? { uri: source.uri } : BUNDLED_ASSETS[source.key];
 
-    if (!avSource) return false;
+    if (!audioSource) return false;
 
-    const loadPromise = Audio.Sound.createAsync(avSource, {
-      shouldPlay: false,
-      volume: 0,
-      progressUpdateIntervalMillis: 500,
-    });
+    const player = createAudioPlayer(audioSource, { updateInterval: 500 });
+    player.volume = 0;
 
-    const timeoutPromise = new Promise<null>((resolve) =>
-      setTimeout(() => resolve(null), PRELOAD_TIMEOUT_MS),
-    );
+    const loaded = await waitForLoaded(player, PRELOAD_TIMEOUT_MS);
+    if (!loaded) {
+      releasePlayer(player);
+      return false;
+    }
 
-    const result = await Promise.race([loadPromise, timeoutPromise]);
-    if (!result) return false;
-
-    preloadedSound = result.sound;
+    preloadedPlayer = player;
     preloadedSourceKey = sourceKey;
     return true;
   } catch (err) {
@@ -103,11 +134,9 @@ export async function preloadAlarmAudio(
 }
 
 async function clearPreload(): Promise<void> {
-  if (preloadedSound) {
-    try {
-      await preloadedSound.unloadAsync();
-    } catch {}
-    preloadedSound = null;
+  if (preloadedPlayer) {
+    releasePlayer(preloadedPlayer);
+    preloadedPlayer = null;
     preloadedSourceKey = null;
   }
 }
@@ -118,17 +147,17 @@ async function clearPreload(): Promise<void> {
  * Play a session as an alarm with gentle volume fade-in and error fallback.
  *
  * This is the primary entry point when an alarm fires. It:
- * 1. Uses a preloaded sound if available, otherwise loads fresh
+ * 1. Uses a preloaded player if available, otherwise loads fresh
  * 2. Starts at volume 0 and fades to full over 30 seconds
  * 3. Falls back to a bundled default session if the primary source fails
  *
- * Returns the Sound instance, or null if everything failed.
+ * Returns the player instance, or null if everything failed.
  */
 export async function playAlarmSession(
   audioUrl: string | null,
   audioAsset: string | null,
-  statusCallback?: (status: AVPlaybackStatus) => void,
-): Promise<Audio.Sound | null> {
+  statusCallback?: SessionStatusCallback,
+): Promise<AudioPlayer | null> {
   // Stop any existing alarm or regular playback
   await stopAlarmSession();
   await stopSession();
@@ -137,81 +166,86 @@ export async function playAlarmSession(
   const source = resolveSource(audioUrl, audioAsset);
 
   // Try primary source
-  let sound = await tryLoadAndPlay(source, statusCallback);
+  let player = await tryLoadAndPlay(source, statusCallback);
 
   // If primary failed, try fallback
-  if (!sound && source) {
+  if (!player && source) {
     console.warn("[alarmAudio] primary source failed, trying fallback");
     const fallback: PlaybackSource = { type: "asset", key: DEFAULT_FALLBACK_KEY };
-    sound = await tryLoadAndPlay(fallback, statusCallback);
+    player = await tryLoadAndPlay(fallback, statusCallback);
   }
 
-  // If we still have no sound and didn't try fallback yet (source was null)
-  if (!sound) {
+  // If we still have no player and didn't try fallback yet (source was null)
+  if (!player) {
     console.warn("[alarmAudio] no source resolved, using fallback");
     const fallback: PlaybackSource = { type: "asset", key: DEFAULT_FALLBACK_KEY };
-    sound = await tryLoadAndPlay(fallback, statusCallback);
+    player = await tryLoadAndPlay(fallback, statusCallback);
   }
 
-  if (!sound) {
+  if (!player) {
     console.error("[alarmAudio] all sources failed — alarm is silent");
     return null;
   }
 
-  alarmSound = sound;
+  alarmPlayer = player;
   // Register with the main engine so the player's pause/resume/seek
   // transport controls operate on the alarm sound too.
-  adoptSession(sound, statusCallback);
-  startVolumeFade(sound);
-  return sound;
+  adoptSession(player, statusCallback);
+  startVolumeFade(player);
+  return player;
 }
 
 async function tryLoadAndPlay(
   source: PlaybackSource | null,
-  statusCallback?: (status: AVPlaybackStatus) => void,
-): Promise<Audio.Sound | null> {
+  statusCallback?: SessionStatusCallback,
+): Promise<AudioPlayer | null> {
   if (!source) return null;
 
   const sourceKey = source.type === "url" ? source.uri : source.key;
 
-  // Use preloaded sound if it matches
-  if (preloadedSound && preloadedSourceKey === sourceKey) {
-    const sound = preloadedSound;
-    preloadedSound = null;
+  // Use preloaded player if it matches
+  if (preloadedPlayer && preloadedSourceKey === sourceKey) {
+    const player = preloadedPlayer;
+    preloadedPlayer = null;
     preloadedSourceKey = null;
 
     try {
-      await sound.setVolumeAsync(0);
+      player.volume = 0;
       if (statusCallback) {
-        sound.setOnPlaybackStatusUpdate(statusCallback);
+        setPlayerStatusCallback(player, statusCallback);
       }
-      await sound.playAsync();
-      return sound;
+      player.play();
+      return player;
     } catch (err) {
-      console.warn("[alarmAudio] preloaded sound failed to play:", err);
-      try { await sound.unloadAsync(); } catch {}
+      console.warn("[alarmAudio] preloaded player failed to play:", err);
+      releasePlayer(player);
       // Fall through to fresh load
     }
   }
 
   // Fresh load
   try {
-    const avSource =
+    const audioSource =
       source.type === "url" ? { uri: source.uri } : BUNDLED_ASSETS[source.key];
 
-    if (!avSource) return null;
+    if (!audioSource) return null;
 
-    const { sound } = await Audio.Sound.createAsync(avSource, {
-      shouldPlay: true,
-      volume: 0,
-      progressUpdateIntervalMillis: 500,
-    });
+    const player = createAudioPlayer(audioSource, { updateInterval: 500 });
+    player.volume = 0;
 
-    if (statusCallback) {
-      sound.setOnPlaybackStatusUpdate(statusCallback);
+    const loaded = await waitForLoaded(player, PRELOAD_TIMEOUT_MS);
+    if (!loaded) {
+      console.warn("[alarmAudio] source failed to load:", sourceKey);
+      releasePlayer(player);
+      return null;
     }
 
-    return sound;
+    if (statusCallback) {
+      setPlayerStatusCallback(player, statusCallback);
+    }
+
+    player.play();
+    return player;
   } catch (err) {
     console.warn("[alarmAudio] failed to load source:", err);
     return null;
@@ -225,22 +259,19 @@ export async function stopAlarmSession(): Promise<void> {
   clearFadeInterval();
   await clearPreload();
 
-  // The alarm sound is adopted as the main engine's current session,
-  // so stopSession() stops and unloads it there too.
+  // The alarm player is adopted as the main engine's current session,
+  // so stopSession() stops and releases it there too.
   await stopSession();
 
-  if (alarmSound) {
-    try {
-      await alarmSound.stopAsync();
-      await alarmSound.unloadAsync();
-    } catch {}
-    alarmSound = null;
+  if (alarmPlayer) {
+    releasePlayer(alarmPlayer);
+    alarmPlayer = null;
   }
 }
 
 /** Check if an alarm is currently playing. */
 export function isAlarmPlaying(): boolean {
-  return alarmSound !== null;
+  return alarmPlayer !== null;
 }
 
 /**
@@ -250,9 +281,9 @@ export function isAlarmPlaying(): boolean {
  */
 export async function skipFadeIn(): Promise<void> {
   clearFadeInterval();
-  if (alarmSound) {
+  if (alarmPlayer) {
     try {
-      await alarmSound.setVolumeAsync(1);
+      alarmPlayer.volume = 1;
     } catch {}
   }
 }

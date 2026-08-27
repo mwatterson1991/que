@@ -25,7 +25,6 @@ import Animated, {
   Easing,
   SharedValue,
 } from "react-native-reanimated";
-import { AVPlaybackStatus } from "expo-av";
 import { F, S } from "@/lib/fonts";
 import { useSessions, useActivity, useProfile, useCategories, usePreferences } from "@/lib/useSupabase";
 import { setPickedSound } from "@/lib/soundPicker";
@@ -36,6 +35,7 @@ import {
   resumeSession,
   seekSession,
   stopSession,
+  SessionPlaybackStatus,
 } from "@/lib/audio";
 import {
   playAlarmSession,
@@ -295,7 +295,7 @@ export default function PlayerScreen() {
 
     setDuration(session.duration_sec);
 
-    const onStatus = (status: AVPlaybackStatus) => {
+    const onStatus = (status: SessionPlaybackStatus) => {
       if (!status.isLoaded) return;
       if (!scrubbing) setElapsed(Math.floor(status.positionMillis / 1000));
       setPlaying(status.isPlaying);

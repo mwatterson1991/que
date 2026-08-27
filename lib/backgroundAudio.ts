@@ -1,5 +1,5 @@
 import { AppState, AppStateStatus } from "react-native";
-import { Audio, InterruptionModeIOS, InterruptionModeAndroid } from "expo-av";
+import { setAudioModeAsync } from "expo-audio";
 
 // ─── Background audio lifecycle ────────────────────────────
 // This module ensures audio keeps playing when the app is backgrounded,
@@ -37,13 +37,13 @@ export function registerPlaybackCallbacks(callbacks: {
  *   or brief system sounds without being killed.
  */
 async function configureAudioMode(): Promise<void> {
-  await Audio.setAudioModeAsync({
-    playsInSilentModeIOS: true,
-    staysActiveInBackground: true,
-    interruptionModeIOS: InterruptionModeIOS.DuckOthers,
-    interruptionModeAndroid: InterruptionModeAndroid.DuckOthers,
-    shouldDuckAndroid: true,
-    playThroughEarpieceAndroid: false,
+  await setAudioModeAsync({
+    playsInSilentMode: true,
+    shouldPlayInBackground: true,
+    // DuckOthers on both platforms (expo-audio unifies the old
+    // per-platform interruption-mode settings into one field)
+    interruptionMode: "duckOthers",
+    shouldRouteThroughEarpiece: false,
   });
 }
 

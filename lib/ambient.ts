@@ -1,4 +1,5 @@
-import { Audio } from "expo-av";
+import { createAudioPlayer, AudioPlayer } from "expo-audio";
+import { releasePlayer } from "./audio";
 
 // ─── Ambient sound catalog ─────────────────────────────────
 // Each entry maps to a bundled asset in assets/audio/.
@@ -82,7 +83,7 @@ export const AMBIENT_ASSETS: Record<string, any> = {
 
 const AMBIENT_VOLUME = 0.20;
 
-let ambientSound: Audio.Sound | null = null;
+let ambientPlayer: AudioPlayer | null = null;
 let currentAmbientId: AmbientSoundId | null = null;
 
 /** Start the ambient loop for the given sound ID. No-ops for "silence". */
@@ -95,37 +96,33 @@ export async function startAmbient(id: AmbientSoundId): Promise<void> {
   const asset = AMBIENT_ASSETS[id];
   if (!asset) return;
 
-  const { sound } = await Audio.Sound.createAsync(asset, {
-    shouldPlay: true,
-    isLooping: true,
-    volume: AMBIENT_VOLUME,
-  });
+  const player = createAudioPlayer(asset);
+  player.loop = true;
+  player.volume = AMBIENT_VOLUME;
+  player.play();
 
-  ambientSound = sound;
+  ambientPlayer = player;
 }
 
 /** Pause the ambient loop (e.g. when the user pauses the session). */
 export async function pauseAmbient(): Promise<void> {
-  if (ambientSound) {
-    try { await ambientSound.pauseAsync(); } catch {}
+  if (ambientPlayer) {
+    try { ambientPlayer.pause(); } catch {}
   }
 }
 
 /** Resume the ambient loop. */
 export async function resumeAmbient(): Promise<void> {
-  if (ambientSound) {
-    try { await ambientSound.playAsync(); } catch {}
+  if (ambientPlayer) {
+    try { ambientPlayer.play(); } catch {}
   }
 }
 
 /** Stop and unload the ambient loop. */
 export async function stopAmbient(): Promise<void> {
-  if (ambientSound) {
-    try {
-      await ambientSound.stopAsync();
-      await ambientSound.unloadAsync();
-    } catch {}
-    ambientSound = null;
+  if (ambientPlayer) {
+    releasePlayer(ambientPlayer);
+    ambientPlayer = null;
     currentAmbientId = null;
   }
 }

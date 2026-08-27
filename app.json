@@ -50,7 +50,8 @@
     },
     "plugins": [
       "expo-router",
-      "expo-av",
+      "expo-audio",
+      "expo-video",
       [
         "expo-notifications",
         {
@@ -59,9 +60,10 @@
           "enableBackgroundRemoteNotifications": true
         }
       ],
-      "expo-speech-recognition",
       "expo-font",
-      "expo-asset"
+      "expo-asset",
+      "expo-splash-screen",
+      "expo-status-bar"
     ],
     "experiments": {
       "typedRoutes": true

@@ -1,4 +1,9 @@
-import { Audio, AVPlaybackStatus } from "expo-av";
+import {
+  createAudioPlayer,
+  setAudioModeAsync,
+  AudioPlayer,
+  AudioStatus,
+} from "expo-audio";
 
 // ─── Bundled audio assets ───────────────────────────────
 // Maps audio_asset keys (from the sessions table) to local require() sources.
@@ -33,16 +38,74 @@ export const BUNDLED_ASSETS: Record<string, any> = {
   "words-stoic": require("../assets/audio/words-stoic.m4a"),
 };
 
+// ─── Playback status (legacy AVPlaybackStatus-style shape) ──
+// expo-audio reports time in SECONDS; this module converts to the
+// millisecond-based shape callers were written against, so screens
+// keep working unchanged.
+export type SessionPlaybackStatus = {
+  isLoaded: boolean;
+  isPlaying: boolean;
+  positionMillis: number;
+  durationMillis?: number;
+  didJustFinish: boolean;
+};
+
+export type SessionStatusCallback = (status: SessionPlaybackStatus) => void;
+
+export function toSessionStatus(status: AudioStatus): SessionPlaybackStatus {
+  return {
+    isLoaded: status.isLoaded,
+    isPlaying: status.playing,
+    positionMillis: Math.round(status.currentTime * 1000),
+    durationMillis:
+      status.duration > 0 ? Math.round(status.duration * 1000) : undefined,
+    didJustFinish: status.didJustFinish,
+  };
+}
+
+// ─── Per-player status listener bookkeeping ─────────────
+// The old setOnPlaybackStatusUpdate REPLACED the previous callback;
+// expo-audio's addListener ADDS one. Track subscriptions per player so
+// re-attaching behaves like a replace and never double-fires.
+type Subscription = { remove: () => void };
+const statusSubscriptions = new WeakMap<AudioPlayer, Subscription>();
+
+/** Attach (or replace) the status callback on a player. */
+export function setPlayerStatusCallback(
+  player: AudioPlayer,
+  callback: SessionStatusCallback | null,
+): void {
+  statusSubscriptions.get(player)?.remove();
+  statusSubscriptions.delete(player);
+  if (callback) {
+    const sub = player.addListener("playbackStatusUpdate", (status) => {
+      callback(toSessionStatus(status));
+    });
+    statusSubscriptions.set(player, sub);
+  }
+}
+
+/** Stop, detach listeners, and release a player's native resources. */
+export function releasePlayer(player: AudioPlayer): void {
+  setPlayerStatusCallback(player, null);
+  try {
+    player.pause();
+  } catch {}
+  try {
+    player.remove();
+  } catch {}
+}
+
 // ─── Audio playback engine ──────────────────────────────
-let currentSound: Audio.Sound | null = null;
-let onStatusUpdate: ((status: AVPlaybackStatus) => void) | null = null;
+let currentPlayer: AudioPlayer | null = null;
 
 /** Configure the audio session for background/silent-mode playback */
 export async function configureAudio() {
-  await Audio.setAudioModeAsync({
-    playsInSilentModeIOS: true,
-    staysActiveInBackground: true,
-    shouldDuckAndroid: true,
+  await setAudioModeAsync({
+    playsInSilentMode: true,
+    shouldPlayInBackground: true,
+    // shouldDuckAndroid: true equivalent → duck other apps' audio
+    interruptionMode: "duckOthers",
   });
 }
 
@@ -60,89 +123,85 @@ export function resolveSource(
   return null;
 }
 
-/** Start playing audio. Returns the Sound instance. */
+/** Start playing audio. Returns the player instance. */
 export async function playSession(
   source: PlaybackSource,
-  statusCallback?: (status: AVPlaybackStatus) => void,
-): Promise<Audio.Sound | null> {
+  statusCallback?: SessionStatusCallback,
+): Promise<AudioPlayer | null> {
   await stopSession();
   await configureAudio();
 
-  onStatusUpdate = statusCallback ?? null;
-
-  const avSource =
+  const audioSource =
     source.type === "url"
       ? { uri: source.uri }
       : BUNDLED_ASSETS[source.key];
 
-  if (!avSource) {
+  if (!audioSource) {
     console.warn("[audio] No audio source found");
     return null;
   }
 
-  const { sound } = await Audio.Sound.createAsync(avSource, {
-    shouldPlay: true,
-    progressUpdateIntervalMillis: 500,
-  });
+  const player = createAudioPlayer(audioSource, { updateInterval: 500 });
+  currentPlayer = player;
 
-  currentSound = sound;
-
-  if (onStatusUpdate) {
-    sound.setOnPlaybackStatusUpdate(onStatusUpdate);
+  if (statusCallback) {
+    setPlayerStatusCallback(player, statusCallback);
   }
 
-  return sound;
+  player.play();
+  return player;
 }
 
 /**
- * Adopt an externally-created Sound as the current session so that
+ * Adopt an externally-created player as the current session so that
  * pauseSession/resumeSession/seekSession/stopSession operate on it.
  * Used by alarmAudio, which manages its own loading/fade but should
  * still respond to the player's transport controls.
  */
 export function adoptSession(
-  sound: Audio.Sound,
-  statusCallback?: (status: AVPlaybackStatus) => void,
+  player: AudioPlayer,
+  statusCallback?: SessionStatusCallback,
 ) {
-  currentSound = sound;
-  onStatusUpdate = statusCallback ?? null;
-  if (onStatusUpdate) sound.setOnPlaybackStatusUpdate(onStatusUpdate);
+  currentPlayer = player;
+  if (statusCallback) setPlayerStatusCallback(player, statusCallback);
 }
 
 /** Pause current playback */
 export async function pauseSession() {
-  if (currentSound) {
-    await currentSound.pauseAsync();
+  if (currentPlayer) {
+    try {
+      currentPlayer.pause();
+    } catch {}
   }
 }
 
 /** Resume current playback */
 export async function resumeSession() {
-  if (currentSound) {
-    await currentSound.playAsync();
+  if (currentPlayer) {
+    try {
+      currentPlayer.play();
+    } catch {}
   }
 }
 
 /** Seek to a position (in milliseconds) */
 export async function seekSession(positionMs: number) {
-  if (currentSound) {
-    await currentSound.setPositionAsync(positionMs);
+  if (currentPlayer) {
+    try {
+      await currentPlayer.seekTo(positionMs / 1000);
+    } catch {}
   }
 }
 
 /** Stop and unload current audio */
 export async function stopSession() {
-  if (currentSound) {
-    try {
-      await currentSound.stopAsync();
-      await currentSound.unloadAsync();
-    } catch {}
-    currentSound = null;
-    onStatusUpdate = null;
+  if (currentPlayer) {
+    releasePlayer(currentPlayer);
+    currentPlayer = null;
   }
 }
 
 /** Get whether audio is currently loaded */
 export function hasActiveSession(): boolean {
-  return currentSound !== null;
+  return currentPlayer !== null;
 }

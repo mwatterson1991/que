@@ -3,9 +3,10 @@ import { useRouter, useLocalSearchParams } from "expo-router";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 import { Ionicons } from "@expo/vector-icons";
 import { useState, useEffect, useRef } from "react";
-import { Audio } from "expo-av";
+import { createAudioPlayer, AudioPlayer } from "expo-audio";
 import { F, S } from "@/lib/fonts";
 import { usePreferences } from "@/lib/useSupabase";
+import { releasePlayer } from "@/lib/audio";
 import {
   AMBIENT_SOUNDS,
   AMBIENT_ASSETS,
@@ -27,7 +28,7 @@ export default function AmbientPickerScreen() {
     (current as AmbientSoundId) ?? "silence",
   );
   const [previewing, setPreviewing] = useState<string | null>(null);
-  const previewRef = useRef<Audio.Sound | null>(null);
+  const previewRef = useRef<AudioPlayer | null>(null);
 
   // Sync from prefs on load
   useEffect(() => {
@@ -39,16 +40,16 @@ export default function AmbientPickerScreen() {
   // Cleanup preview on unmount
   useEffect(() => {
     return () => {
-      previewRef.current?.unloadAsync().catch(() => {});
+      if (previewRef.current) {
+        releasePlayer(previewRef.current);
+        previewRef.current = null;
+      }
     };
   }, []);
 
   const stopPreview = async () => {
     if (previewRef.current) {
-      try {
-        await previewRef.current.stopAsync();
-        await previewRef.current.unloadAsync();
-      } catch {}
+      releasePlayer(previewRef.current);
       previewRef.current = null;
     }
     setPreviewing(null);
@@ -65,12 +66,11 @@ export default function AmbientPickerScreen() {
     const asset = PREVIEW_ASSETS[id];
     if (!asset) return;
 
-    const { sound } = await Audio.Sound.createAsync(asset, {
-      shouldPlay: true,
-      isLooping: true,
-      volume: PREVIEW_VOLUME,
-    });
-    previewRef.current = sound;
+    const player = createAudioPlayer(asset);
+    player.loop = true;
+    player.volume = PREVIEW_VOLUME;
+    player.play();
+    previewRef.current = player;
     setPreviewing(id);
   };
 

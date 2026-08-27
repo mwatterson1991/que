@@ -329,7 +329,7 @@ const styles = StyleSheet.create({
     backgroundColor: "#1c1c1e",
   },
   heroArt: {
-    ...StyleSheet.absoluteFillObject,
+    position: "absolute", left: 0, right: 0, top: 0, bottom: 0,
   },
   heroCardEmpty: {
     backgroundColor: "rgba(255,255,255,0.06)",
@@ -350,7 +350,7 @@ const styles = StyleSheet.create({
     letterSpacing: 0.2,
   },
   heroOverlay: {
-    ...StyleSheet.absoluteFillObject,
+    position: "absolute", left: 0, right: 0, top: 0, bottom: 0,
     backgroundColor: "rgba(0,0,0,0.38)",
   },
   heroTextWrap: {
