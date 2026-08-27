@@ -13,7 +13,7 @@ import { useRouter, useFocusEffect } from "expo-router";
 import { useCallback, useEffect, useRef, useState } from "react";
 import AsyncStorage from "@react-native-async-storage/async-storage";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
-import { Svg, Defs, LinearGradient, Stop, Rect } from "react-native-svg";
+import AuroraBackground from "@/components/AuroraBackground";
 import { Ionicons } from "@expo/vector-icons";
 import Animated, {
   useSharedValue,
@@ -207,12 +207,6 @@ export default function AlarmsScreen() {
   const sessionMap: SessionMap = {};
   for (const s of sessions) sessionMap[s.id] = s;
 
-  // Backdrop: the first alarm's artwork — bright, luxe, color for the
-  // glass to react to. Falls back to the first session in the catalog.
-  const backdropSession =
-    sessionMap[alarms.find((a) => a.enabled)?.mantra_id ?? alarms[0]?.mantra_id ?? ""] ??
-    sessions[0];
-
   const openEditor = (item: Alarm, f: { x: number; y: number; w: number; h: number }) => {
     const d = new Date(item.next_fire_at);
     const h12 = d.getHours() % 12 || 12;
@@ -361,28 +355,8 @@ export default function AlarmsScreen() {
         });
       }}
     >
-      {/* ── Luxe backdrop the glass reacts to ── */}
-      {backdropSession && (
-        <Image
-          source={{ uri: artworkFor(backdropSession) }}
-          style={StyleSheet.absoluteFill}
-          resizeMode="cover"
-          accessible={false}
-        />
-      )}
-      <View style={StyleSheet.absoluteFill} pointerEvents="none">
-        <Svg width="100%" height="100%">
-          <Defs>
-            <LinearGradient id="alarmscrim" x1="0" y1="0" x2="0" y2="1">
-              <Stop offset="0%" stopColor="#000000" stopOpacity="0.45" />
-              <Stop offset="30%" stopColor="#000000" stopOpacity="0.12" />
-              <Stop offset="75%" stopColor="#000000" stopOpacity="0.18" />
-              <Stop offset="100%" stopColor="#000000" stopOpacity="0.55" />
-            </LinearGradient>
-          </Defs>
-          <Rect x="0" y="0" width="100%" height="100%" fill="url(#alarmscrim)" />
-        </Svg>
-      </View>
+      {/* ── The field the glass reacts to: pure morphing light ── */}
+      <AuroraBackground />
 
       {loading ? (
         <View style={styles.emptyState}>
@@ -609,15 +583,16 @@ const styles = StyleSheet.create({
     alignItems: "center",
     marginBottom: 18,
   },
+  // Flat row — no panel-on-glass; the artwork and text sit directly
+  // on the sheet (glass-on-glass reads muddy)
   editorSound: {
     flexDirection: "row",
     alignItems: "center",
     gap: 14,
-    borderRadius: 20,
-    padding: 10,
-    backgroundColor: "rgba(255,255,255,0.10)",
-    borderWidth: StyleSheet.hairlineWidth,
-    borderColor: "rgba(255,255,255,0.18)",
+    paddingVertical: 6,
+    borderBottomWidth: StyleSheet.hairlineWidth,
+    borderBottomColor: "rgba(255,255,255,0.18)",
+    paddingBottom: 16,
   },
   editorArt: {
     width: 64,
