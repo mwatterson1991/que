@@ -92,7 +92,7 @@ function SuggestButton() {
 function AddAlarmButton() {
   const router = useRouter();
   return (
-    <Pressable onPress={() => router.push("/edit-alarm" as any)} accessibilityRole="button" accessibilityLabel="Add alarm">
+    <Pressable onPress={() => router.push("/alarm-config" as any)} accessibilityRole="button" accessibilityLabel="Add alarm">
       <Ionicons
         name="add"
         size={28}

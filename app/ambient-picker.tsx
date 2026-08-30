@@ -4,6 +4,7 @@ import { useSafeAreaInsets } from "react-native-safe-area-context";
 import { Ionicons } from "@expo/vector-icons";
 import { useState, useEffect, useRef } from "react";
 import { createAudioPlayer, AudioPlayer } from "expo-audio";
+import { fadePlayerTo } from "@/lib/audio";
 import { F, S } from "@/lib/fonts";
 import { usePreferences } from "@/lib/useSupabase";
 import { releasePlayer } from "@/lib/audio";
@@ -68,8 +69,9 @@ export default function AmbientPickerScreen() {
 
     const player = createAudioPlayer(asset);
     player.loop = true;
-    player.volume = PREVIEW_VOLUME;
+    player.volume = 0;
     player.play();
+    fadePlayerTo(player, PREVIEW_VOLUME, 1200);
     previewRef.current = player;
     setPreviewing(id);
   };

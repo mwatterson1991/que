@@ -281,6 +281,17 @@ export default function RootLayout() {
             }}
           />
           <Stack.Screen
+            name="alarm-config"
+            options={{
+              animation: "default",
+              headerShown: true,
+              headerBackTitle: "",
+              headerLeft: () => <HeaderBackButton />,
+              ...HEADER_BASE,
+              contentStyle: { flex: 1, backgroundColor: "#020805" },
+            }}
+          />
+          <Stack.Screen
             name="edit-alarm"
             options={{
               animation: "default",

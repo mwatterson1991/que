@@ -1,5 +1,5 @@
 import { createAudioPlayer, AudioPlayer } from "expo-audio";
-import { releasePlayer } from "./audio";
+import { releasePlayer, fadePlayerTo } from "./audio";
 
 // ─── Ambient sound catalog ─────────────────────────────────
 // Each entry maps to a bundled asset in assets/audio/.
@@ -98,8 +98,9 @@ export async function startAmbient(id: AmbientSoundId): Promise<void> {
 
   const player = createAudioPlayer(asset);
   player.loop = true;
-  player.volume = AMBIENT_VOLUME;
+  player.volume = 0;
   player.play();
+  fadePlayerTo(player, AMBIENT_VOLUME, 2000);
 
   ambientPlayer = player;
 }
