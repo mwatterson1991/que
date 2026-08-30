@@ -1,4 +1,5 @@
 import { View, Text, Pressable, StyleSheet, ScrollView } from "react-native";
+import AuroraBackground from "@/components/AuroraBackground";
 import { Drawer } from "expo-router/drawer";
 import { Ionicons } from "@expo/vector-icons";
 import { useRouter, useNavigation } from "expo-router";
@@ -8,6 +9,7 @@ import { useRouter, useNavigation } from "expo-router";
 // package's; the narrow shape below is all this component actually uses.
 type DrawerContentComponentProps = any;
 import { F, S } from "@/lib/fonts";
+import { Glass } from "@/components/Glass";
 import { useAuth } from "@/lib/auth";
 
 function CustomDrawerContent(props: DrawerContentComponentProps) {
@@ -20,7 +22,7 @@ function CustomDrawerContent(props: DrawerContentComponentProps) {
   };
 
   return (
-    <View style={styles.drawer}>
+    <Glass style={styles.drawer}>
       {/* Nav links */}
       <ScrollView
         contentContainerStyle={styles.scrollContent}
@@ -69,7 +71,7 @@ function CustomDrawerContent(props: DrawerContentComponentProps) {
           </>
         )}
       </View>
-    </View>
+    </Glass>
   );
 }
 
@@ -92,7 +94,7 @@ function SuggestButton() {
 function AddAlarmButton() {
   const router = useRouter();
   return (
-    <Pressable onPress={() => router.push("/edit-alarm" as any)} accessibilityRole="button" accessibilityLabel="Add alarm">
+    <Pressable onPress={() => router.push("/alarm-config" as any)} accessibilityRole="button" accessibilityLabel="Add alarm">
       <Ionicons
         name="add"
         size={28}
@@ -119,12 +121,15 @@ function HamburgerButton() {
 
 export default function DrawerLayout() {
   return (
+    <View style={{ flex: 1, backgroundColor: "#020805" }}>
+      <AuroraBackground />
     <Drawer
       initialRouteName="alarms"
       drawerContent={(props) => <CustomDrawerContent {...props} />}
       screenOptions={{
+        headerTransparent: true,
+        headerBackground: () => <Glass style={{ flex: 1 }} />,
         headerStyle: {
-          backgroundColor: "#020805",
           elevation: 0,
           shadowOpacity: 0,
           borderBottomWidth: 0,
@@ -134,7 +139,8 @@ export default function DrawerLayout() {
           fontFamily: F.semibold,
           fontSize: S.body,
         },
-        drawerStyle: { backgroundColor: "#04120b", width: 280 },
+        sceneStyle: { backgroundColor: "transparent" },
+        drawerStyle: { backgroundColor: "transparent", width: 280 },
       }}
     >
       <Drawer.Screen
@@ -177,13 +183,13 @@ export default function DrawerLayout() {
         options={{ title: "You", drawerItemStyle: { display: "none" } }}
       />
     </Drawer>
+    </View>
   );
 }
 
 const styles = StyleSheet.create({
   drawer: {
     flex: 1,
-    backgroundColor: "#04120b",
     paddingTop: 60,
   },
   scrollContent: {

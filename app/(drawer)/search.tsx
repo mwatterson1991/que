@@ -15,6 +15,7 @@ import { F, S } from "@/lib/fonts";
 import { useAuth } from "@/lib/auth";
 import { supabase } from "@/lib/supabase";
 import SoundsBrowser from "@/components/SoundsBrowser";
+import { useSafeAreaInsets } from "react-native-safe-area-context";
 
 const MAX_CHARS = 280;
 
@@ -156,6 +157,7 @@ function SuggestionModal({
 
 // ─── Screen ───────────────────────────────────────────────
 export default function SoundsScreen() {
+  const insets = useSafeAreaInsets();
   const router = useRouter();
   const { user } = useAuth();
   const params = useLocalSearchParams<{ suggest?: string }>();
@@ -173,6 +175,8 @@ export default function SoundsScreen() {
   return (
     <View style={styles.container}>
       <SoundsBrowser
+      withAurora={false}
+      topPad={insets.top + 52}
         onPressSession={(session) => router.push(`/player?id=${session.id}` as any)}
         footer={
           <View style={styles.suggestWrap}>
@@ -188,7 +192,7 @@ export default function SoundsScreen() {
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    backgroundColor: "#000000",
+    backgroundColor: "transparent",
   },
 
   suggestWrap: {

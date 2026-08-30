@@ -201,11 +201,33 @@ export default function GratitudeScreen() {
           })}
         </View>
 
-        {/* ── Completion message ── */}
+        {/* ── Completion reward loop: see what today earned you ── */}
         {isComplete && (
-          <Text style={styles.completeText}>
-            Day complete — well done.
-          </Text>
+          <View style={styles.completeBlock}>
+            <Text style={styles.completeText}>
+              Day complete — +{TOTAL} positivity today.
+            </Text>
+            <Pressable
+              onPress={() => router.push("/profile-page" as any)}
+              style={styles.progressButton}
+              accessibilityRole="button"
+              accessibilityLabel="See your positivity graph"
+            >
+              <Text style={styles.progressButtonText}>See your graph</Text>
+              <Ionicons name="trending-up" size={18} color="#0a0a0a" />
+            </Pressable>
+          </View>
+        )}
+        {!isComplete && savedCount > 0 && (
+          <Pressable
+            onPress={() => router.push("/profile-page" as any)}
+            style={styles.todayPts}
+            accessibilityRole="button"
+            accessibilityLabel={`${savedCount} points earned today. See your graph`}
+          >
+            <Ionicons name="trending-up" size={14} color="#34C759" />
+            <Text style={styles.todayPtsText}>+{savedCount} today · see your graph</Text>
+          </Pressable>
         )}
 
         {/* ── Soft account nudge for guests ── */}
@@ -253,6 +275,38 @@ export default function GratitudeScreen() {
 }
 
 const styles = StyleSheet.create({
+  completeBlock: {
+    alignItems: "center",
+    gap: 14,
+    marginTop: 4,
+  },
+  progressButton: {
+    flexDirection: "row",
+    alignItems: "center",
+    gap: 8,
+    backgroundColor: "#f5f5f7",
+    borderRadius: 999,
+    paddingVertical: 13,
+    paddingHorizontal: 24,
+  },
+  progressButtonText: {
+    color: "#0a0a0a",
+    fontSize: S.secondary,
+    fontFamily: F.semibold,
+  },
+  todayPts: {
+    flexDirection: "row",
+    alignItems: "center",
+    justifyContent: "center",
+    gap: 6,
+    marginTop: 2,
+    paddingVertical: 8,
+  },
+  todayPtsText: {
+    color: "#34C759",
+    fontSize: S.caption,
+    fontFamily: F.semibold,
+  },
   container: {
     flex: 1,
     backgroundColor: "transparent",

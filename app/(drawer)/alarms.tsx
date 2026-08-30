@@ -7,27 +7,15 @@ import {
   Animated as RNAnimated,
   Image,
   ScrollView,
-  useWindowDimensions,
 } from "react-native";
 import { useRouter, useFocusEffect } from "expo-router";
-import { useCallback, useEffect, useRef, useState } from "react";
+import { useCallback, useEffect, useRef } from "react";
 import AsyncStorage from "@react-native-async-storage/async-storage";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
-import AuroraBackground from "@/components/AuroraBackground";
-import { Ionicons } from "@expo/vector-icons";
-import Animated, {
-  useSharedValue,
-  useAnimatedStyle,
-  withSpring,
-  runOnJS,
-  interpolate,
-} from "react-native-reanimated";
 import { useAlarms, useSessions } from "@/lib/useSupabase";
-import { scheduleAlarm, cancelAlarm } from "@/lib/alarmScheduler";
+import { rollForward, scheduleAlarm, cancelAlarm, syncAlarms } from "@/lib/alarmScheduler";
 import { artworkFor } from "@/lib/catalog";
-import { consumePickedSound } from "@/lib/soundPicker";
 import { Glass } from "@/components/Glass";
-import { WheelColumn, HOURS, MINUTES, MERIDIEM } from "@/components/TimeWheel";
 import { F, S } from "@/lib/fonts";
 
 let Haptics: any = null;
@@ -130,23 +118,16 @@ function AlarmCard({
   item: Alarm;
   session?: Session;
   onToggle: (id: string, enabled: boolean) => void;
-  onOpen: (item: Alarm, frame: { x: number; y: number; w: number; h: number }) => void;
+  onOpen: (item: Alarm) => void;
 }) {
   const { hour, ampm } = formatTime(item.next_fire_at);
   const soundName = session?.title || "Default";
   const duration = session ? `${Math.round(session.duration_sec / 60)} min` : "10 min";
-  const wrapRef = useRef<View>(null);
-
-  const open = () => {
-    wrapRef.current?.measureInWindow((x, y, w, h) => {
-      onOpen(item, { x, y, w, h });
-    });
-  };
 
   return (
-    <View ref={wrapRef} collapsable={false} style={styles.cardWrap}>
+    <View style={styles.cardWrap}>
       <Pressable
-        onPress={open}
+        onPress={() => onOpen(item)}
         accessibilityRole="button"
         accessibilityLabel={`Edit ${item.label || "Alarm"}, ${hour} ${ampm}, ${soundName}, ${duration}`}
         style={({ pressed }) => [pressed && { transform: [{ scale: 0.98 }] }]}
@@ -182,100 +163,38 @@ function AlarmCard({
 
 // ─── Screen ────────────────────────────────────────────────
 export default function AlarmsScreen() {
-  const { alarms, loading, toggle, refresh, remove, add, update } = useAlarms();
+  const { alarms, loading, refresh, add, update } = useAlarms();
   const { sessions } = useSessions();
   const router = useRouter();
   const insets = useSafeAreaInsets();
-  const { width: winW, height: winH } = useWindowDimensions();
+  const headerPad = insets.top + 52; // floating glass header
   const seedingRef = useRef(false);
   const healedRef = useRef(false);
-  const rootRef = useRef<View>(null);
-  const rootOrigin = useRef({ x: 0, y: 0 });
-
-  // ── Morph editor state ──
-  const [editing, setEditing] = useState<Alarm | null>(null);
-  const [closing, setClosing] = useState(false);
-  const morph = useSharedValue(0); // 0 = card, 1 = expanded editor
-  const [frame, setFrame] = useState({ x: 0, y: 0, w: 0, h: 0 });
-
-  // Editor form state
-  const [hourIdx, setHourIdx] = useState(0);
-  const [minIdx, setMinIdx] = useState(0);
-  const [merIdx, setMerIdx] = useState(0);
-  const [sessionId, setSessionId] = useState("");
+  const syncedRef = useRef(false);
 
   const sessionMap: SessionMap = {};
   for (const s of sessions) sessionMap[s.id] = s;
 
-  const openEditor = (item: Alarm, f: { x: number; y: number; w: number; h: number }) => {
-    const d = new Date(item.next_fire_at);
-    const h12 = d.getHours() % 12 || 12;
-    setHourIdx(h12 - 1);
-    setMinIdx(d.getMinutes());
-    setMerIdx(d.getHours() >= 12 ? 1 : 0);
-    setSessionId(item.mantra_id);
-    setFrame({
-      x: f.x - rootOrigin.current.x,
-      y: f.y - rootOrigin.current.y,
-      w: f.w,
-      h: f.h,
-    });
-    setClosing(false);
-    setEditing(item);
+  // One glass layer only: tapping a card travels to the alarm's own page.
+  const openAlarm = (item: Alarm) => {
     Haptics?.impactAsync?.(Haptics.ImpactFeedbackStyle?.Light);
-    morph.value = 0;
-    // Jelly: springs past 1 and settles — the card stretches into the sheet
-    morph.value = withSpring(1, { damping: 14, stiffness: 130, mass: 0.9 });
+    router.push(`/alarm-config?id=${item.id}` as any);
   };
 
-  const finishClose = () => {
-    setEditing(null);
-    setClosing(false);
-  };
-
-  const closeEditor = () => {
-    setClosing(true);
-    morph.value = withSpring(0, { damping: 16, stiffness: 160, mass: 0.9 }, (done) => {
-      if (done) runOnJS(finishClose)();
-    });
-  };
-
-  const saveEditor = async () => {
-    if (!editing) return;
-    let h = hourIdx + 1;
-    if (merIdx === 1 && h < 12) h += 12;
-    if (merIdx === 0 && h === 12) h = 0;
-    const fire = new Date();
-    fire.setHours(h, minIdx, 0, 0);
-    if (fire.getTime() <= Date.now()) fire.setDate(fire.getDate() + 1);
-    const label = sessionMap[sessionId]?.title ?? editing.label ?? "Alarm";
-
-    await cancelAlarm(editing.id);
-    const { data: updated } = await update(editing.id, {
-      label,
-      mantra_id: sessionId,
-      next_fire_at: fire.toISOString(),
-    });
-    if (updated?.enabled) await scheduleAlarm(updated);
-    Haptics?.notificationAsync?.(Haptics.NotificationFeedbackType?.Success);
-    closeEditor();
-  };
-
-  const deleteEditing = async () => {
-    if (!editing) return;
-    await cancelAlarm(editing.id);
-    await remove(editing.id);
-    closeEditor();
-  };
-
-  // Sound picked from /sounds while the editor is open; refresh list on focus
   useFocusEffect(
     useCallback(() => {
-      const picked = consumePickedSound();
-      if (picked) setSessionId(picked);
       refresh();
     }, [refresh])
   );
+
+  // ── OS-queue sync: the "alarm never fires" fix ──
+  // Once per app session, after alarms load: heal stale fire times and
+  // make the notification queue match the list exactly.
+  useEffect(() => {
+    if (loading || syncedRef.current || alarms.length === 0) return;
+    syncedRef.current = true;
+    syncAlarms(alarms, async (id, next_fire_at) => update(id, { next_fire_at }));
+  }, [loading, alarms, update]);
 
   // Heal alarms whose session left the catalog
   useEffect(() => {
@@ -314,50 +233,23 @@ export default function AlarmsScreen() {
     })();
   }, [loading, alarms.length, sessions, add]);
 
+  // Enabling always schedules at a FUTURE time — a stale next_fire_at
+  // used to be scheduled as-is and silently dropped by the OS guard.
   const handleToggle = useCallback(async (id: string, enabled: boolean) => {
-    await toggle(id, enabled);
     const alarm = alarms.find((a) => a.id === id);
     if (!alarm) return;
-    if (enabled) await scheduleAlarm({ ...alarm, enabled: true });
-    else await cancelAlarm(id);
-  }, [alarms, toggle]);
-
-  // ── Morph animation frames ──
-  const expTop = insets.top + 8;
-  const expBottom = 12 + insets.bottom;
-
-  const morphStyle = useAnimatedStyle(() => {
-    const t = morph.value;
-    return {
-      position: "absolute" as const,
-      left: interpolate(t, [0, 1], [frame.x, 12]),
-      top: interpolate(t, [0, 1], [frame.y, expTop]),
-      width: interpolate(t, [0, 1], [frame.w, winW - 24]),
-      height: interpolate(t, [0, 1], [frame.h, winH - expTop - expBottom]),
-      borderRadius: interpolate(t, [0, 1], [26, 34]),
-    };
-  }, [frame, winW, winH, expTop, expBottom]);
-
-  const editorContentStyle = useAnimatedStyle(() => ({
-    opacity: interpolate(morph.value, [0.35, 1], [0, 1]),
-  }));
-
-  const editingSession = editing ? sessionMap[sessionId] : undefined;
-  const editTime = editing ? formatTime(editing.next_fire_at) : null;
+    if (enabled) {
+      const next_fire_at = rollForward(alarm);
+      const { data: updated } = await update(id, { enabled: true, next_fire_at });
+      await scheduleAlarm(updated ?? { ...alarm, enabled: true, next_fire_at });
+    } else {
+      await update(id, { enabled: false });
+      await cancelAlarm(id);
+    }
+  }, [alarms, update]);
 
   return (
-    <View
-      ref={rootRef}
-      style={styles.container}
-      onLayout={() => {
-        rootRef.current?.measureInWindow((x, y) => {
-          rootOrigin.current = { x, y };
-        });
-      }}
-    >
-      {/* ── The field the glass reacts to: pure morphing light ── */}
-      <AuroraBackground />
-
+    <View style={styles.container}>
       {loading ? (
         <View style={styles.emptyState}>
           <ActivityIndicator color="#ffffff" />
@@ -368,7 +260,7 @@ export default function AlarmsScreen() {
         </View>
       ) : (
         <ScrollView
-          contentContainerStyle={styles.list}
+          contentContainerStyle={[styles.list, { paddingTop: headerPad + 8 }]}
           showsVerticalScrollIndicator={false}
         >
           {alarms.map((item) => (
@@ -377,106 +269,10 @@ export default function AlarmsScreen() {
               item={item}
               session={sessionMap[item.mantra_id]}
               onToggle={handleToggle}
-              onOpen={openEditor}
+              onOpen={openAlarm}
             />
           ))}
         </ScrollView>
-      )}
-
-      {/* ── The jelly editor: the tapped card, expanded ── */}
-      {editing && (
-        <>
-          <Pressable
-            style={StyleSheet.absoluteFill}
-            onPress={closing ? undefined : closeEditor}
-            accessibilityLabel="Close alarm editor"
-          />
-          <Animated.View style={[morphStyle, styles.morphShell]}>
-            <Glass style={styles.morphGlass}>
-              <Animated.View style={[styles.editorContent, editorContentStyle]}>
-                {/* Header row */}
-                <View style={styles.editorHeader}>
-                  <Pressable
-                    onPress={closeEditor}
-                    hitSlop={12}
-                    accessibilityRole="button"
-                    accessibilityLabel="Close"
-                  >
-                    <Ionicons name="chevron-down" size={26} color="#ffffff" />
-                  </Pressable>
-                  <Pressable
-                    onPress={deleteEditing}
-                    hitSlop={12}
-                    accessibilityRole="button"
-                    accessibilityLabel="Delete alarm"
-                  >
-                    <Ionicons name="trash-outline" size={22} color="rgba(255,255,255,0.75)" />
-                  </Pressable>
-                </View>
-
-                {/* Sound — tap to change */}
-                <Pressable
-                  onPress={() => router.push(`/sounds?current=${sessionId}` as any)}
-                  style={styles.editorSound}
-                  accessibilityRole="button"
-                  accessibilityLabel={
-                    editingSession
-                      ? `Wake-up sound, ${editingSession.title}. Change sound`
-                      : "Choose sound"
-                  }
-                >
-                  {editingSession ? (
-                    <Image
-                      source={{ uri: artworkFor(editingSession) }}
-                      style={styles.editorArt}
-                      resizeMode="cover"
-                    />
-                  ) : (
-                    <View style={[styles.editorArt, styles.editorArtEmpty]}>
-                      <Ionicons name="add" size={22} color="#ffffff" />
-                    </View>
-                  )}
-                  <View style={{ flex: 1 }}>
-                    <Text style={styles.editorSoundTitle} numberOfLines={1}>
-                      {editingSession?.title ?? "Choose sound"}
-                    </Text>
-                    {editingSession && (
-                      <Text style={styles.editorSoundMeta}>
-                        {editingSession.category} · {Math.round(editingSession.duration_sec / 60)} min
-                      </Text>
-                    )}
-                  </View>
-                  <Ionicons name="chevron-forward" size={18} color="rgba(255,255,255,0.6)" />
-                </Pressable>
-
-                {/* Time wheel */}
-                <View
-                  style={styles.wheelWrap}
-                  accessible
-                  accessibilityLabel={editTime ? `Alarm time ${editTime.hour} ${editTime.ampm}` : "Alarm time"}
-                >
-                  <View style={styles.wheelHighlight} />
-                  <View style={styles.wheelColumns}>
-                    <WheelColumn data={HOURS} selected={hourIdx} onSelect={setHourIdx} width={52} label="Hour" light />
-                    <Text style={styles.wheelColon}>:</Text>
-                    <WheelColumn data={MINUTES} selected={minIdx} onSelect={setMinIdx} width={52} label="Minute" light />
-                    <WheelColumn data={MERIDIEM} selected={merIdx} onSelect={setMerIdx} width={52} label="AM or PM" light />
-                  </View>
-                </View>
-
-                {/* Save */}
-                <Pressable
-                  onPress={saveEditor}
-                  style={({ pressed }) => [styles.saveButton, pressed && { transform: [{ scale: 0.98 }] }]}
-                  accessibilityRole="button"
-                  accessibilityLabel="Save alarm"
-                >
-                  <Text style={styles.saveText}>Save</Text>
-                </Pressable>
-              </Animated.View>
-            </Glass>
-          </Animated.View>
-        </>
       )}
     </View>
   );
@@ -485,11 +281,10 @@ export default function AlarmsScreen() {
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    backgroundColor: "#000000",
+    backgroundColor: "transparent",
   },
   list: {
     paddingHorizontal: 12,
-    paddingTop: 8,
     paddingBottom: 40,
     gap: 12,
   },
@@ -557,102 +352,6 @@ const styles = StyleSheet.create({
     shadowOpacity: 0.3,
     shadowRadius: 4,
     shadowOffset: { width: 0, height: 2 },
-  },
-
-  // Morph editor
-  morphShell: {
-    overflow: "hidden",
-    shadowColor: "#000",
-    shadowOpacity: 0.35,
-    shadowRadius: 30,
-    shadowOffset: { width: 0, height: 12 },
-  },
-  morphGlass: {
-    flex: 1,
-    borderRadius: 34,
-    overflow: "hidden",
-  },
-  editorContent: {
-    flex: 1,
-    padding: 20,
-    paddingTop: 16,
-  },
-  editorHeader: {
-    flexDirection: "row",
-    justifyContent: "space-between",
-    alignItems: "center",
-    marginBottom: 18,
-  },
-  // Flat row — no panel-on-glass; the artwork and text sit directly
-  // on the sheet (glass-on-glass reads muddy)
-  editorSound: {
-    flexDirection: "row",
-    alignItems: "center",
-    gap: 14,
-    paddingVertical: 6,
-    borderBottomWidth: StyleSheet.hairlineWidth,
-    borderBottomColor: "rgba(255,255,255,0.18)",
-    paddingBottom: 16,
-  },
-  editorArt: {
-    width: 64,
-    height: 64,
-    borderRadius: 14,
-    backgroundColor: "rgba(255,255,255,0.10)",
-  },
-  editorArtEmpty: {
-    alignItems: "center",
-    justifyContent: "center",
-  },
-  editorSoundTitle: {
-    color: "#ffffff",
-    fontSize: S.body,
-    fontFamily: F.semibold,
-  },
-  editorSoundMeta: {
-    color: "rgba(255,255,255,0.65)",
-    fontSize: S.caption,
-    fontFamily: F.regular,
-    marginTop: 2,
-  },
-
-  // Wheel
-  wheelWrap: {
-    flex: 1,
-    justifyContent: "center",
-    alignItems: "center",
-  },
-  wheelHighlight: {
-    position: "absolute",
-    alignSelf: "center",
-    width: 210,
-    height: 44,
-    borderRadius: 14,
-    backgroundColor: "rgba(255,255,255,0.14)",
-  },
-  wheelColumns: {
-    flexDirection: "row",
-    alignItems: "center",
-    gap: 6,
-  },
-  wheelColon: {
-    color: "#ffffff",
-    fontSize: S.title,
-    fontFamily: F.regular,
-  },
-
-  // Save
-  saveButton: {
-    backgroundColor: "#ffffff",
-    borderRadius: 999,
-    paddingVertical: 16,
-    alignItems: "center",
-  },
-  saveText: {
-    color: "#0a0a0a",
-    fontSize: S.body,
-    fontFamily: F.semibold,
-    letterSpacing: 0.3,
   },
 
   emptyState: {

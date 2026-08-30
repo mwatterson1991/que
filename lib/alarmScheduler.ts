@@ -147,6 +147,59 @@ export async function rescheduleAll(alarms: SchedulableAlarm[]): Promise<void> {
   console.log(`[alarmScheduler] Rescheduled ${enabled.length}/${alarms.length} alarms`);
 }
 
+// ─── Roll an alarm's fire time forward ───────────────────
+/**
+ * Returns the next FUTURE occurrence of the alarm's wall-clock time as an
+ * ISO string. Empty repeat_days means "every day" — an enabled morning
+ * alarm keeps firing daily until it's switched off, like a bedside clock.
+ *
+ * This is the heart of the "alarm never fires" fix: scheduling with a
+ * stale next_fire_at silently does nothing, so every schedule path must
+ * roll forward first.
+ */
+export function rollForward(alarm: Pick<SchedulableAlarm, "next_fire_at" | "repeat_days">): string {
+  const src = new Date(alarm.next_fire_at);
+  const hour = src.getHours();
+  const min = src.getMinutes();
+  const days = alarm.repeat_days ?? [];
+
+  const next = new Date();
+  next.setHours(hour, min, 0, 0);
+  for (let i = 0; i <= 7; i++) {
+    const future = next.getTime() > Date.now();
+    const dayOk = days.length === 0 || days.includes(next.getDay());
+    if (future && dayOk) return next.toISOString();
+    next.setDate(next.getDate() + 1);
+    next.setHours(hour, min, 0, 0);
+  }
+  return next.toISOString();
+}
+
+// ─── Sync OS queue with alarm list ───────────────────────
+/**
+ * Call whenever the alarm list is loaded or the app comes to the
+ * foreground. Heals stale fire times (persisting them via the supplied
+ * callback) and makes the OS notification queue match: every enabled
+ * alarm scheduled at a future time, every disabled one cancelled.
+ */
+export async function syncAlarms(
+  alarms: SchedulableAlarm[],
+  persist: (id: string, next_fire_at: string) => Promise<unknown>,
+): Promise<void> {
+  for (const alarm of alarms) {
+    if (!alarm.enabled) {
+      await cancelAlarm(alarm.id);
+      continue;
+    }
+    let fireAt = alarm.next_fire_at;
+    if (new Date(fireAt).getTime() <= Date.now()) {
+      fireAt = rollForward(alarm);
+      try { await persist(alarm.id, fireAt); } catch {}
+    }
+    await scheduleAlarm({ ...alarm, next_fire_at: fireAt });
+  }
+}
+
 // ─── List pending notifications (debug) ──────────────────
 export async function getPendingAlarms(): Promise<Notifications.NotificationRequest[]> {
   const all = await Notifications.getAllScheduledNotificationsAsync();

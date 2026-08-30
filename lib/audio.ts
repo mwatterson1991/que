@@ -148,8 +148,41 @@ export async function playSession(
     setPlayerStatusCallback(player, statusCallback);
   }
 
+  // Never blast: every session eases in from silence to a comfortable
+  // level. The user raises it past that only by choice (volume rocker).
+  player.volume = 0;
   player.play();
+  fadePlayerTo(player, COMFORT_VOLUME, 1800);
   return player;
+}
+
+/** Comfortable default listening level — deliberately below full. */
+export const COMFORT_VOLUME = 0.65;
+
+const fadeTimers = new WeakMap<AudioPlayer, ReturnType<typeof setInterval>>();
+
+/**
+ * Smoothly ramp a player's volume. Cancels any fade already running on
+ * that player. 60ms steps ≈ imperceptible.
+ */
+export function fadePlayerTo(player: AudioPlayer, target: number, durationMs = 1500) {
+  const prev = fadeTimers.get(player);
+  if (prev) clearInterval(prev);
+  let start: number;
+  try { start = player.volume; } catch { return; }
+  const steps = Math.max(1, Math.round(durationMs / 60));
+  let i = 0;
+  const timer = setInterval(() => {
+    i++;
+    try {
+      player.volume = start + (target - start) * (i / steps);
+    } catch {
+      clearInterval(timer);
+      return;
+    }
+    if (i >= steps) clearInterval(timer);
+  }, 60);
+  fadeTimers.set(player, timer);
 }
 
 /**
