@@ -1,4 +1,5 @@
 import { View, Text, Pressable, StyleSheet, ScrollView } from "react-native";
+import AuroraBackground from "@/components/AuroraBackground";
 import { Drawer } from "expo-router/drawer";
 import { Ionicons } from "@expo/vector-icons";
 import { useRouter, useNavigation } from "expo-router";
@@ -120,12 +121,15 @@ function HamburgerButton() {
 
 export default function DrawerLayout() {
   return (
+    <View style={{ flex: 1, backgroundColor: "#020805" }}>
+      <AuroraBackground />
     <Drawer
       initialRouteName="alarms"
       drawerContent={(props) => <CustomDrawerContent {...props} />}
       screenOptions={{
+        headerTransparent: true,
+        headerBackground: () => <Glass style={{ flex: 1 }} />,
         headerStyle: {
-          backgroundColor: "#020805",
           elevation: 0,
           shadowOpacity: 0,
           borderBottomWidth: 0,
@@ -135,6 +139,7 @@ export default function DrawerLayout() {
           fontFamily: F.semibold,
           fontSize: S.body,
         },
+        sceneStyle: { backgroundColor: "transparent" },
         drawerStyle: { backgroundColor: "transparent", width: 280 },
       }}
     >
@@ -178,6 +183,7 @@ export default function DrawerLayout() {
         options={{ title: "You", drawerItemStyle: { display: "none" } }}
       />
     </Drawer>
+    </View>
   );
 }
 

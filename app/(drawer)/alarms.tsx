@@ -11,11 +11,11 @@ import {
 import { useRouter, useFocusEffect } from "expo-router";
 import { useCallback, useEffect, useRef } from "react";
 import AsyncStorage from "@react-native-async-storage/async-storage";
+import { useSafeAreaInsets } from "react-native-safe-area-context";
 import { useAlarms, useSessions } from "@/lib/useSupabase";
 import { rollForward, scheduleAlarm, cancelAlarm, syncAlarms } from "@/lib/alarmScheduler";
 import { artworkFor } from "@/lib/catalog";
 import { Glass } from "@/components/Glass";
-import AuroraBackground from "@/components/AuroraBackground";
 import { F, S } from "@/lib/fonts";
 
 let Haptics: any = null;
@@ -166,6 +166,8 @@ export default function AlarmsScreen() {
   const { alarms, loading, refresh, add, update } = useAlarms();
   const { sessions } = useSessions();
   const router = useRouter();
+  const insets = useSafeAreaInsets();
+  const headerPad = insets.top + 52; // floating glass header
   const seedingRef = useRef(false);
   const healedRef = useRef(false);
   const syncedRef = useRef(false);
@@ -248,9 +250,6 @@ export default function AlarmsScreen() {
 
   return (
     <View style={styles.container}>
-      {/* ── The field the glass reacts to: pure morphing light ── */}
-      <AuroraBackground />
-
       {loading ? (
         <View style={styles.emptyState}>
           <ActivityIndicator color="#ffffff" />
@@ -261,7 +260,7 @@ export default function AlarmsScreen() {
         </View>
       ) : (
         <ScrollView
-          contentContainerStyle={styles.list}
+          contentContainerStyle={[styles.list, { paddingTop: headerPad + 8 }]}
           showsVerticalScrollIndicator={false}
         >
           {alarms.map((item) => (
@@ -282,11 +281,10 @@ export default function AlarmsScreen() {
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    backgroundColor: "#000000",
+    backgroundColor: "transparent",
   },
   list: {
     paddingHorizontal: 12,
-    paddingTop: 8,
     paddingBottom: 40,
     gap: 12,
   },

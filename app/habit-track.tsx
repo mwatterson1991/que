@@ -6,6 +6,7 @@ import {
   FlatList,
   StyleSheet,
   ActivityIndicator,
+  Alert,
 } from "react-native";
 import { useRouter, useFocusEffect } from "expo-router";
 import { Ionicons } from "@expo/vector-icons";
@@ -17,7 +18,7 @@ import AuroraBackground from "@/components/AuroraBackground";
 export default function HabitTrackScreen() {
   const router = useRouter();
   const { user, isGuest } = useAuth();
-  const { habits, loading: habitsLoading, refresh: refreshHabits } = useHabits();
+  const { habits, loading: habitsLoading, refresh: refreshHabits, archive } = useHabits();
   const { logs, loading: logsLoading, refresh: refreshLogs, logHabit, removeLog, todayCount } = useHabitLogs(31);
 
   useFocusEffect(
@@ -30,6 +31,26 @@ export default function HabitTrackScreen() {
   const loading = habitsLoading || logsLoading;
   const todayStr = new Date().toLocaleDateString("en-CA");
   const todayTotal = logs.filter((l) => l.log_date === todayStr).length;
+
+  // Consecutive days (ending today or yesterday) with at least one log
+  const streakFor = (habitId: string): number => {
+    const days = new Set(logs.filter((l) => l.habit_id === habitId).map((l) => l.log_date));
+    let streak = 0;
+    const d = new Date();
+    if (!days.has(d.toLocaleDateString("en-CA"))) d.setDate(d.getDate() - 1); // today not done yet
+    while (days.has(d.toLocaleDateString("en-CA"))) {
+      streak++;
+      d.setDate(d.getDate() - 1);
+    }
+    return streak;
+  };
+
+  const confirmArchive = (habitId: string, title: string) => {
+    Alert.alert("Remove habit?", `"${title}" and its history will be hidden from tracking.`, [
+      { text: "Cancel", style: "cancel" },
+      { text: "Remove", style: "destructive", onPress: async () => { await archive(habitId); refreshHabits(); } },
+    ]);
+  };
 
   const handleDotPress = async (habitId: string, timesPerDay: number) => {
     const count = todayCount(habitId);
@@ -92,15 +113,22 @@ export default function HabitTrackScreen() {
           const count = todayCount(item.id);
           const complete = count >= item.times_per_day;
 
+          const streak = streakFor(item.id);
           return (
-            <View style={styles.row}>
+            <Pressable
+              style={styles.row}
+              onLongPress={() => confirmArchive(item.id, item.title)}
+              delayLongPress={450}
+              accessibilityRole="button"
+              accessibilityLabel={`${item.title}. Long press to remove.`}
+            >
               <View style={styles.rowLeft}>
                 <Text style={styles.habitTitle}>{item.title}</Text>
-                {item.times_per_day > 1 && (
-                  <Text style={styles.habitMeta}>
-                    {count}/{item.times_per_day} today
-                  </Text>
-                )}
+                <Text style={styles.habitMeta}>
+                  {item.times_per_day > 1 ? `${count}/${item.times_per_day} today` : ""}
+                  {item.times_per_day > 1 && streak > 1 ? " · " : ""}
+                  {streak > 1 ? `${streak >= 31 ? "31+" : streak}-day streak 🔥` : ""}
+                </Text>
               </View>
               <Pressable
                 onPress={() => handleDotPress(item.id, item.times_per_day)}
@@ -119,7 +147,7 @@ export default function HabitTrackScreen() {
                   ]}
                 />
               </Pressable>
-            </View>
+            </Pressable>
           );
         }}
         ItemSeparatorComponent={() => <View style={styles.separator} />}

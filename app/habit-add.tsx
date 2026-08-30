@@ -11,6 +11,19 @@ import { useRouter, useNavigation } from "expo-router";
 import { Ionicons } from "@expo/vector-icons";
 import { useHabits } from "@/lib/useSupabase";
 import { F, S } from "@/lib/fonts";
+import AuroraBackground from "@/components/AuroraBackground";
+
+// One-tap starters — the blank input is the biggest reason people bail
+const SUGGESTIONS = [
+  "Drink a glass of water",
+  "Get sunlight first thing",
+  "Meditate 5 minutes",
+  "Morning walk",
+  "Read 10 pages",
+  "Stretch",
+  "Make the bed",
+  "No phone for first hour",
+];
 
 const PRESET_COLORS = [
   "#FF6B35", // orange
@@ -99,11 +112,29 @@ export default function HabitAddScreen() {
   }, [title, timesPerDay, factor, color, saving]);
 
   return (
+    <View style={{ flex: 1 }}>
+    <AuroraBackground dim={0.45} />
     <ScrollView
       style={styles.container}
       contentContainerStyle={styles.scroll}
       keyboardShouldPersistTaps="handled"
     >
+      {/* Starter suggestions */}
+      {title.trim().length === 0 && (
+        <View style={styles.suggestWrap}>
+          {SUGGESTIONS.map((sug) => (
+            <Pressable
+              key={sug}
+              onPress={() => setTitle(sug)}
+              style={styles.suggestChip}
+              accessibilityRole="button"
+              accessibilityLabel={`Use suggestion: ${sug}`}
+            >
+              <Text style={styles.suggestText}>{sug}</Text>
+            </Pressable>
+          ))}
+        </View>
+      )}
       {/* Title */}
       <View style={styles.row}>
         <Text style={styles.label}>Title</Text>
@@ -174,13 +205,34 @@ export default function HabitAddScreen() {
       )}
       <View style={styles.sep} />
     </ScrollView>
+    </View>
   );
 }
 
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    backgroundColor: "#000000",
+    backgroundColor: "transparent",
+  },
+  suggestWrap: {
+    flexDirection: "row",
+    flexWrap: "wrap",
+    gap: 8,
+    paddingTop: 16,
+    paddingBottom: 6,
+  },
+  suggestChip: {
+    borderRadius: 999,
+    paddingVertical: 8,
+    paddingHorizontal: 14,
+    backgroundColor: "rgba(255,255,255,0.08)",
+    borderWidth: StyleSheet.hairlineWidth,
+    borderColor: "rgba(255,255,255,0.2)",
+  },
+  suggestText: {
+    color: "#e4e4e7",
+    fontSize: S.caption,
+    fontFamily: F.regular,
   },
   scroll: {
     paddingHorizontal: 20,

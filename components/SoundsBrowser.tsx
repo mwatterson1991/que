@@ -110,10 +110,14 @@ export default function SoundsBrowser({
   onPressSession,
   selectedId,
   footer,
+  withAurora = true,
+  topPad = 0,
 }: {
   onPressSession: (session: Session) => void;
   selectedId?: string;
   footer?: ReactNode;
+  withAurora?: boolean;
+  topPad?: number;
 }) {
   const { sessions, loading } = useSessions();
   const { unlocked } = usePremium();
@@ -143,8 +147,8 @@ export default function SoundsBrowser({
   }, [sessions, query]);
 
   return (
-    <View style={styles.container}>
-      <AuroraBackground dim={0.8} />
+    <View style={[styles.container, { paddingTop: topPad }]}>
+      {withAurora && <AuroraBackground dim={0.8} />}
       {/* Search bar */}
       <Glass style={styles.searchBar}>
         <Ionicons name="search" size={18} color="#8b8b93" />

@@ -12,10 +12,10 @@ import {
 } from "react-native-svg";
 import { useRouter, useNavigation, useLocalSearchParams } from "expo-router";
 import { F, S } from "@/lib/fonts";
-import AuroraBackground from "@/components/AuroraBackground";
 import { Glass } from "@/components/Glass";
 import { buildPositivitySeries } from "@/lib/positivity";
 import { useHabits, useHabitLogs, useProfile, useActivity, useGratitudeEntries } from "@/lib/useSupabase";
+import { useSafeAreaInsets } from "react-native-safe-area-context";
 
 // Native screenshot module — lands with the next dev build; guarded so
 // the current binary shares text until then.
@@ -311,6 +311,7 @@ export default function ProfileScreen() {
   const fromDrawer = from === "drawer";
 
   const chartRef = useRef(null);
+  const insets = useSafeAreaInsets();
   const { activity } = useActivity();
 
   // Share your positivity graph like a stock ticker on yourself.
@@ -385,10 +386,9 @@ export default function ProfileScreen() {
 
   return (
     <View style={styles.container}>
-    <AuroraBackground dim={0.5} />
     <ScrollView
       style={{ flex: 1 }}
-      contentContainerStyle={styles.scroll}
+      contentContainerStyle={[styles.scroll, { paddingTop: insets.top + 56 }]}
       bounces={true}
       showsVerticalScrollIndicator={false}
       nestedScrollEnabled={true}
@@ -498,7 +498,7 @@ const styles = StyleSheet.create({
   },
   container: {
     flex: 1,
-    backgroundColor: "#020805",
+    backgroundColor: "transparent",
   },
   scroll: {
     paddingHorizontal: 20,
