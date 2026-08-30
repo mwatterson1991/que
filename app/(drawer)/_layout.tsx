@@ -8,6 +8,7 @@ import { useRouter, useNavigation } from "expo-router";
 // package's; the narrow shape below is all this component actually uses.
 type DrawerContentComponentProps = any;
 import { F, S } from "@/lib/fonts";
+import { Glass } from "@/components/Glass";
 import { useAuth } from "@/lib/auth";
 
 function CustomDrawerContent(props: DrawerContentComponentProps) {
@@ -20,7 +21,7 @@ function CustomDrawerContent(props: DrawerContentComponentProps) {
   };
 
   return (
-    <View style={styles.drawer}>
+    <Glass style={styles.drawer}>
       {/* Nav links */}
       <ScrollView
         contentContainerStyle={styles.scrollContent}
@@ -69,7 +70,7 @@ function CustomDrawerContent(props: DrawerContentComponentProps) {
           </>
         )}
       </View>
-    </View>
+    </Glass>
   );
 }
 
@@ -134,7 +135,7 @@ export default function DrawerLayout() {
           fontFamily: F.semibold,
           fontSize: S.body,
         },
-        drawerStyle: { backgroundColor: "#04120b", width: 280 },
+        drawerStyle: { backgroundColor: "transparent", width: 280 },
       }}
     >
       <Drawer.Screen
@@ -183,7 +184,6 @@ export default function DrawerLayout() {
 const styles = StyleSheet.create({
   drawer: {
     flex: 1,
-    backgroundColor: "#04120b",
     paddingTop: 60,
   },
   scrollContent: {

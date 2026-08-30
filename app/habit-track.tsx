@@ -28,6 +28,8 @@ export default function HabitTrackScreen() {
   );
 
   const loading = habitsLoading || logsLoading;
+  const todayStr = new Date().toLocaleDateString("en-CA");
+  const todayTotal = logs.filter((l) => l.log_date === todayStr).length;
 
   const handleDotPress = async (habitId: string, timesPerDay: number) => {
     const count = todayCount(habitId);
@@ -129,6 +131,17 @@ export default function HabitTrackScreen() {
         ListFooterComponent={
           <View>
             {habits.length > 0 && <View style={styles.separator} />}
+            {todayTotal > 0 && (
+              <Pressable
+                onPress={() => router.push("/profile-page" as any)}
+                style={styles.todayPts}
+                accessibilityRole="button"
+                accessibilityLabel={`${todayTotal * 2} points earned today. See your graph`}
+              >
+                <Ionicons name="trending-up" size={14} color="#34C759" />
+                <Text style={styles.todayPtsText}>+{todayTotal * 2} today · see your graph</Text>
+              </Pressable>
+            )}
             <Pressable
               style={styles.addRow}
               onPress={() => router.push("/habit-add" as any)}
@@ -146,6 +159,18 @@ export default function HabitTrackScreen() {
 }
 
 const styles = StyleSheet.create({
+  todayPts: {
+    flexDirection: "row",
+    alignItems: "center",
+    justifyContent: "center",
+    gap: 6,
+    paddingVertical: 14,
+  },
+  todayPtsText: {
+    color: "#34C759",
+    fontSize: S.caption,
+    fontFamily: F.semibold,
+  },
   gateWrap: {
     flex: 1,
     backgroundColor: "#000000",

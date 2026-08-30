@@ -13,7 +13,9 @@ import {
 import { useRouter, useNavigation, useLocalSearchParams } from "expo-router";
 import { F, S } from "@/lib/fonts";
 import AuroraBackground from "@/components/AuroraBackground";
-import { useHabits, useHabitLogs, useProfile, useScores, useActivity } from "@/lib/useSupabase";
+import { Glass } from "@/components/Glass";
+import { buildPositivitySeries } from "@/lib/positivity";
+import { useHabits, useHabitLogs, useProfile, useActivity, useGratitudeEntries } from "@/lib/useSupabase";
 
 // Native screenshot module — lands with the next dev build; guarded so
 // the current binary shares text until then.
@@ -21,73 +23,79 @@ let ViewShot: any = null;
 try { ViewShot = require("react-native-view-shot"); } catch {}
 
 // ─── Positivity chart ────────────────────────────────────
-// Your gratitude points over time, drawn like a stock ticker you'd be
-// proud to share. Cumulative, so the line only goes up.
+// A stock ticker on yourself, with weather. The baseline sits mid-
+// chart: gratitude and habits push the line up, missed days pull it
+// below zero. Built from the same data guests have on-device.
 function PositivityChart({ chartRef }: { chartRef: any }) {
-  const { scores } = useScores();
+  const { entries } = useGratitudeEntries();
+  const { logs } = useHabitLogs(31);
   const { width } = useWindowDimensions();
   const W = width - 40;
   const H = 180;
   const padX = 8;
   const padY = 18;
 
-  const points = useMemo(() => {
-    const days = 30;
-    const byDay = new Map<string, number>();
-    for (const s of scores) {
-      const d = s.recorded_at.slice(0, 10);
-      byDay.set(d, (byDay.get(d) ?? 0) + s.score);
-    }
-    let running = 0;
-    const out: number[] = [];
-    for (let i = days - 1; i >= 0; i--) {
-      const d = new Date();
-      d.setDate(d.getDate() - i);
-      running += byDay.get(d.toLocaleDateString("en-CA")) ?? 0;
-      out.push(running);
-    }
-    return out;
-  }, [scores]);
+  const series = useMemo(
+    () =>
+      buildPositivitySeries(
+        entries.map((e) => e.entry_date),
+        logs.map((l) => l.log_date),
+        31,
+      ),
+    [entries, logs],
+  );
 
-  const total = points[points.length - 1] ?? 0;
-  const weekGain = total - (points[points.length - 8] ?? 0);
-  const maxVal = Math.max(...points, 1);
+  const { points, total, weekDelta, todayPts } = series;
+  // Symmetric range so zero is always the visual midline
+  const amp = Math.max(...points.map(Math.abs), 10);
 
-  const poly = points
-    .map((v, i) => {
-      const x = padX + (i / (points.length - 1)) * (W - padX * 2);
-      const y = padY + (1 - v / maxVal) * (H - padY * 2);
-      return `${x},${y}`;
-    })
-    .join(" ");
+  const toXY = (v: number, i: number) => {
+    const x = padX + (i / Math.max(points.length - 1, 1)) * (W - padX * 2);
+    const y = padY + (1 - (v + amp) / (2 * amp)) * (H - padY * 2);
+    return { x, y };
+  };
+  const poly = points.map((v, i) => { const { x, y } = toXY(v, i); return `${x},${y}`; }).join(" ");
+  const zeroY = toXY(0, 0).y;
+  const up = weekDelta >= 0;
 
   return (
-    <View
-      ref={chartRef}
-      collapsable={false}
+    <Glass
       style={styles.posCard}
       accessible
-      accessibilityLabel={`Positivity score ${total}${weekGain > 0 ? `, up ${weekGain} this week` : ""}, last 30 days`}
+      accessibilityLabel={`Positivity score ${total}, ${up ? "up" : "down"} ${Math.abs(weekDelta)} this week, last 30 days`}
     >
+      <View ref={chartRef} collapsable={false} style={styles.posInner}>
       <View style={styles.posHeader}>
         <View>
           <Text style={styles.posLabel} maxFontSizeMultiplier={1.3}>POSITIVITY</Text>
           <Text style={styles.posTotal} maxFontSizeMultiplier={1.2}>{total}</Text>
         </View>
-        {weekGain > 0 && (
+        <View style={{ alignItems: "flex-end", gap: 4 }}>
           <View style={styles.posGain}>
-            <Ionicons name="trending-up" size={14} color="#34C759" />
-            <Text style={styles.posGainText} maxFontSizeMultiplier={1.3}>+{weekGain} this week</Text>
+            <Ionicons name={up ? "trending-up" : "trending-down"} size={14} color={up ? "#34C759" : "#ff6b6b"} />
+            <Text style={[styles.posGainText, !up && { color: "#ff6b6b" }]} maxFontSizeMultiplier={1.3}>
+              {up ? "+" : ""}{weekDelta} this week
+            </Text>
           </View>
-        )}
+          {todayPts > 0 && (
+            <Text style={styles.posToday} maxFontSizeMultiplier={1.3}>+{todayPts} today</Text>
+          )}
+        </View>
       </View>
-      <Svg width={W} height={H} viewBox={`0 0 ${W} ${H}`}>
+      <Svg width={W - 32} height={H} viewBox={`0 0 ${W - 32} ${H}`}>
         <Defs>
           <LinearGradient id="posLine" x1="0" y1="0" x2="1" y2="0">
             <Stop offset="0%" stopColor="#34C759" stopOpacity="0.5" />
             <Stop offset="100%" stopColor="#34C759" stopOpacity="1" />
           </LinearGradient>
         </Defs>
+        {/* Baseline — the line you're above or below */}
+        <Line
+          x1={padX} y1={zeroY} x2={W - 32 - padX} y2={zeroY}
+          stroke="rgba(255,255,255,0.25)"
+          strokeWidth="1"
+          strokeDasharray="3 5"
+        />
         <Polyline
           points={poly}
           fill="none"
@@ -98,9 +106,10 @@ function PositivityChart({ chartRef }: { chartRef: any }) {
         />
       </Svg>
       <Text style={styles.posFooter} maxFontSizeMultiplier={1.3}>
-        Last 30 days · Morning Que
+        Last 30 days · above the line you're building, below it you're drifting
       </Text>
-    </View>
+      </View>
+    </Glass>
   );
 }
 
@@ -432,13 +441,20 @@ export default function ProfileScreen() {
 
 const styles = StyleSheet.create({
   posCard: {
-    backgroundColor: "#0f0f10",
     borderRadius: 20,
     marginHorizontal: 20,
     marginBottom: 18,
+    overflow: "hidden",
+  },
+  posInner: {
     paddingTop: 16,
     paddingBottom: 12,
-    overflow: "hidden",
+    paddingHorizontal: 16,
+  },
+  posToday: {
+    color: "#34C759",
+    fontSize: S.caption,
+    fontFamily: F.semibold,
   },
   posHeader: {
     flexDirection: "row",
@@ -511,10 +527,10 @@ const styles = StyleSheet.create({
 
   // Chart
   chartCard: {
-    backgroundColor: "#0d0d0f",
+    backgroundColor: "rgba(255,255,255,0.05)",
     borderRadius: 16,
-    borderWidth: 1,
-    borderColor: "#1c1c1e",
+    borderWidth: StyleSheet.hairlineWidth,
+    borderColor: "rgba(255,255,255,0.14)",
     paddingTop: 8,
     paddingHorizontal: 4,
     paddingBottom: 12,

@@ -11,63 +11,65 @@ const pex = (id: number) =>
   `https://images.pexels.com/photos/${id}/pexels-photo-${id}.jpeg?auto=compress&cs=tinysrgb&w=1200`;
 
 const ARTWORK_BY_ID: Record<string, string> = {
-  "local-dawn-birds": pex(302804), // pine forest
-  "local-river": pex(355321), // mossy forest stream
-  "local-ocean-waves": pex(1032650), // sunset beach waves
-  "local-rain": pex(807598), // raindrops on leaves
-  "local-crickets": pex(1257860), // milky way
-  "local-theta": pex(62693), // clean light stripes
+  // Brand pass: macro photography — zoomed-in, detailed, tactile.
+  "local-dawn-birds": pex(36404660), // feather with morning dew, macro
+  "local-river": pex(14933322), // moss beside flowing water, close
+  "local-ocean-waves": pex(8335650), // seafoam lace on sand, macro
+  "local-rain": pex(28961050), // raindrops hanging on a leaf edge
+  "local-crickets": pex(33155622), // dew on grass, night bokeh
+  "local-theta": pex(5214569), // single water droplet, minimal
   "local-freq-alpha": pex(949587), // warm bokeh
-  "local-freq-delta": pex(268533), // lone tree under stars
+  "local-freq-delta": pex(2115085), // leaf skeleton, backlit veins
   "local-horo-star": pex(1257860), // milky way
   "local-horo-cosmic": pex(355887), // night sky over trees
   "local-horo-moon": pex(1287145), // moon over snowy peaks
-  "local-words-affirm": pex(736230), // pink rose
-  "local-words-grace": pex(268134), // meditation at sunset
-  "local-words-stoic": pex(216798), // autumn path
+  "local-words-affirm": pex(736230), // rose petals, close
+  "local-words-grace": pex(10064818), // white feather, soft macro
+  "local-words-stoic": pex(35527794), // intricate leaf pattern, macro
 };
 
 const ARTWORK_BY_TITLE: Record<string, string> = {
-  "deep sleep induction": pex(268533), // lone tree under stars
-  "circadian reset": pex(355887), // night sky over trees
-  "improve focus": pex(62693), // clean light stripes
-  "morning confidence ritual": pex(417074), // alpine sunrise lake
-  "self-worth boost": pex(371633), // bright mountain lake
-  "gratitude flood": pex(268134), // meditation at sunset
-  "panic relief": pex(1287145), // still snowy peaks + moon
+  "deep sleep induction": pex(2115085), // backlit leaf skeleton
+  "circadian reset": pex(36831777), // glowing green leaf veins
+  "improve focus": pex(5214569), // one droplet, held
+  "morning confidence ritual": pex(785695), // clear dew on fresh green
+  "self-worth boost": pex(717412), // droplet on vibrant leaf
+  "gratitude flood": pex(6527380), // dew strung across moss
+  "panic relief": pex(10064818), // white feather, weightless
 };
 
 const ARTWORK_BY_CATEGORY: Record<string, string> = {
-  Naturescapes: pex(302804),
-  Sleep: pex(268533),
-  Confidence: pex(417074),
-  Addiction: pex(216798), // autumn path — a new road
-  Mindfulness: pex(268134),
-  Anxiety: pex(462162), // calm ocean cove
-  "Focus & Productivity": pex(62693), // clean light stripes
-  "Health & Habits": pex(216798), // autumn path
-  "Mental & Emotional": pex(462162), // calm ocean cove
-  "Spiritual / Purpose-driven": pex(268134), // meditation at sunset
-  Frequencies: pex(62693), // clean light stripes
-  Horoscope: pex(355887), // night sky over trees
-  "Positive Words": pex(736230), // pink rose
+  Naturescapes: pex(6527380), // dew on moss
+  Sleep: pex(2115085),
+  Confidence: pex(785695),
+  Addiction: pex(969044), // new moss growth
+  Mindfulness: pex(5214569),
+  Anxiety: pex(10064818),
+  "Focus & Productivity": pex(5214569),
+  "Health & Habits": pex(18012355), // vibrant living moss
+  "Mental & Emotional": pex(34415000), // dew drops, ordered
+  "Spiritual / Purpose-driven": pex(38445116), // intricate vein network
+  Frequencies: pex(949587),
+  Horoscope: pex(355887),
+  "Positive Words": pex(736230),
 };
 
-const ARTWORK_FALLBACK = pex(371633);
+const ARTWORK_FALLBACK = pex(34415000);
 
 // Scenic pool for the hypnotherapy library — every session gets its own
 // photo, assigned by a stable hash of its title so it never shuffles.
+// All macro: texture and detail, not postcards.
 const HYPNO_POOL = [
-  pex(417074), // alpine sunrise lake
-  pex(371633), // bright mountain lake
-  pex(268533), // lone tree under stars
-  pex(462162), // calm ocean cove
-  pex(216798), // autumn path
-  pex(1287145), // moon over snowy peaks
-  pex(268134), // meditation at sunset
-  pex(355887), // night sky over trees
-  pex(949587), // warm bokeh
-  pex(1257860), // milky way
+  pex(785695), // dew on green
+  pex(34415000), // dew rows on leaf
+  pex(16086657), // single dew drop
+  pex(717412), // droplet on leaf
+  pex(6527380), // moss dew strands
+  pex(969044), // moss forest floor
+  pex(36148607), // fern leaf detail
+  pex(10064818), // white feather
+  pex(5840692), // ostrich feather softness
+  pex(33155622), // grass dew bokeh
 ];
 
 function stableIndex(text: string, mod: number): number {
