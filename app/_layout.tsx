@@ -250,6 +250,15 @@ export default function RootLayout() {
             options={{ contentStyle: { flex: 1, backgroundColor: "#000000" } }}
           />
           <Stack.Screen
+            name="goodnight"
+            options={{
+              headerShown: false,
+              animation: "fade",
+              gestureEnabled: true,
+              contentStyle: { flex: 1, backgroundColor: "#000000" },
+            }}
+          />
+          <Stack.Screen
             name="background-picker"
             options={{
               animation: "default",
