@@ -10,7 +10,7 @@ import Animated, {
   interpolate,
   Easing,
 } from "react-native-reanimated";
-import { GlassView, isLiquidGlassAvailable } from "expo-glass-effect";
+import { GlassView, GlassContainer, isLiquidGlassAvailable } from "expo-glass-effect";
 
 // One glass surface for the whole app. iOS 26+ renders Apple's Liquid Glass
 // in the "clear" style (liquid transparent, not frosted — Michael's call);
@@ -28,10 +28,10 @@ export const hasGlass = isLiquidGlassAvailable();
  */
 export type ScrimLevel = "none" | "soft" | "strong";
 
-const SCRIM_OPACITY: Record<ScrimLevel, number> = {
-  none: 0,
-  soft: 0.22,
-  strong: 0.4,
+const SCRIM_TINT: Record<ScrimLevel, string | undefined> = {
+  none: undefined,
+  soft: "rgba(6,8,12,0.20)",
+  strong: "rgba(6,8,12,0.34)",
 };
 
 /** Text sitting directly on artwork (not on glass) needs its own lift. */
@@ -54,138 +54,45 @@ export const TEXT_ON_IMAGE = {
  * `liquid` takes a phase offset (0–1) so a stack of cards doesn't
  * shimmer in unison, which reads as a screen flicker rather than light.
  */
-function Sheen({
-  radius,
-  phase,
-  intensity,
-}: {
-  radius: number;
-  phase: number;
-  intensity: number;
-}) {
-  const t = useSharedValue(0);
-  // Measured, not assumed: a fixed sweep distance makes a 56pt button
-  // glint for half a second while a full-width dock washes properly.
-  // Scaling travel to the surface gives every size the same gesture.
-  const w = useSharedValue(260);
-
-  useEffect(() => {
-    t.value = withDelay(
-      Math.round(phase * 5200),
-      withRepeat(withTiming(1, { duration: 7400, easing: Easing.inOut(Easing.cubic) }), -1, false),
-    );
-  }, [t, phase]);
-
-  const style = useAnimatedStyle(() => ({
-    // Travels well past both edges so the band enters and leaves rather
-    // than appearing in place
-    transform: [{ translateX: interpolate(t.value, [0, 1], [-1.3, 1.3]) * w.value }],
-    opacity: interpolate(t.value, [0, 0.14, 0.5, 0.86, 1], [0, 1, 1, 1, 0]),
-  }));
-
-  return (
-    <View
-      pointerEvents="none"
-      onLayout={(e) => { w.value = Math.max(48, e.nativeEvent.layout.width); }}
-      style={[StyleSheet.absoluteFill, { borderRadius: radius, overflow: "hidden" }]}
-    >
-      <Animated.View style={[StyleSheet.absoluteFill, style]}>
-        <Svg width="100%" height="100%">
-          <Defs>
-            <LinearGradient id="sheen" x1="0" y1="0" x2="1" y2="1">
-              <Stop offset="0%" stopColor="#ffffff" stopOpacity="0" />
-              <Stop offset="38%" stopColor="#ffffff" stopOpacity={0.02 * intensity} />
-              <Stop offset="48%" stopColor="#dff4ff" stopOpacity={0.16 * intensity} />
-              <Stop offset="52%" stopColor="#ffe9f7" stopOpacity={0.14 * intensity} />
-              <Stop offset="62%" stopColor="#ffffff" stopOpacity={0.02 * intensity} />
-              <Stop offset="100%" stopColor="#ffffff" stopOpacity="0" />
-            </LinearGradient>
-          </Defs>
-          <Rect x="0" y="0" width="100%" height="100%" fill="url(#sheen)" />
-        </Svg>
-      </Animated.View>
-    </View>
-  );
-}
-
-function PrismRim({ radius, intensity }: { radius: number; intensity: number }) {
-  return (
-    <View pointerEvents="none" style={StyleSheet.absoluteFill}>
-      <Svg width="100%" height="100%">
-        <Defs>
-          <LinearGradient id="rim" x1="0" y1="0" x2="1" y2="1">
-            <Stop offset="0%" stopColor="#9fe8ff" stopOpacity={0.5 * intensity} />
-            <Stop offset="26%" stopColor="#ffffff" stopOpacity={0.62 * intensity} />
-            <Stop offset="52%" stopColor="#ffd9f2" stopOpacity={0.3 * intensity} />
-            <Stop offset="74%" stopColor="#fff3c4" stopOpacity={0.34 * intensity} />
-            <Stop offset="100%" stopColor="#bfe4ff" stopOpacity={0.5 * intensity} />
-          </LinearGradient>
-        </Defs>
-        <Rect
-          x="0.75"
-          y="0.75"
-          width="99%"
-          height="99%"
-          rx={radius}
-          ry={radius}
-          fill="none"
-          stroke="url(#rim)"
-          strokeWidth="1.5"
-        />
-      </Svg>
-    </View>
-  );
-}
-
 export function Glass({
   style,
   children,
-  interactive = false,
-  scrim = "soft",
-  liquid = false,
-  phase = 0,
-  intensity = 1,
+  interactive = true,
+  scrim = "none",
+  variant = "clear",
+  tint,
+  // Accepted and ignored — the material generates its own specular
+  // response now. Kept so existing call sites keep compiling.
+  liquid: _liquid,
+  phase: _phase,
+  intensity: _intensity,
   ...rest
 }: ViewProps & {
   interactive?: boolean;
   scrim?: ScrimLevel;
-  /** Adds the moving sheen and prismatic rim. */
+  /** `clear` needs vivid content behind it; `regular` adapts anywhere. */
+  variant?: "clear" | "regular";
+  /** Marks a primary action or state — used sparingly, per Apple. */
+  tint?: string;
   liquid?: boolean;
-  /** 0–1 offset so neighbouring surfaces don't shimmer in lockstep. */
   phase?: number;
-  /** Scales the whole liquid effect for quiet surfaces. */
   intensity?: number;
 }) {
-  const radius = readRadius(style);
-
-  const veil =
-    SCRIM_OPACITY[scrim] > 0 ? (
-      <View
-        pointerEvents="none"
-        style={[StyleSheet.absoluteFill, { backgroundColor: `rgba(6,8,10,${SCRIM_OPACITY[scrim]})` }]}
-      />
-    ) : null;
-
-  const shimmer = liquid ? (
-    <>
-      <Sheen radius={radius} phase={phase} intensity={intensity} />
-      <PrismRim radius={radius} intensity={intensity} />
-    </>
-  ) : null;
-
   if (hasGlass) {
     return (
-      <GlassView glassEffectStyle="clear" isInteractive={interactive} style={style} {...rest}>
-        {veil}
-        {shimmer}
+      <GlassView
+        glassEffectStyle={variant}
+        isInteractive={interactive}
+        tintColor={tint ?? SCRIM_TINT[scrim]}
+        style={style}
+        {...rest}
+      >
         {children}
       </GlassView>
     );
   }
   return (
     <View style={[styles.fallback, style]} {...rest}>
-      {veil}
-      {shimmer}
       {children}
     </View>
   );
@@ -200,21 +107,44 @@ export function GlassButton({
   style,
   children,
   tone = "bright",
-  phase = 0,
+  phase: _phase,
   ...rest
 }: ViewProps & { tone?: "bright" | "quiet"; phase?: number }) {
   return (
     <Glass
       interactive
-      liquid
-      phase={phase}
-      intensity={tone === "bright" ? 1.35 : 0.8}
-      scrim={tone === "bright" ? "none" : "soft"}
+      tint={tone === "bright" ? "rgba(255,255,255,0.26)" : undefined}
       style={[tone === "bright" ? styles.btnBright : styles.btnQuiet, style]}
       {...rest}
     >
       {children}
     </Glass>
+  );
+}
+
+/**
+ * Controls that merge into one another as they approach — the gooey
+ * behaviour Apple's material does natively. Children must be sibling
+ * Glass surfaces; `spacing` is the distance at which they begin to blend
+ * into one connected shape.
+ */
+export function GlassCluster({
+  spacing = 20,
+  style,
+  children,
+  ...rest
+}: ViewProps & { spacing?: number }) {
+  if (!hasGlass) {
+    return (
+      <View style={style} {...rest}>
+        {children}
+      </View>
+    );
+  }
+  return (
+    <GlassContainer spacing={spacing} style={style} {...rest}>
+      {children}
+    </GlassContainer>
   );
 }
 

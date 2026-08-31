@@ -65,6 +65,64 @@ function formatTime(iso: string) {
 }
 
 // ─── Glass pill switch ─────────────────────────────────────
+// The track is a real glass capsule, so "on" can't be a painted-in colour —
+// an opaque fill reads as frosted plastic sitting on top of the card. Instead
+// the state is carried by LIGHT: a green wash *inside* the glass plus a lit
+// pad *behind* it, so the capsule looks illuminated from within rather than
+// filled. Two layers, one animation driver.
+function TrackTint({ opacity }: { opacity: RNAnimated.AnimatedInterpolation<number> | RNAnimated.Value }) {
+  return (
+    <RNAnimated.View pointerEvents="none" style={[styles.trackTint, { opacity }]}>
+      <Svg width="100%" height="100%">
+        <Defs>
+          <LinearGradient id="switchOn" x1="0" y1="0" x2="0" y2="1">
+            <Stop offset="0%" stopColor="#b6ffd2" stopOpacity="0.62" />
+            <Stop offset="46%" stopColor="#3ddc7f" stopOpacity="0.46" />
+            <Stop offset="100%" stopColor="#12a352" stopOpacity="0.52" />
+          </LinearGradient>
+        </Defs>
+        <Rect x="0" y="0" width="100%" height="100%" fill="url(#switchOn)" />
+      </Svg>
+    </RNAnimated.View>
+  );
+}
+
+// The thumb is a glass disc, not a white pill: a vertical gradient that runs
+// bright at the crown and nearly clear at its foot (so the track shows
+// through it), a hard specular dot where the light source hits, and a halo
+// that only lights up when the alarm is armed.
+function Thumb({
+  width,
+  translateX,
+  glow,
+}: {
+  width: RNAnimated.AnimatedInterpolation<number>;
+  translateX: RNAnimated.AnimatedInterpolation<number>;
+  glow: RNAnimated.AnimatedInterpolation<number> | RNAnimated.Value;
+}) {
+  return (
+    <RNAnimated.View
+      pointerEvents="none"
+      style={[styles.thumbWrap, { width, transform: [{ translateX }] }]}
+    >
+      <RNAnimated.View style={[styles.thumbGlow, { opacity: glow }]} />
+      <View style={styles.thumbDisc}>
+        <Svg width="100%" height="100%">
+          <Defs>
+            <LinearGradient id="switchThumb" x1="0" y1="0" x2="0" y2="1">
+              <Stop offset="0%" stopColor="#ffffff" stopOpacity="0.96" />
+              <Stop offset="38%" stopColor="#ffffff" stopOpacity="0.74" />
+              <Stop offset="100%" stopColor="#dff3ff" stopOpacity="0.34" />
+            </LinearGradient>
+          </Defs>
+          <Rect x="0" y="0" width="100%" height="100%" fill="url(#switchThumb)" />
+        </Svg>
+      </View>
+      <View style={styles.thumbSpec} />
+    </RNAnimated.View>
+  );
+}
+
 function PillSwitch({
   value,
   onValueChange,
@@ -88,14 +146,14 @@ function PillSwitch({
   }, [value, anim]);
 
   const thumbW = squish.interpolate({ inputRange: [0, 1], outputRange: [27, 33] });
-  const translateX = RNAnimated.subtract(
+  const translateX = RNAnimated.subtract<number>(
     anim.interpolate({ inputRange: [0, 1], outputRange: [2, 22] }),
     RNAnimated.multiply(squish, anim.interpolate({ inputRange: [0, 1], outputRange: [0, 6] })),
   );
-  const trackColor = anim.interpolate({
-    inputRange: [0, 1],
-    outputRange: ["rgba(255,255,255,0.18)", "#34C759"],
-  });
+  // Off is never fully dark: a trace of the tint stays so the capsule reads as
+  // glass with something behind it rather than an empty hole.
+  const tintOpacity = anim.interpolate({ inputRange: [0, 1], outputRange: [0.04, 1] });
+  const glowOpacity = anim.interpolate({ inputRange: [0, 1], outputRange: [0, 0.95] });
 
   const setSquish = (to: number) =>
     RNAnimated.spring(squish, { toValue: to, stiffness: 300, damping: 20, useNativeDriver: false }).start();
@@ -113,9 +171,16 @@ function PillSwitch({
       accessibilityState={{ checked: value }}
       accessibilityLabel={accessibilityLabel}
     >
-      <RNAnimated.View style={[styles.switchTrack, { backgroundColor: trackColor }]}>
-        <RNAnimated.View style={[styles.switchThumb, { width: thumbW, transform: [{ translateX }] }]} />
-      </RNAnimated.View>
+      <View style={styles.switchHost}>
+        {/* Lit from behind, *outside* the glass: clear glass takes its colour
+            from whatever it refracts, so the armed state glows up through the
+            capsule instead of being painted onto it. */}
+        <RNAnimated.View pointerEvents="none" style={[styles.trackLamp, { opacity: glowOpacity }]} />
+        <Glass interactive liquid phase={0.42} intensity={1.25} scrim="none" style={styles.switchTrack}>
+          <TrackTint opacity={tintOpacity} />
+          <Thumb width={thumbW} translateX={translateX} glow={glowOpacity} />
+        </Glass>
+      </View>
     </Pressable>
   );
 }
@@ -612,6 +677,27 @@ const styles = StyleSheet.create({
   },
 
   // Switch
+  // The host is only a positioning frame — it deliberately doesn't clip, so
+  // the lamp's bloom and the thumb's halo can spill past the capsule the way
+  // light does.
+  switchHost: {
+    width: 51,
+    height: 31,
+  },
+  trackLamp: {
+    position: "absolute",
+    top: 0,
+    left: 0,
+    right: 0,
+    bottom: 0,
+    borderRadius: 999,
+    backgroundColor: "rgba(45,205,110,0.62)",
+    shadowColor: "#3DDC7F",
+    shadowOpacity: 0.85,
+    shadowRadius: 9,
+    shadowOffset: { width: 0, height: 0 },
+    elevation: 6,
+  },
   switchTrack: {
     width: 51,
     height: 31,
@@ -620,15 +706,60 @@ const styles = StyleSheet.create({
     borderWidth: StyleSheet.hairlineWidth,
     borderColor: "rgba(255,255,255,0.35)",
   },
-  switchThumb: {
-    width: 27,
+  trackTint: {
+    position: "absolute",
+    top: 0,
+    left: 0,
+    right: 0,
+    bottom: 0,
+    borderRadius: 999,
+    overflow: "hidden",
+  },
+  thumbWrap: {
     height: 27,
     borderRadius: 999,
-    backgroundColor: "#ffffff",
-    shadowColor: "#000",
-    shadowOpacity: 0.3,
+    shadowColor: "#000000",
+    shadowOpacity: 0.32,
     shadowRadius: 4,
     shadowOffset: { width: 0, height: 2 },
+  },
+  // Sits a hair proud of the disc on every side, so when the alarm is armed
+  // the thumb carries a green corona rather than a green fill.
+  thumbGlow: {
+    position: "absolute",
+    top: -3,
+    left: -3,
+    right: -3,
+    bottom: -3,
+    borderRadius: 999,
+    backgroundColor: "rgba(150,255,195,0.45)",
+    shadowColor: "#7CF7B0",
+    shadowOpacity: 0.95,
+    shadowRadius: 7,
+    shadowOffset: { width: 0, height: 0 },
+  },
+  thumbDisc: {
+    position: "absolute",
+    top: 0,
+    left: 0,
+    right: 0,
+    bottom: 0,
+    borderRadius: 999,
+    overflow: "hidden",
+    borderWidth: StyleSheet.hairlineWidth,
+    borderColor: "rgba(255,255,255,0.7)",
+  },
+  // The one hard highlight on the whole control — a disc without a hot spot
+  // reads as matte, and matte doesn't read as glass.
+  thumbSpec: {
+    position: "absolute",
+    top: 4,
+    left: 6,
+    width: 10,
+    height: 5,
+    borderRadius: 999,
+    backgroundColor: "rgba(255,255,255,0.95)",
+    transform: [{ rotate: "-24deg" }],
   },
 
   emptyState: {

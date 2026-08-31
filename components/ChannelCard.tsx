@@ -1,22 +1,27 @@
+import { memo } from "react";
 import { View, Text, Image, Pressable, StyleSheet } from "react-native";
 import { Ionicons } from "@expo/vector-icons";
 import { F, S } from "@/lib/fonts";
-import { Glass } from "@/components/Glass";
+import { Glass, TEXT_ON_IMAGE } from "@/components/Glass";
 import { channelArtwork } from "@/lib/catalog";
-import { Scrim } from "@/components/SessionCard";
-import { CARD_W, CARD_H, phaseFor, tapFeedback } from "@/components/cardLayout";
+import { TextScrim } from "@/components/SessionCard";
+import { CARD_W, CARD_H, phaseFor, tapFeedback, toneFor } from "@/components/cardLayout";
 import type { Session } from "@/lib/types";
 
 // The CHANNEL card: not a track, a subscription. Picking a channel means
 // we wake you with a DIFFERENT recording from it every morning, so the
-// card has to sell that promise in words — which is also why it looks
-// nothing like a SessionCard: a full sheet of liquid glass over ONE
-// deeply blurred photograph, and a text block instead of a title. If you
-// can mistake it for a sound at a glance, it has failed.
+// card has to sell that promise in words — which is also why it must
+// never be mistaken for a SessionCard at a glance.
 //
-// It used to blur three photos side by side. Three unrelated macro shots
-// at 22px blur average out to gray sludge — one photograph blurs into a
-// single soft colour field, which is what glass wants behind it.
+// Same clear glass panel and the same inset artwork as a sound card,
+// but the proportions are pulled the other way: the picture is a band
+// across the top and the words own the rest. A sound card is a picture
+// with a name; a channel card is a promise with a picture.
+//
+// It used to be a deeply blurred photograph washed grey under a full
+// sheet of glass. Blurred photography as a surface is exactly what
+// we've just taken off the screen behind the app, so it comes off the
+// card too — the channel's own colour does that job now.
 
 const CHANNEL_COPY: Record<string, string> = {
   Naturescapes: "Real field recordings — dawn birds, rain, rivers, tide.",
@@ -28,78 +33,91 @@ const CHANNEL_COPY: Record<string, string> = {
 
 const FALLBACK_COPY = "A hand-picked collection, growing every week.";
 
-export default function ChannelCard({
+// Noticeably shorter than a sound card's 0.56, so the two are never
+// confused at a glance: a sound card is mostly picture, a channel card
+// is mostly words and air.
+const ART_H = Math.round(CARD_H * 0.44);
+
+function ChannelCard({
   channel,
   sessions,
   index = 0,
+  light = 1,
   onPress,
 }: {
   channel: string;
   sessions: Session[];
   /** Position in its rail — only used to offset the glass shimmer. */
   index?: number;
+  /** House-lights level (0–1) from the backdrop; scales the tint. */
+  light?: number;
   onPress?: (channel: string) => void;
 }) {
   const count = sessions.length;
   const empty = count === 0;
   const copy = CHANNEL_COPY[channel] ?? FALLBACK_COPY;
   const countLabel = count === 1 ? "1 recording" : `${count} recordings`;
+  const tone = toneFor(channel, light);
+  const scrimId = `channel-${channel.replace(/\W+/g, "-")}`;
 
   const body = (
-    <View style={styles.frame}>
-      {/* The photograph is a SIBLING under the glass sheet, not a child
-          of it — a GlassView only refracts what is drawn behind it. */}
-      <Image
-        source={{ uri: channelArtwork(channel) }}
-        style={styles.photo}
-        blurRadius={20}
-        resizeMode="cover"
+    <Glass
+      liquid
+      phase={phaseFor(index)}
+      scrim="none"
+      style={[styles.frame, { borderColor: tone.edge }]}
+    >
+      {/* The channel's colour, held INSIDE the glass. On a channel card
+          it runs a little stronger than on a sound card — this is the
+          swatch for the whole shelf. */}
+      <View
+        style={[StyleSheet.absoluteFill, { backgroundColor: tone.wash }]}
+        pointerEvents="none"
       />
-      <View style={styles.wash} pointerEvents="none" />
-      <Glass liquid phase={phaseFor(index)} style={styles.sheet} pointerEvents="none" />
-      <Scrim id={`channel-${channel.replace(/\W+/g, "-")}`} height="72%" />
 
-      <View style={styles.inner}>
+      <View
+        style={[styles.art, { height: ART_H, backgroundColor: tone.well, borderColor: tone.edge }]}
+      >
+        <Image
+          source={{ uri: channelArtwork(channel) }}
+          style={StyleSheet.absoluteFill}
+          resizeMode="cover"
+        />
         <View style={styles.kicker}>
-          <Ionicons name="radio-outline" size={12} color="#f5f5f7" />
+          <Ionicons name="radio-outline" size={11} color="#f5f5f7" />
           <Text style={styles.kickerText} maxFontSizeMultiplier={1.2}>
-            CHANNEL
+            {empty ? "CHANNEL" : `CHANNEL · ${countLabel.toUpperCase()}`}
           </Text>
-        </View>
-
-        <View style={styles.copyBlock}>
-          <Text style={styles.name} numberOfLines={2} maxFontSizeMultiplier={1.25}>
-            {channel}
-          </Text>
-          <Text style={styles.desc} numberOfLines={2} maxFontSizeMultiplier={1.25}>
-            {copy}
-          </Text>
-
-          <View style={styles.rule} />
-
-          <View style={styles.promiseRow}>
-            <Ionicons
-              name={empty ? "time-outline" : "sunny-outline"}
-              size={15}
-              color="#f5f5f7"
-            />
-            <Text style={styles.promise} numberOfLines={2} maxFontSizeMultiplier={1.2}>
-              {empty
-                ? "Coming soon — we're still recording."
-                : "Wake to a fresh one every morning."}
-            </Text>
-          </View>
-
-          {!empty && (
-            <View style={styles.countPill}>
-              <Text style={styles.countText} maxFontSizeMultiplier={1.2}>
-                {countLabel} inside
-              </Text>
-            </View>
-          )}
         </View>
       </View>
-    </View>
+
+      <View style={styles.copyBlock}>
+        <TextScrim id={scrimId} height="100%" accent={tone.accent} />
+
+        <Text style={styles.name} numberOfLines={2} maxFontSizeMultiplier={1.25}>
+          {channel}
+        </Text>
+        <Text style={styles.desc} numberOfLines={2} maxFontSizeMultiplier={1.25}>
+          {copy}
+        </Text>
+
+        {/* The promise. The one line on this card that has to survive
+            every edit — it is the entire difference between a channel
+            and a track. */}
+        <View style={styles.promiseRow}>
+          <Ionicons
+            name={empty ? "time-outline" : "sunny-outline"}
+            size={15}
+            color={tone.accent}
+          />
+          <Text style={styles.promise} numberOfLines={2} maxFontSizeMultiplier={1.2}>
+            {empty
+              ? "Coming soon — we're still recording."
+              : "Wake to a fresh one every morning."}
+          </Text>
+        </View>
+      </View>
+    </Glass>
   );
 
   if (empty || !onPress) {
@@ -129,6 +147,8 @@ export default function ChannelCard({
   );
 }
 
+export default memo(ChannelCard);
+
 const styles = StyleSheet.create({
   card: {
     width: CARD_W,
@@ -141,51 +161,24 @@ const styles = StyleSheet.create({
 
   frame: {
     flex: 1,
-    borderRadius: 30,
+    borderRadius: 34,
+    padding: 10,
     overflow: "hidden",
-    backgroundColor: "#0a0d0a",
-  },
-  // Full-bleed glass pane over the photograph — the channel card is
-  // glass-forward where the sound card is only glass-framed. Nothing is
-  // drawn inside it, so its sheen sweeps the entire card.
-  sheet: {
-    position: "absolute",
-    top: 0,
-    left: 0,
-    right: 0,
-    bottom: 0,
-    borderRadius: 30,
+    borderWidth: StyleSheet.hairlineWidth,
   },
 
-  // Scaled past the frame because a blur samples beyond its own edges
-  // and would otherwise leave a pale halo around the card.
-  photo: {
-    position: "absolute",
-    top: 0,
-    left: 0,
-    right: 0,
-    bottom: 0,
-    opacity: 0.85,
-    transform: [{ scale: 1.12 }],
-  },
-  // Flattens the photo's contrast so the text has a predictable floor
-  // no matter which channel this is.
-  wash: {
-    position: "absolute",
-    top: 0,
-    left: 0,
-    right: 0,
-    bottom: 0,
-    backgroundColor: "rgba(4,10,6,0.46)",
-  },
-
-  inner: {
-    flex: 1,
-    padding: 20,
-    justifyContent: "space-between",
+  // A band, not a poster: enough photograph to know what this channel
+  // sounds like, not enough to become the card.
+  art: {
+    borderRadius: 24,
+    overflow: "hidden",
+    borderWidth: StyleSheet.hairlineWidth,
   },
 
   kicker: {
+    position: "absolute",
+    left: 10,
+    bottom: 10,
     flexDirection: "row",
     alignItems: "center",
     alignSelf: "flex-start",
@@ -193,7 +186,7 @@ const styles = StyleSheet.create({
     paddingHorizontal: 10,
     paddingVertical: 5,
     borderRadius: 999,
-    backgroundColor: "rgba(0,0,0,0.55)",
+    backgroundColor: "rgba(0,0,0,0.5)",
     borderWidth: StyleSheet.hairlineWidth,
     borderColor: "rgba(255,255,255,0.28)",
   },
@@ -201,36 +194,38 @@ const styles = StyleSheet.create({
     color: "#f5f5f7",
     fontSize: S.micro,
     fontFamily: F.bold,
-    letterSpacing: 1.6,
+    letterSpacing: 1.4,
   },
 
+  // Words own the bottom two thirds. Pinned low, so the space between
+  // the artwork and the name is deliberate rather than left over.
   copyBlock: {
+    flex: 1,
+    justifyContent: "flex-end",
+    paddingHorizontal: 10,
+    paddingBottom: 12,
     gap: 8,
   },
-  // The rail heading directly above already says this word at 28. The
-  // card repeats it one step down so the shelf reads as a heading with
-  // a card under it, not as the same title printed twice.
   name: {
     color: "#ffffff",
     fontSize: S.title,
     fontFamily: F.bold,
     lineHeight: 27,
+    letterSpacing: -0.3,
+    ...TEXT_ON_IMAGE,
   },
   desc: {
-    color: "rgba(255,255,255,0.9)",
+    color: "rgba(255,255,255,0.82)",
     fontSize: S.secondary,
     fontFamily: F.medium,
     lineHeight: 21,
-  },
-  rule: {
-    height: StyleSheet.hairlineWidth,
-    backgroundColor: "rgba(255,255,255,0.28)",
-    marginVertical: 2,
+    ...TEXT_ON_IMAGE,
   },
   promiseRow: {
     flexDirection: "row",
     alignItems: "center",
     gap: 8,
+    marginTop: 2,
   },
   promise: {
     flex: 1,
@@ -238,20 +233,6 @@ const styles = StyleSheet.create({
     fontSize: S.caption,
     fontFamily: F.semibold,
     lineHeight: 18,
-  },
-  countPill: {
-    alignSelf: "flex-start",
-    paddingHorizontal: 10,
-    paddingVertical: 5,
-    borderRadius: 999,
-    backgroundColor: "rgba(0,0,0,0.5)",
-    borderWidth: StyleSheet.hairlineWidth,
-    borderColor: "rgba(255,255,255,0.22)",
-  },
-  countText: {
-    color: "rgba(255,255,255,0.92)",
-    fontSize: S.micro,
-    fontFamily: F.semibold,
-    letterSpacing: 0.3,
+    ...TEXT_ON_IMAGE,
   },
 });

@@ -371,7 +371,7 @@ export default function RootLayout() {
           <Stack.Screen
             name="background-picker"
             options={{
-              animation: "default",
+              animation: "fade",
               headerShown: true,
               title: "Background",
               headerBackTitle: "",
@@ -382,7 +382,7 @@ export default function RootLayout() {
           <Stack.Screen
             name="settings"
             options={{
-              animation: "default",
+              animation: "fade",
               headerShown: true,
               title: "Settings",
               headerBackTitle: "",
@@ -393,7 +393,7 @@ export default function RootLayout() {
           <Stack.Screen
             name="edit-profile"
             options={{
-              animation: "default",
+              animation: "fade",
               headerShown: true,
               title: "Edit Profile",
               headerBackTitle: "",
@@ -404,7 +404,7 @@ export default function RootLayout() {
           <Stack.Screen
             name="edit-email"
             options={{
-              animation: "default",
+              animation: "fade",
               headerShown: true,
               title: "Email",
               headerBackTitle: "",
@@ -415,7 +415,7 @@ export default function RootLayout() {
           <Stack.Screen
             name="alarm-config"
             options={{
-              animation: "default",
+              animation: "fade",
               headerShown: true,
               headerBackTitle: "",
               ...HEADER_BASE,
@@ -425,7 +425,7 @@ export default function RootLayout() {
           <Stack.Screen
             name="edit-alarm"
             options={{
-              animation: "default",
+              animation: "fade",
               headerShown: true,
               headerBackTitle: "",
               ...HEADER_BASE,
@@ -435,7 +435,7 @@ export default function RootLayout() {
           <Stack.Screen
             name="sounds"
             options={{
-              animation: "default",
+              animation: "fade",
               headerShown: true,
               title: "Sounds",
               headerBackTitle: "",
@@ -471,7 +471,7 @@ export default function RootLayout() {
           <Stack.Screen
             name="player"
             options={{
-              animation: "slide_from_right",
+              animation: "fade",
               headerShown: false,
               contentStyle: { flex: 1, backgroundColor: "#000000" },
             }}
@@ -479,7 +479,7 @@ export default function RootLayout() {
           <Stack.Screen
             name="habit-add"
             options={{
-              animation: "slide_from_right",
+              animation: "fade",
               headerShown: true,
               title: "New Habit",
               headerBackTitle: "",
@@ -490,7 +490,7 @@ export default function RootLayout() {
           <Stack.Screen
             name="alarm-debug"
             options={{
-              animation: "slide_from_right",
+              animation: "fade",
               headerShown: true,
               title: "Alarm Debug",
               headerBackTitle: "",

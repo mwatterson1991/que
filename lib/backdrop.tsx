@@ -40,15 +40,64 @@ export interface BackdropPreset {
   rays?: { color: string; count: number; opacity: number; originXPct: number; originYPct: number };
   /** Scattered starlight. */
   sparkle?: { count: number; opacity: number };
+  /**
+   * Flowing contour bands. This is what separates a premium gradient
+   * from a blurry smear: long, slow, overlapping curves that catch the
+   * light like folded silk, and give clear glass real structure to
+   * refract when it passes over them.
+   */
+  silk?: { color: string; count: number; opacity: number; amplitude: number };
   /** Swatch colors for the picker chip. */
   swatch: string[];
 }
 
 export const BACKDROP_PRESETS: BackdropPreset[] = [
   {
+    id: "amethyst",
+    name: "Amethyst",
+    description: "Violet silk, folding slowly",
+    base: "#4A21A0",
+    swatch: ["#B98CFF", "#6C33D8", "#2E1268"],
+    blobs: [
+      { color: "#C9A6FF", edge: "#6C33D8", xPct: 0.24, yPct: 0.2, sizePct: 2.1, driftXPct: 0.2, driftYPct: 0.14, scaleTo: 1.2, durationMs: 16000, opacity: 0.95 },
+      { color: "#7C3FE4", edge: "#2E1268", xPct: 0.88, yPct: 0.62, sizePct: 2.3, driftXPct: -0.18, driftYPct: -0.16, scaleTo: 1.24, durationMs: 21000, delayMs: 2600, opacity: 0.9 },
+      { color: "#E7D5FF", edge: "#9A63F0", xPct: 0.62, yPct: 0.96, sizePct: 1.5, driftXPct: -0.22, driftYPct: -0.2, scaleTo: 1.3, durationMs: 18000, delayMs: 1300, opacity: 0.62 },
+      { color: "#2E1268", edge: "#180733", xPct: 0.1, yPct: 0.9, sizePct: 1.6, driftXPct: 0.16, driftYPct: -0.1, scaleTo: 1.2, durationMs: 24000, delayMs: 3800, opacity: 0.8 },
+    ],
+    silk: { color: "#FFFFFF", count: 7, opacity: 0.1, amplitude: 0.13 },
+  },
+  {
+    id: "daybreak",
+    name: "Daybreak",
+    description: "Cold blue giving way to gold",
+    base: "#2A6ACF",
+    swatch: ["#F2D08A", "#3E8FE0", "#12386E"],
+    blobs: [
+      { color: "#8FD2F0", edge: "#2A6ACF", xPct: 0.2, yPct: 0.18, sizePct: 2.0, driftXPct: 0.18, driftYPct: 0.12, scaleTo: 1.22, durationMs: 17000, opacity: 0.9 },
+      { color: "#F5DCA6", edge: "#E0A85C", xPct: 0.78, yPct: 0.44, sizePct: 1.9, driftXPct: -0.2, driftYPct: 0.16, scaleTo: 1.26, durationMs: 20000, delayMs: 2200, opacity: 0.85 },
+      { color: "#12386E", edge: "#081C3A", xPct: 0.5, yPct: 1.0, sizePct: 2.2, driftXPct: 0.1, driftYPct: -0.14, scaleTo: 1.18, durationMs: 23000, delayMs: 1500, opacity: 0.92 },
+      { color: "#FFFFFF", edge: "#BFE0F5", xPct: 0.92, yPct: 0.1, sizePct: 1.1, driftXPct: -0.24, driftYPct: 0.22, scaleTo: 1.35, durationMs: 15000, delayMs: 900, opacity: 0.45 },
+    ],
+    silk: { color: "#FFFFFF", count: 6, opacity: 0.11, amplitude: 0.16 },
+  },
+  {
+    id: "deepwater",
+    name: "Deep Water",
+    description: "Teal light under the surface",
+    base: "#0C4A63",
+    swatch: ["#7FE3E0", "#127F9E", "#052835"],
+    blobs: [
+      { color: "#7FE3E0", edge: "#127F9E", xPct: 0.3, yPct: 0.26, sizePct: 1.9, driftXPct: 0.2, driftYPct: 0.14, scaleTo: 1.24, durationMs: 15000, opacity: 0.82 },
+      { color: "#0E6E96", edge: "#052835", xPct: 0.86, yPct: 0.68, sizePct: 2.2, driftXPct: -0.18, driftYPct: -0.14, scaleTo: 1.22, durationMs: 19000, delayMs: 2000, opacity: 0.9 },
+      { color: "#D8FBF6", edge: "#4FC4C8", xPct: 0.58, yPct: 0.04, sizePct: 1.2, driftXPct: -0.2, driftYPct: 0.24, scaleTo: 1.32, durationMs: 17000, delayMs: 1100, opacity: 0.5 },
+      { color: "#052835", edge: "#02141C", xPct: 0.14, yPct: 0.96, sizePct: 1.7, driftXPct: 0.14, driftYPct: -0.12, scaleTo: 1.2, durationMs: 22000, delayMs: 3200, opacity: 0.85 },
+    ],
+    silk: { color: "#FFFFFF", count: 8, opacity: 0.09, amplitude: 0.12 },
+  },
+  {
     id: "obsidian",
     name: "Obsidian",
-    description: "Black, with light moving under the surface",
+    description: "Near-black — for sleep. The glass all but vanishes.",
     base: "#000000",
     swatch: ["#1b2b3a", "#2a1f38", "#0f2a26"],
     // Deliberately dim and slow: these are not colour fields, they are
@@ -176,7 +225,7 @@ interface BackdropValue {
 const BackdropContext = createContext<BackdropValue | null>(null);
 
 export function BackdropProvider({ children }: { children: ReactNode }) {
-  const [presetId, setPresetIdState] = useState("obsidian");
+  const [presetId, setPresetIdState] = useState("amethyst");
   const [customColors, setCustomColorsState] = useState<string[]>(["#2fbf71", "#3ad8f0", "#7b5cf0"]);
   const [stageDark, setStageDarkState] = useState(false);
   const [windDown, setWindDownState] = useState(true);
@@ -263,7 +312,7 @@ export function useBackdrop(): BackdropValue {
   if (ctx) return ctx;
   return {
     preset: BACKDROP_PRESETS[0],
-    presetId: "obsidian",
+    presetId: "amethyst",
     setPresetId: () => {},
     customColors: [],
     setCustomColors: () => {},

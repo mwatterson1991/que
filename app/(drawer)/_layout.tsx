@@ -1,4 +1,4 @@
-import { View, Text, Pressable, StyleSheet, ScrollView } from "react-native";
+import { View, Text, Pressable, StyleSheet, ScrollView, Image } from "react-native";
 import AuroraBackground from "@/components/AuroraBackground";
 import { Drawer } from "expo-router/drawer";
 import { Ionicons } from "@expo/vector-icons";
@@ -39,6 +39,23 @@ function CustomDrawerContent(props: DrawerContentComponentProps) {
         contentContainerStyle={styles.scrollContent}
         scrollEnabled={false}
       >
+        {/* Brand mark. The app icon is a full-bleed photograph, so it gets a
+            glass ring rather than sitting loose on the panel — the same
+            surface as everything else, just small enough to read as a mark.
+            The generous margin below it is what separates "who this is" from
+            "where you can go". */}
+        <View style={styles.brand} accessible accessibilityRole="header" accessibilityLabel="Morning Que">
+          <Glass liquid phase={0.5} intensity={0.7} scrim="none" style={styles.brandRing}>
+            <Image
+              source={require("../../assets/icon.png")}
+              style={styles.brandMark}
+              resizeMode="cover"
+              accessible={false}
+            />
+          </Glass>
+          <Text style={styles.brandWord}>Morning Que</Text>
+        </View>
+
         {NAV.map((item) => (
           <Pressable
             key={item.route}
@@ -249,10 +266,38 @@ export default function DrawerLayout() {
 const styles = StyleSheet.create({
   drawer: {
     flex: 1,
-    paddingTop: 60,
+    // Clears the notch and then some: the list used to start level with the
+    // status bar, which made the panel feel like it was sliding off the top.
+    paddingTop: 92,
   },
   scrollContent: {
     paddingTop: 4,
+  },
+  brand: {
+    flexDirection: "row",
+    alignItems: "center",
+    paddingHorizontal: 20,
+    // The breathing room the founder asked for — the mark should not look
+    // like the first nav row.
+    marginBottom: 34,
+  },
+  brandRing: {
+    borderRadius: 17,
+    overflow: "hidden",
+    padding: 4,
+  },
+  brandMark: {
+    width: 48,
+    height: 48,
+    borderRadius: 13,
+  },
+  brandWord: {
+    marginLeft: 12,
+    flexShrink: 1,
+    color: "#f5f5f7",
+    fontSize: S.body,
+    fontFamily: "Lora",
+    letterSpacing: 0.2,
   },
   navSep: {
     height: StyleSheet.hairlineWidth,
