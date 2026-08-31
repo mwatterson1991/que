@@ -23,6 +23,14 @@
         "simulator": false,
         "image": "latest"
       }
+    },
+    "development-device": {
+      "developmentClient": true,
+      "distribution": "internal",
+      "ios": {
+        "simulator": false,
+        "image": "latest"
+      }
     }
   },
   "submit": {
