@@ -122,11 +122,22 @@ function Silk({ preset, w, h, opacity }: { preset: BackdropPreset; w: number; h:
         </Defs>
         {bands.map((d, i) => (
           <Path
-            key={i}
+            key={`glow-${i}`}
             d={d}
             fill="none"
             stroke="url(#silkFade)"
-            strokeWidth={i % 3 === 0 ? 2.4 : 1.3}
+            strokeWidth={i % 3 === 0 ? 16 : 9}
+            strokeOpacity={0.5}
+            strokeLinecap="round"
+          />
+        ))}
+        {bands.map((d, i) => (
+          <Path
+            key={`core-${i}`}
+            d={d}
+            fill="none"
+            stroke="url(#silkFade)"
+            strokeWidth={i % 3 === 0 ? 2.6 : 1.5}
             strokeLinecap="round"
           />
         ))}

@@ -64,7 +64,7 @@ export const BACKDROP_PRESETS: BackdropPreset[] = [
       { color: "#E7D5FF", edge: "#9A63F0", xPct: 0.62, yPct: 0.96, sizePct: 1.5, driftXPct: -0.22, driftYPct: -0.2, scaleTo: 1.3, durationMs: 18000, delayMs: 1300, opacity: 0.62 },
       { color: "#2E1268", edge: "#180733", xPct: 0.1, yPct: 0.9, sizePct: 1.6, driftXPct: 0.16, driftYPct: -0.1, scaleTo: 1.2, durationMs: 24000, delayMs: 3800, opacity: 0.8 },
     ],
-    silk: { color: "#FFFFFF", count: 7, opacity: 0.1, amplitude: 0.13 },
+    silk: { color: "#FFFFFF", count: 13, opacity: 0.3, amplitude: 0.15 },
   },
   {
     id: "daybreak",
@@ -78,7 +78,7 @@ export const BACKDROP_PRESETS: BackdropPreset[] = [
       { color: "#12386E", edge: "#081C3A", xPct: 0.5, yPct: 1.0, sizePct: 2.2, driftXPct: 0.1, driftYPct: -0.14, scaleTo: 1.18, durationMs: 23000, delayMs: 1500, opacity: 0.92 },
       { color: "#FFFFFF", edge: "#BFE0F5", xPct: 0.92, yPct: 0.1, sizePct: 1.1, driftXPct: -0.24, driftYPct: 0.22, scaleTo: 1.35, durationMs: 15000, delayMs: 900, opacity: 0.45 },
     ],
-    silk: { color: "#FFFFFF", count: 6, opacity: 0.11, amplitude: 0.16 },
+    silk: { color: "#FFFFFF", count: 12, opacity: 0.32, amplitude: 0.18 },
   },
   {
     id: "deepwater",
@@ -92,7 +92,7 @@ export const BACKDROP_PRESETS: BackdropPreset[] = [
       { color: "#D8FBF6", edge: "#4FC4C8", xPct: 0.58, yPct: 0.04, sizePct: 1.2, driftXPct: -0.2, driftYPct: 0.24, scaleTo: 1.32, durationMs: 17000, delayMs: 1100, opacity: 0.5 },
       { color: "#052835", edge: "#02141C", xPct: 0.14, yPct: 0.96, sizePct: 1.7, driftXPct: 0.14, driftYPct: -0.12, scaleTo: 1.2, durationMs: 22000, delayMs: 3200, opacity: 0.85 },
     ],
-    silk: { color: "#FFFFFF", count: 8, opacity: 0.09, amplitude: 0.12 },
+    silk: { color: "#FFFFFF", count: 14, opacity: 0.28, amplitude: 0.14 },
   },
   {
     id: "obsidian",

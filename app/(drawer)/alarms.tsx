@@ -330,8 +330,6 @@ function AlarmCard({
             >
               {/* Above the sheen, below the content: body first, then the
                   hard specular line that sells the top edge as an EDGE. */}
-              <Slab />
-              <View style={styles.innerTopEdge} pointerEvents="none" />
               {session && (
                 <Image
                   source={{ uri: artworkFor(session) }}
@@ -550,13 +548,12 @@ const styles = StyleSheet.create({
 
   // Cards
   // Sits OUTSIDE the clipping layer so the drop shadow survives, and its
-  // near-black fill gives iOS a clean shadow path to trace as well as the
-  // dark body the clear glass sits on.
+  // Shadow host only — no fill. Anything painted here sits between the
+  // gradient and the glass and kills the lensing.
   cardShadow: {
     borderRadius: CARD_RADIUS,
-    backgroundColor: "rgba(6,8,10,0.30)",
     shadowColor: "#000000",
-    shadowOpacity: 0.55,
+    shadowOpacity: 0.4,
     shadowRadius: 18,
     shadowOffset: { width: 0, height: 10 },
     elevation: 8,
