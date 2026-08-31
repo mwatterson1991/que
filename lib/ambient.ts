@@ -32,7 +32,7 @@ export const AMBIENT_SOUNDS: AmbientSoundEntry[] = [
   },
   {
     id: "dawn-birds",
-    label: "Dawn Chorus",
+    label: "First Light",
     description: "Early morning birdsong over a running brook",
     icon: "sunny-outline",
   },

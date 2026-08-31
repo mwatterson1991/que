@@ -26,7 +26,7 @@ try { ViewShot = require("react-native-view-shot"); } catch {}
 // A stock ticker on yourself, with weather. The baseline sits mid-
 // chart: gratitude and habits push the line up, missed days pull it
 // below zero. Built from the same data guests have on-device.
-function PositivityChart({ chartRef }: { chartRef: any }) {
+function PositivityChart({ chartRef, lifetimeScore }: { chartRef: any; lifetimeScore: number }) {
   const { entries } = useGratitudeEntries();
   const { logs } = useHabitLogs(31);
   const { width } = useWindowDimensions();
@@ -69,6 +69,12 @@ function PositivityChart({ chartRef }: { chartRef: any }) {
         <View>
           <Text style={styles.posLabel} maxFontSizeMultiplier={1.3}>POSITIVITY</Text>
           <Text style={styles.posTotal} maxFontSizeMultiplier={1.2}>{total}</Text>
+          {/* The lifetime number that used to float in a bare card above this
+              chart. It lives here now, labelled, so it can't be mistaken for
+              the 30-day figure above it. */}
+          <Text style={styles.posLifetime} maxFontSizeMultiplier={1.3}>
+            {lifetimeScore} points all-time
+          </Text>
         </View>
         <View style={{ alignItems: "flex-end", gap: 4 }}>
           <View style={styles.posGain}>
@@ -393,14 +399,10 @@ export default function ProfileScreen() {
       showsVerticalScrollIndicator={false}
       nestedScrollEnabled={true}
     >
-      {/* Score */}
-      <View style={styles.scoreRow}>
-        <Text style={styles.scoreValue}>{profile?.score ?? 0}</Text>
-        <Text style={styles.scoreDelta}>+{profile?.score ?? 0}</Text>
-      </View>
-
-      {/* Habit chart */}
-      <PositivityChart chartRef={chartRef} />
+      {/* The positivity graph leads the page — it's the one thing here that
+          explains itself. (The bare score/+score row that used to sit above it
+          showed the same number twice; its value moved into the card header.) */}
+      <PositivityChart chartRef={chartRef} lifetimeScore={profile?.score ?? 0} />
       <HabitChart />
 
       {/* Stats */}
@@ -475,6 +477,12 @@ const styles = StyleSheet.create({
     fontSize: S.display,
     fontFamily: F.light,
   },
+  posLifetime: {
+    color: "#8b8b93",
+    fontSize: S.micro,
+    fontFamily: F.medium,
+    marginTop: 2,
+  },
   posGain: {
     flexDirection: "row",
     alignItems: "center",
@@ -504,25 +512,6 @@ const styles = StyleSheet.create({
     paddingHorizontal: 20,
     paddingTop: 16,
     paddingBottom: 80,
-  },
-
-  // Score
-  scoreRow: {
-    flexDirection: "row",
-    alignItems: "baseline",
-    gap: 12,
-    marginBottom: 20,
-  },
-  scoreValue: {
-    color: "#f5f5f7",
-    fontSize: S.clock,
-    fontFamily: F.light,
-    letterSpacing: -2,
-  },
-  scoreDelta: {
-    color: "#22c55e",
-    fontSize: S.body,
-    fontFamily: F.medium,
   },
 
   // Chart

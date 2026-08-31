@@ -2,7 +2,7 @@ import { View, Text, Pressable, StyleSheet, ScrollView } from "react-native";
 import AuroraBackground from "@/components/AuroraBackground";
 import { Drawer } from "expo-router/drawer";
 import { Ionicons } from "@expo/vector-icons";
-import { useRouter, useNavigation } from "expo-router";
+import { useRouter, useNavigation, useLocalSearchParams } from "expo-router";
 
 
 // expo-router v6 bundles its own drawer types that clash with the standalone
@@ -21,32 +21,46 @@ function CustomDrawerContent(props: DrawerContentComponentProps) {
     router.push(route as any);
   };
 
+  // Every destination carries from=drawer so its back control knows to
+  // return here rather than unwinding to whatever screen came before.
+  const NAV = [
+    { route: "/alarms", icon: "alarm-outline", label: "Wake", a11y: "Wake — your alarms" },
+    { route: "/search", icon: "musical-notes-outline", label: "Listen", a11y: "Listen — sounds and channels" },
+    { route: "/habit-track?from=drawer", icon: "repeat-outline", label: "Habits", a11y: "Habits — daily tracking" },
+    { route: "/gratitude?from=drawer", icon: "create-outline", label: "Gratitude", a11y: "Gratitude journal" },
+    { route: "/profile-page?from=drawer", icon: "stats-chart-outline", label: "Progress", a11y: "Progress — your positivity graph" },
+  ] as const;
+
   return (
-    <Glass style={styles.drawer}>
+    <Glass scrim="strong" style={styles.drawer}>
       {/* Nav links */}
       <ScrollView
         contentContainerStyle={styles.scrollContent}
         scrollEnabled={false}
       >
-        <Pressable style={styles.navItem} onPress={() => navigate("/alarms")} accessibilityRole="button" accessibilityLabel="Alarms">
-          <Ionicons name="alarm-outline" size={24} color="#f5f5f7" style={styles.navIcon} />
-          <Text style={styles.navText}>Alarms</Text>
-        </Pressable>
-        <Pressable style={styles.navItem} onPress={() => navigate("/search")} accessibilityRole="button" accessibilityLabel="Sounds">
-          <Ionicons name="search-outline" size={24} color="#f5f5f7" style={styles.navIcon} />
-          <Text style={styles.navText}>Sounds</Text>
-        </Pressable>
-        <Pressable style={styles.navItem} onPress={() => navigate("/gratitude")} accessibilityRole="button" accessibilityLabel="Gratitude journal">
-          <Ionicons name="create-outline" size={24} color="#f5f5f7" style={styles.navIcon} />
-          <Text style={styles.navText}>Gratitude</Text>
-        </Pressable>
-        <Pressable style={styles.navItem} onPress={() => navigate("/habit-track")} accessibilityRole="button" accessibilityLabel="Habit tracker">
-          <Ionicons name="checkmark-circle-outline" size={24} color="#f5f5f7" style={styles.navIcon} />
-          <Text style={styles.navText}>Track</Text>
-        </Pressable>
-        <Pressable style={styles.navItem} onPress={() => navigate("/profile-page?from=drawer")} accessibilityRole="button" accessibilityLabel="You">
-          <Ionicons name="person-outline" size={24} color="#f5f5f7" style={styles.navIcon} />
-          <Text style={styles.navText}>You</Text>
+        {NAV.map((item) => (
+          <Pressable
+            key={item.route}
+            style={styles.navItem}
+            onPress={() => navigate(item.route)}
+            accessibilityRole="button"
+            accessibilityLabel={item.a11y}
+          >
+            <Ionicons name={item.icon as any} size={24} color="#f5f5f7" style={styles.navIcon} />
+            <Text style={styles.navText}>{item.label}</Text>
+          </Pressable>
+        ))}
+
+        <View style={styles.navSep} />
+
+        <Pressable
+          style={styles.navItem}
+          onPress={() => navigate("/settings")}
+          accessibilityRole="button"
+          accessibilityLabel="Settings"
+        >
+          <Ionicons name="settings-outline" size={24} color="#f5f5f7" style={styles.navIcon} />
+          <Text style={styles.navText}>Settings</Text>
         </Pressable>
       </ScrollView>
 
@@ -72,6 +86,25 @@ function CustomDrawerContent(props: DrawerContentComponentProps) {
         )}
       </View>
     </Glass>
+  );
+}
+
+function AdaptiveLeft() {
+  const navigation = useNavigation();
+  const router = useRouter();
+  const { from } = useLocalSearchParams<{ from?: string }>();
+  const cameFromDrawer = from === "drawer";
+
+  return (
+    <Pressable
+      onPress={() => (cameFromDrawer ? (navigation as any).openDrawer() : router.back())}
+      style={{ marginLeft: 16, padding: 4 }}
+      hitSlop={12}
+      accessibilityRole="button"
+      accessibilityLabel={cameFromDrawer ? "Open menu" : "Go back"}
+    >
+      <Ionicons name={cameFromDrawer ? "menu-outline" : "chevron-back"} size={26} color="#f5f5f7" />
+    </Pressable>
   );
 }
 
@@ -165,7 +198,7 @@ export default function DrawerLayout() {
       <Drawer.Screen
         name="alarms"
         options={{
-          title: "Alarms",
+          title: "Wake",
           headerLeft: () => <HamburgerButton />,
           headerRight: () => <AddAlarmButton />,
         }}
@@ -173,14 +206,34 @@ export default function DrawerLayout() {
       <Drawer.Screen
         name="search"
         options={{
-          title: "Sounds",
+          title: "Listen",
           headerLeft: () => <HamburgerButton />,
           headerRight: () => <SuggestButton />,
         }}
       />
       <Drawer.Screen
+        name="habit-track"
+        options={{
+          title: "Habits",
+          drawerItemStyle: { display: "none" },
+          headerLeft: () => <AdaptiveLeft />,
+        }}
+      />
+      <Drawer.Screen
+        name="gratitude"
+        options={{
+          title: "Gratitude",
+          drawerItemStyle: { display: "none" },
+          headerLeft: () => <AdaptiveLeft />,
+          headerTransparent: false,
+          headerBackground: undefined,
+          headerStyle: { backgroundColor: "#000000" },
+          sceneStyle: { backgroundColor: "#000000" },
+        }}
+      />
+      <Drawer.Screen
         name="profile-page"
-        options={{ title: "You", drawerItemStyle: { display: "none" } }}
+        options={{ title: "Progress", drawerItemStyle: { display: "none" } }}
       />
     </Drawer>
     </View>
@@ -194,6 +247,12 @@ const styles = StyleSheet.create({
   },
   scrollContent: {
     paddingTop: 4,
+  },
+  navSep: {
+    height: StyleSheet.hairlineWidth,
+    backgroundColor: "rgba(255,255,255,0.18)",
+    marginVertical: 10,
+    marginHorizontal: 20,
   },
   navItem: {
     flexDirection: "row",

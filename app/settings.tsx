@@ -129,6 +129,12 @@ export default function SettingsScreen() {
       {/* App */}
       <Text style={styles.sectionTitle}>APP</Text>
       <SettingsRow
+        icon="color-palette-outline"
+        label="Background"
+        onPress={() => router.push("/background-picker" as any)}
+      />
+      <View style={styles.rowSep} />
+      <SettingsRow
         icon="water-outline"
         label="Ambient Sound"
         value={

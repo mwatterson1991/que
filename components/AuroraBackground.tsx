@@ -1,6 +1,6 @@
 import { useEffect } from "react";
 import { StyleSheet, View, useWindowDimensions } from "react-native";
-import Svg, { Defs, RadialGradient, Stop, Ellipse, Rect } from "react-native-svg";
+import Svg, { Defs, RadialGradient, Stop, Ellipse, Rect, Line, Circle } from "react-native-svg";
 import Animated, {
   useSharedValue,
   useAnimatedStyle,
@@ -9,67 +9,50 @@ import Animated, {
   withDelay,
   Easing,
 } from "react-native-reanimated";
+import { useBackdrop, type BackdropBlob, type BackdropPreset } from "@/lib/backdrop";
 
-// The luxe field the glass reacts to: deep near-black green with three
-// slow-breathing glow blobs. No photography — glass over pure light.
-// Each blob is an SVG radial gradient (soft falloff, no filters needed),
-// drifting and swelling on its own long loop so the field never repeats
-// visibly. Michael's brief: "glowy green sort of morphing screen".
+// The luminous field every glass surface reacts to. The preset (colour
+// story) comes from the user's choice in Settings → Background; `dim`
+// is a LOCAL request from a text-heavy screen to quiet the light, and
+// multiplies with the global level (wind-down / stage-dark).
+//
+// Named AuroraBackground for history — it renders whichever backdrop
+// is selected, not only the green one.
 
-const BASE = "#020805";
-
-function Blob({
-  size,
-  color,
-  edge,
-  x,
-  y,
-  driftX,
-  driftY,
-  scaleTo,
-  duration,
-  delay = 0,
-  opacity = 1,
-}: {
-  size: number;
-  color: string;
-  edge: string;
-  x: number;
-  y: number;
-  driftX: number;
-  driftY: number;
-  scaleTo: number;
-  duration: number;
-  delay?: number;
-  opacity?: number;
-}) {
+function Blob({ blob, w, h, opacity }: { blob: BackdropBlob; w: number; h: number; opacity: number }) {
   const t = useSharedValue(0);
+  const size = w * blob.sizePct;
 
   useEffect(() => {
     t.value = withDelay(
-      delay,
+      blob.delayMs ?? 0,
       withRepeat(
-        withTiming(1, { duration, easing: Easing.inOut(Easing.sin) }),
+        withTiming(1, { duration: blob.durationMs, easing: Easing.inOut(Easing.sin) }),
         -1,
         true // yoyo — breathe out, breathe in
       )
     );
-  }, [t, duration, delay]);
+  }, [t, blob.durationMs, blob.delayMs]);
 
   const style = useAnimatedStyle(() => ({
     transform: [
-      { translateX: t.value * driftX },
-      { translateY: t.value * driftY },
-      { scale: 1 + t.value * (scaleTo - 1) },
+      { translateX: t.value * w * blob.driftXPct },
+      { translateY: t.value * h * blob.driftYPct },
+      { scale: 1 + t.value * (blob.scaleTo - 1) },
     ],
   }));
 
-  const id = `g-${color.replace("#", "")}-${size}`;
+  const id = `g-${blob.color.replace("#", "")}-${Math.round(size)}`;
 
   return (
     <Animated.View
       style={[
-        { position: "absolute", left: x - size / 2, top: y - size / 2, opacity },
+        {
+          position: "absolute",
+          left: w * blob.xPct - size / 2,
+          top: h * blob.yPct - size / 2,
+          opacity: (blob.opacity ?? 1) * opacity,
+        },
         style,
       ]}
       pointerEvents="none"
@@ -77,10 +60,10 @@ function Blob({
       <Svg width={size} height={size}>
         <Defs>
           <RadialGradient id={id} cx="50%" cy="50%" r="50%">
-            <Stop offset="0%" stopColor={color} stopOpacity="0.85" />
-            <Stop offset="45%" stopColor={color} stopOpacity="0.35" />
-            <Stop offset="75%" stopColor={edge} stopOpacity="0.10" />
-            <Stop offset="100%" stopColor={edge} stopOpacity="0" />
+            <Stop offset="0%" stopColor={blob.color} stopOpacity="0.85" />
+            <Stop offset="45%" stopColor={blob.color} stopOpacity="0.35" />
+            <Stop offset="75%" stopColor={blob.edge} stopOpacity="0.1" />
+            <Stop offset="100%" stopColor={blob.edge} stopOpacity="0" />
           </RadialGradient>
         </Defs>
         <Ellipse cx={size / 2} cy={size / 2} rx={size / 2} ry={size / 2} fill={`url(#${id})`} />
@@ -89,60 +72,90 @@ function Blob({
   );
 }
 
-export default function AuroraBackground({ dim = 1 }: { dim?: number }) {
-  // dim < 1 quiets the glow for text-heavy screens (journal, tracker)
-  const { width: w, height: h } = useWindowDimensions();
+// Deterministic pseudo-random so the starfield never reshuffles between
+// renders (Math.random would twinkle the layout, not the stars).
+function hashUnit(n: number, salt: number): number {
+  const x = Math.sin(n * 127.1 + salt * 311.7) * 43758.5453;
+  return x - Math.floor(x);
+}
+
+function Rays({ preset, w, h, opacity }: { preset: BackdropPreset; w: number; h: number; opacity: number }) {
+  const r = preset.rays;
+  if (!r) return null;
+  const ox = w * r.originXPct;
+  const oy = h * r.originYPct;
+  const reach = Math.hypot(w, h) * 1.6;
+  const spread = Math.PI * 0.75;
+  const start = Math.PI * 0.55;
 
   return (
-    <View style={[StyleSheet.absoluteFill, { backgroundColor: BASE, overflow: "hidden" }]} pointerEvents="none">
-      {/* Heart of the glow — emerald, upper third */}
-      <Blob
-        size={w * 1.6}
-        color="#2fbf71"
-        edge="#0a3d24"
-        x={w * 0.3}
-        y={h * 0.28}
-        driftX={w * 0.18}
-        driftY={h * 0.08}
-        scaleTo={1.25}
-        duration={9000}
-        opacity={dim}
-      />
-      {/* Deep teal counterweight — lower right, slower */}
-      <Blob
-        size={w * 1.9}
-        color="#0e6e54"
-        edge="#04231a"
-        x={w * 0.85}
-        y={h * 0.75}
-        driftX={-w * 0.14}
-        driftY={-h * 0.1}
-        scaleTo={1.3}
-        duration={13000}
-        delay={1200}
-        opacity={dim}
-      />
-      {/* Bright lime accent — small, wandering, gives the "alive" flicker */}
-      <Blob
-        size={w * 0.9}
-        color="#9fe870"
-        edge="#2fbf71"
-        x={w * 0.7}
-        y={h * 0.15}
-        driftX={-w * 0.25}
-        driftY={h * 0.22}
-        scaleTo={1.45}
-        duration={11000}
-        delay={600}
-        opacity={0.55 * dim}
-      />
-      {/* Soft top-and-bottom vignette so headers and edges stay legible */}
+    <Svg width={w} height={h} style={StyleSheet.absoluteFill} pointerEvents="none">
+      {Array.from({ length: r.count }, (_, i) => {
+        const a = start + (i / (r.count - 1)) * spread;
+        // Alternating weight keeps the fan from moiréing into a solid block
+        const width = i % 3 === 0 ? 1.6 : 0.8;
+        return (
+          <Line
+            key={i}
+            x1={ox}
+            y1={oy}
+            x2={ox + Math.cos(a) * reach}
+            y2={oy + Math.sin(a) * reach}
+            stroke={r.color}
+            strokeWidth={width}
+            strokeOpacity={r.opacity * opacity}
+          />
+        );
+      })}
+    </Svg>
+  );
+}
+
+function Sparkle({ preset, w, h, opacity }: { preset: BackdropPreset; w: number; h: number; opacity: number }) {
+  const s = preset.sparkle;
+  if (!s) return null;
+  return (
+    <Svg width={w} height={h} style={StyleSheet.absoluteFill} pointerEvents="none">
+      {Array.from({ length: s.count }, (_, i) => (
+        <Circle
+          key={i}
+          cx={hashUnit(i, 1) * w}
+          cy={hashUnit(i, 2) * h}
+          r={0.6 + hashUnit(i, 3) * 1.3}
+          fill="#ffffff"
+          fillOpacity={s.opacity * opacity * (0.4 + hashUnit(i, 4) * 0.6)}
+        />
+      ))}
+    </Svg>
+  );
+}
+
+export default function AuroraBackground({ dim = 1 }: { dim?: number }) {
+  const { width: w, height: h } = useWindowDimensions();
+  const { preset, level } = useBackdrop();
+  const opacity = dim * level;
+
+  return (
+    <View
+      style={[StyleSheet.absoluteFill, { backgroundColor: preset.base, overflow: "hidden" }]}
+      pointerEvents="none"
+    >
+      {opacity > 0.01 && (
+        <>
+          {preset.blobs.map((blob, i) => (
+            <Blob key={`${preset.id}-${i}`} blob={blob} w={w} h={h} opacity={opacity} />
+          ))}
+          <Rays preset={preset} w={w} h={h} opacity={opacity} />
+          <Sparkle preset={preset} w={w} h={h} opacity={opacity} />
+        </>
+      )}
+      {/* Vignette keeps headers and screen edges legible over any preset */}
       <Svg width={w} height={h} style={StyleSheet.absoluteFill}>
         <Defs>
           <RadialGradient id="vig" cx="50%" cy="50%" r="75%">
-            <Stop offset="0%" stopColor={BASE} stopOpacity="0" />
-            <Stop offset="80%" stopColor={BASE} stopOpacity="0.25" />
-            <Stop offset="100%" stopColor={BASE} stopOpacity="0.6" />
+            <Stop offset="0%" stopColor={preset.base} stopOpacity="0" />
+            <Stop offset="80%" stopColor={preset.base} stopOpacity="0.25" />
+            <Stop offset="100%" stopColor={preset.base} stopOpacity="0.6" />
           </RadialGradient>
         </Defs>
         <Rect x="0" y="0" width={w} height={h} fill="url(#vig)" />

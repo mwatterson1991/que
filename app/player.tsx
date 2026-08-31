@@ -51,12 +51,20 @@ import {
 } from "@/lib/ambient";
 import { artworkFor, isHypnotherapy } from "@/lib/catalog";
 import { usePremium, isLocked } from "@/lib/premium";
+import { Glass } from "@/components/Glass";
+
+let Haptics: any = null;
+try { Haptics = require("expo-haptics"); } catch {}
 
 const { width: SCREEN_W } = Dimensions.get("window");
 const ORB_RADIUS = 38;
 const ORB_SIZE = ORB_RADIUS * 2 + 24;
 const SWING_RANGE = SCREEN_W / 2 - ORB_SIZE / 2 - 20;
-const TRACK_PAD = 24;
+// The dock is a glass card inset from the screen edge, so the scrub math has
+// to use the card's real inner width or the thumbless bar lands off by 8pt.
+const DOCK_MARGIN = 12;
+const DOCK_PAD = 16;
+const TRACK_PAD = DOCK_MARGIN + DOCK_PAD;
 const TRACK_WIDTH = SCREEN_W - TRACK_PAD * 2;
 const PARTICLE_COUNT = 72;
 const MANTRA_GAP = 20;
@@ -382,6 +390,7 @@ export default function PlayerScreen() {
   ).current;
 
   const togglePlay = async () => {
+    Haptics?.impactAsync?.(Haptics.ImpactFeedbackStyle?.Light);
     if (playing) {
       await pauseSession();
       await pauseAmbient();
@@ -394,6 +403,7 @@ export default function PlayerScreen() {
   };
 
   const skip = async (delta: number) => {
+    Haptics?.selectionAsync?.();
     const target = Math.max(0, Math.min(duration, elapsed + delta));
     setElapsed(target);
     await seekSession(target * 1000);
@@ -419,6 +429,33 @@ export default function PlayerScreen() {
 
   return (
     <View style={styles.container}>
+      {/* Artwork is the hero: it fills the whole screen so the glass dock
+          floats ON the photo rather than sitting on a black shelf below it. */}
+      {!showOrb && session && (
+        <Image
+          source={{ uri: artworkFor(session) }}
+          style={StyleSheet.absoluteFill}
+          resizeMode="cover"
+          accessibilityLabel={`${session.title} artwork`}
+        />
+      )}
+      {!showOrb && (
+        // Legibility scrim — glass is CLEAR, so anything over a photo needs a
+        // gradient underneath it, not just a heavier font.
+        <View style={styles.artScrim} pointerEvents="none">
+          <Svg width="100%" height="100%">
+            <Defs>
+              <LinearGradient id="gArt" x1="0" y1="0" x2="0" y2="1">
+                <Stop offset="0%" stopColor="#000000" stopOpacity="0" />
+                <Stop offset="45%" stopColor="#000000" stopOpacity="0.35" />
+                <Stop offset="100%" stopColor="#000000" stopOpacity="0.8" />
+              </LinearGradient>
+            </Defs>
+            <Rect x="0" y="0" width="100%" height="100%" fill="url(#gArt)" />
+          </Svg>
+        </View>
+      )}
+
       {showOrb ? (
         <>
           {/* Nav bar */}
@@ -455,28 +492,10 @@ export default function PlayerScreen() {
           <MantraTeleprompter mantras={mantras} activeMantra={activeMantra} />
         </>
       ) : (
+        // Spacer that holds the floating chrome; the photo behind it is
+        // already full-bleed, so this View draws nothing itself.
         <View style={styles.artworkArea}>
-          {session && (
-            <Image
-              source={{ uri: artworkFor(session) }}
-              style={StyleSheet.absoluteFill}
-              resizeMode="cover"
-              accessibilityLabel={`${session.title} artwork`}
-            />
-          )}
-          {/* Fade the artwork into the black bottom sheet */}
-          <View style={styles.artworkFade} pointerEvents="none">
-            <Svg width="100%" height="100%">
-              <Defs>
-                <LinearGradient id="gArt" x1="0" y1="0" x2="0" y2="1">
-                  <Stop offset="0%" stopColor="#000000" stopOpacity="0" />
-                  <Stop offset="100%" stopColor="#000000" stopOpacity="1" />
-                </LinearGradient>
-              </Defs>
-              <Rect x="0" y="0" width="100%" height="100%" fill="url(#gArt)" />
-            </Svg>
-          </View>
-          {/* Fixed back button over the artwork */}
+          {/* Back button — glass over ARTWORK is fine; glass over glass is not */}
           <Pressable
             style={[styles.artworkBack, { top: insets.top + 6 }]}
             onPress={() => router.back()}
@@ -484,7 +503,9 @@ export default function PlayerScreen() {
             accessibilityRole="button"
             accessibilityLabel="Go back"
           >
-            <Ionicons name="chevron-back" size={26} color="#f5f5f7" />
+            <Glass interactive scrim="soft" style={styles.artworkBackGlass}>
+              <Ionicons name="chevron-back" size={26} color="#f5f5f7" />
+            </Glass>
           </Pressable>
           {!completed && (
             <Pressable
@@ -503,72 +524,98 @@ export default function PlayerScreen() {
         </View>
       )}
 
-      {/* Bottom section */}
-      <View style={[styles.bottomSection, { paddingBottom: Math.max(insets.bottom + 12, 28) }]}>
-        {/* Title row */}
-        <View style={styles.titleRow}>
-          <Text style={styles.sessionTitle} numberOfLines={1}>
-            {session?.title ?? "Loading..."}
-          </Text>
-          <Pressable
-            style={styles.menuButton}
-            hitSlop={12}
-            onPress={() => Alert.alert(session?.title ?? "", session?.description ?? "")}
-            accessibilityRole="button"
-            accessibilityLabel="Session details"
-          >
-            <Ionicons name="ellipsis-horizontal" size={22} color="#8b8b93" />
-          </Pressable>
-        </View>
-        <Text style={styles.narrator}>{session?.narrator}</Text>
+      {/* Transport dock — ONE glass layer, holding metadata + scrubber + controls */}
+      <View style={[styles.dockWrap, { paddingBottom: Math.max(insets.bottom + 10, 22) }]}>
+        {/* "strong" — the dock carries small type (timestamps, skip labels)
+            and in artwork mode it sits directly on the photo. */}
+        <Glass scrim="strong" style={styles.dock}>
+          {/* Title row */}
+          <View style={styles.titleRow}>
+            <Text style={styles.sessionTitle} numberOfLines={1}>
+              {session?.title ?? "Loading..."}
+            </Text>
+            <Pressable
+              style={styles.menuButton}
+              hitSlop={12}
+              onPress={() => Alert.alert(session?.title ?? "", session?.description ?? "")}
+              accessibilityRole="button"
+              accessibilityLabel="Session details"
+            >
+              <Ionicons name="ellipsis-horizontal" size={22} color="rgba(255,255,255,0.7)" />
+            </Pressable>
+          </View>
+          <Text style={styles.narrator} numberOfLines={1}>{session?.narrator}</Text>
 
-        {/* Progress bar — no thumb */}
-        <View style={styles.progressContainer}>
-          <View
-            ref={trackRef}
-            onLayout={() => {
-              trackRef.current?.measureInWindow((x) => { trackXRef.current = x; });
-            }}
-            style={styles.progressTrackOuter}
-            {...panResponder.panHandlers}
-            accessible={true}
-            accessibilityRole="adjustable"
-            accessibilityLabel="Playback position"
-            accessibilityValue={{ text: `${formatTime(displayElapsed)} of ${formatTime(duration)}` }}
-          >
-            <View style={styles.progressTrack}>
-              <View style={[styles.progressFill, { width: `${progress * 100}%` }]} />
+          {/* Progress bar — no thumb */}
+          <View style={styles.progressContainer}>
+            <View
+              ref={trackRef}
+              onLayout={() => {
+                trackRef.current?.measureInWindow((x) => { trackXRef.current = x; });
+              }}
+              style={styles.progressTrackOuter}
+              {...panResponder.panHandlers}
+              accessible={true}
+              accessibilityRole="adjustable"
+              accessibilityLabel="Playback position"
+              accessibilityValue={{ text: `${formatTime(displayElapsed)} of ${formatTime(duration)}` }}
+            >
+              <View style={styles.progressTrack}>
+                <View style={[styles.progressFill, { width: `${progress * 100}%` }]} />
+              </View>
+            </View>
+            <View style={styles.timeRow}>
+              <Text style={styles.timeText} maxFontSizeMultiplier={1.4}>{formatTime(displayElapsed)}</Text>
+              <Text style={styles.timeText} maxFontSizeMultiplier={1.4}>{formatTime(duration)}</Text>
             </View>
           </View>
-          <View style={styles.timeRow}>
-            <Text style={styles.timeText} maxFontSizeMultiplier={1.4}>{formatTime(displayElapsed)}</Text>
-            <Text style={styles.timeText} maxFontSizeMultiplier={1.4}>{formatTime(duration)}</Text>
-          </View>
-        </View>
 
-        {/* Controls — a single, calm play/pause */}
-        <View style={styles.controls}>
-          <Pressable
-            style={styles.controlBtn}
-            onPress={togglePlay}
-            accessibilityRole="button"
-            accessibilityLabel={playing ? "Pause session" : "Play session"}
-          >
-            <Ionicons
-              name={playing ? "pause" : "play"}
-              size={26}
-              color="#f5f5f7"
-              style={!playing ? { marginLeft: 3 } : undefined}
-            />
-          </Pressable>
-        </View>
+          {/* Transport — solid white play button so it reads on clear glass */}
+          <View style={styles.transport}>
+            <Pressable
+              style={styles.skipBtn}
+              onPress={() => skip(-15)}
+              hitSlop={10}
+              accessibilityRole="button"
+              accessibilityLabel="Back 15 seconds"
+            >
+              <Ionicons name="play-back" size={22} color="#f5f5f7" />
+              <Text style={styles.skipLabel} maxFontSizeMultiplier={1.2}>15</Text>
+            </Pressable>
 
-        {completed && (
-          <View style={styles.completedBanner}>
-            <Ionicons name="checkmark-circle" size={20} color="#34d399" style={{ marginRight: 8 }} />
-            <Text style={styles.completedText}>SESSION COMPLETE</Text>
+            <Pressable
+              style={({ pressed }) => [styles.playBtn, pressed && { transform: [{ scale: 0.94 }] }]}
+              onPress={togglePlay}
+              accessibilityRole="button"
+              accessibilityLabel={playing ? "Pause session" : "Play session"}
+            >
+              <Ionicons
+                name={playing ? "pause" : "play"}
+                size={30}
+                color="#0a0a0a"
+                style={!playing ? { marginLeft: 3 } : undefined}
+              />
+            </Pressable>
+
+            <Pressable
+              style={styles.skipBtn}
+              onPress={() => skip(15)}
+              hitSlop={10}
+              accessibilityRole="button"
+              accessibilityLabel="Forward 15 seconds"
+            >
+              <Ionicons name="play-forward" size={22} color="#f5f5f7" />
+              <Text style={styles.skipLabel} maxFontSizeMultiplier={1.2}>15</Text>
+            </Pressable>
           </View>
-        )}
+
+          {completed && (
+            <View style={styles.completedBanner}>
+              <Ionicons name="checkmark-circle" size={20} color="#34d399" style={{ marginRight: 8 }} />
+              <Text style={styles.completedText}>SESSION COMPLETE</Text>
+            </View>
+          )}
+        </Glass>
       </View>
     </View>
   );
@@ -620,24 +667,29 @@ const styles = StyleSheet.create({
   artworkArea: {
     flex: 1,
     position: "relative",
-    overflow: "hidden",
   },
-  artworkFade: {
+  // Covers the lower two-thirds of the photo so the dock's text always
+  // lands on something dark, whatever the artwork is doing underneath.
+  artScrim: {
     position: "absolute",
     left: 0,
     right: 0,
     bottom: 0,
-    height: 160,
+    height: "66%",
   },
   artworkBack: {
     position: "absolute",
     left: 12,
-    width: 40,
-    height: 40,
+    width: 42,
+    height: 42,
+  },
+  artworkBackGlass: {
+    width: 42,
+    height: 42,
     alignItems: "center",
     justifyContent: "center",
-    borderRadius: 20,
-    backgroundColor: "rgba(0,0,0,0.45)",
+    borderRadius: 21,
+    overflow: "hidden",
   },
 
   // Orb
@@ -682,30 +734,45 @@ const styles = StyleSheet.create({
     zIndex: 1,
   },
 
-  // Bottom
-  bottomSection: {
-    paddingHorizontal: TRACK_PAD,
+  // Transport dock
+  dockWrap: {
+    paddingHorizontal: DOCK_MARGIN,
+  },
+  dock: {
+    borderRadius: 28,
+    overflow: "hidden",
+    padding: DOCK_PAD,
+    paddingTop: 14,
+    borderWidth: StyleSheet.hairlineWidth,
+    borderColor: "rgba(255,255,255,0.16)",
   },
   titleRow: {
     flexDirection: "row",
     alignItems: "center",
-    marginBottom: 4,
+    marginBottom: 2,
   },
   sessionTitle: {
     flex: 1,
-    color: "#f5f5f7",
+    color: "#ffffff",
     fontSize: S.title,
     fontFamily: F.bold,
+    // Belt-and-braces over a bright photo — the scrim does most of the work
+    textShadowColor: "rgba(0,0,0,0.55)",
+    textShadowOffset: { width: 0, height: 1 },
+    textShadowRadius: 6,
   },
   menuButton: {
     paddingLeft: 12,
     paddingVertical: 4,
   },
   narrator: {
-    color: "#8b8b93",
+    color: "rgba(255,255,255,0.72)",
     fontSize: S.secondary,
-    fontFamily: F.regular,
+    fontFamily: F.medium,
     marginBottom: 16,
+    textShadowColor: "rgba(0,0,0,0.5)",
+    textShadowOffset: { width: 0, height: 1 },
+    textShadowRadius: 5,
   },
 
   // Progress (no thumb)
@@ -718,7 +785,7 @@ const styles = StyleSheet.create({
   },
   progressTrack: {
     height: 3,
-    backgroundColor: "#27272a",
+    backgroundColor: "rgba(255,255,255,0.22)",
     borderRadius: 2,
     overflow: "hidden",
   },
@@ -733,52 +800,47 @@ const styles = StyleSheet.create({
     marginTop: 4,
   },
   timeText: {
-    color: "#8b8b93",
+    color: "rgba(255,255,255,0.7)",
     fontSize: S.micro,
-    fontFamily: F.regular,
+    fontFamily: F.medium,
   },
 
   // Controls
-  controls: {
+  transport: {
     flexDirection: "row",
-    gap: 10,
-    marginBottom: 14,
+    alignItems: "center",
+    justifyContent: "center",
+    gap: 34,
+    marginTop: 4,
+    marginBottom: 4,
   },
-  controlBtn: {
-    flex: 1,
+  skipBtn: {
+    width: 56,
     height: 56,
-    backgroundColor: "#1c1c1e",
-    borderRadius: 14,
+    alignItems: "center",
+    justifyContent: "center",
+  },
+  playBtn: {
+    width: 66,
+    height: 66,
+    borderRadius: 33,
+    backgroundColor: "#ffffff",
     alignItems: "center",
     justifyContent: "center",
   },
   skipLabel: {
-    color: "#8b8b93",
+    color: "rgba(255,255,255,0.72)",
     fontSize: S.micro,
-    fontFamily: F.medium,
+    fontFamily: F.semibold,
     marginTop: 2,
   },
 
   // Bottom actions
-  alarmButton: {
-    borderWidth: 1,
-    borderColor: "#3f3f46",
-    borderRadius: 14,
-    paddingVertical: 14,
-    alignItems: "center",
-    justifyContent: "center",
-    flexDirection: "row",
-  },
-  alarmButtonText: {
-    color: "#f5f5f7",
-    fontSize: S.secondary,
-    fontFamily: F.bold,
-    letterSpacing: 1.5,
-  },
   completedBanner: {
-    backgroundColor: "#0a1f15",
-    borderRadius: 14,
+    backgroundColor: "rgba(10,31,21,0.85)",
+    borderRadius: 16,
     paddingVertical: 14,
+    marginTop: 12,
     alignItems: "center",
     justifyContent: "center",
     flexDirection: "row",
