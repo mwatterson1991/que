@@ -30,6 +30,7 @@ import { supabase } from "@/lib/supabase";
 import { useAlarms } from "@/lib/useSupabase";
 import { scheduleAlarm } from "@/lib/alarmScheduler";
 import { requestAlarmPermissions } from "@/lib/alarmScheduler";
+import { GlassButton } from "@/components/Glass";
 import { F, S } from "@/lib/fonts";
 
 const { width: SW } = Dimensions.get("window");
@@ -258,8 +259,10 @@ function StepPermission({
           <Text style={styles.grantedText}>✓ Notifications enabled</Text>
         </View>
       ) : (
-        <Pressable style={styles.grantButton} onPress={onGrant} accessibilityRole="button">
-          <Text style={styles.grantButtonText}>Grant Access</Text>
+        <Pressable onPress={onGrant} accessibilityRole="button" accessibilityLabel="Grant access">
+          <GlassButton tone="bright" phase={0.4} style={styles.grantButton}>
+            <Text style={styles.grantButtonText}>Grant Access</Text>
+          </GlassButton>
         </Pressable>
       )}
     </View>
@@ -487,13 +490,15 @@ export default function OnboardingScreen() {
       {/* CTA */}
       <View style={styles.ctaWrap}>
         <Pressable
-          style={[styles.ctaButton, ctaDisabled && styles.ctaDisabled]}
+          style={ctaDisabled ? styles.ctaDisabled : undefined}
           onPress={handleContinue}
           disabled={ctaDisabled}
           accessibilityRole="button"
           accessibilityState={{ disabled: ctaDisabled }}
         >
-          <Text style={styles.ctaText}>{ctaLabel()}</Text>
+          <GlassButton tone="bright" phase={0.15} style={styles.ctaButton}>
+            <Text style={styles.ctaText}>{ctaLabel()}</Text>
+          </GlassButton>
         </Pressable>
         <Pressable
           onPress={async () => {
@@ -696,16 +701,14 @@ const styles = StyleSheet.create({
     textAlign: "center",
   },
   grantButton: {
-    backgroundColor: "#f5f5f7",
     borderRadius: 14,
     height: 56,
-    alignItems: "center",
-    justifyContent: "center",
+    paddingVertical: 0,
   },
   grantButtonText: {
     fontSize: S.body,
     fontFamily: F.semibold,
-    color: "#000000",
+    color: "#ffffff",
   },
   grantedRow: {
     height: 56,
@@ -761,11 +764,9 @@ const styles = StyleSheet.create({
     paddingTop: 16,
   },
   ctaButton: {
-    backgroundColor: "#f5f5f7",
     borderRadius: 16,
     height: 58,
-    alignItems: "center",
-    justifyContent: "center",
+    paddingVertical: 0,
   },
   ctaDisabled: {
     opacity: 0.5,
@@ -773,6 +774,6 @@ const styles = StyleSheet.create({
   ctaText: {
     fontSize: S.body,
     fontFamily: F.semibold,
-    color: "#000000",
+    color: "#ffffff",
   },
 });

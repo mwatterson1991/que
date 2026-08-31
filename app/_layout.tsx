@@ -176,34 +176,142 @@ function AuthGate() {
   return null;
 }
 
-// Back button aligned with the drawer screens' hamburger (16pt inset) —
-// the native chevron hugs the edge too tightly.
-function HeaderBackButton() {
-  const router = useRouter();
+// ─── The split glass nav ─────────────────────────────────
+// A full-width translucent bar still reads as chrome: one slab pinned to
+// the top of the screen. Liquid glass wants objects, so the nav is broken
+// into three separate pieces that float over whatever backdrop the screen
+// is running — a round control on the left, a pill holding the title, a
+// round control on the right when the screen has an action. Each piece
+// carries its own sheen at a different phase so they catch the light one
+// after another rather than blinking together.
+const NAV_PHASE = { left: 0, title: 0.34, right: 0.68 };
+
+export function NavGlassButton({
+  icon,
+  onPress,
+  label,
+  phase = NAV_PHASE.left,
+  disabled = false,
+  iconSize = 22,
+}: {
+  icon: keyof typeof Ionicons.glyphMap;
+  onPress: () => void;
+  label: string;
+  phase?: number;
+  disabled?: boolean;
+  iconSize?: number;
+}) {
   return (
     <Pressable
-      onPress={() => router.back()}
-      hitSlop={12}
-      style={{ marginLeft: Platform.OS === "ios" ? 4 : 0, padding: 4 }}
+      onPress={onPress}
+      disabled={disabled}
+      hitSlop={10}
       accessibilityRole="button"
-      accessibilityLabel="Go back"
+      accessibilityLabel={label}
+      accessibilityState={{ disabled }}
+      style={({ pressed }) => [
+        navStyles.controlWrap,
+        pressed && { transform: [{ scale: 0.94 }], opacity: 0.9 },
+      ]}
     >
-      <Ionicons name="chevron-back" size={26} color="#f5f5f7" />
+      <Glass liquid phase={phase} intensity={1.15} scrim="soft" style={navStyles.control}>
+        <Ionicons
+          name={icon}
+          size={iconSize}
+          color={disabled ? "rgba(245,245,247,0.35)" : "#ffffff"}
+        />
+      </Glass>
     </Pressable>
   );
 }
 
+export function NavGlassTitle({
+  children,
+  serif = false,
+}: {
+  children?: React.ReactNode;
+  serif?: boolean;
+}) {
+  return (
+    <Glass liquid phase={NAV_PHASE.title} intensity={0.95} scrim="soft" style={navStyles.pill}>
+      <Text
+        numberOfLines={1}
+        maxFontSizeMultiplier={1.3}
+        style={[navStyles.pillText, serif && navStyles.pillSerif]}
+      >
+        {children}
+      </Text>
+    </Glass>
+  );
+}
+
+const navStyles = StyleSheet.create({
+  controlWrap: {
+    marginHorizontal: 12,
+  },
+  control: {
+    width: 40,
+    height: 40,
+    borderRadius: 20,
+    overflow: "hidden",
+    alignItems: "center",
+    justifyContent: "center",
+  },
+  pill: {
+    borderRadius: 20,
+    overflow: "hidden",
+    maxWidth: 230,
+    paddingHorizontal: 18,
+    paddingVertical: 8,
+    alignItems: "center",
+    justifyContent: "center",
+  },
+  pillText: {
+    color: "#ffffff",
+    fontSize: S.body,
+    fontFamily: F.semibold,
+  },
+  pillSerif: {
+    fontFamily: "Lora",
+    fontSize: S.title,
+    fontWeight: "400",
+  },
+});
+
+// Back control for the stack screens — same glass piece the drawer uses,
+// so travelling between the two navigators never changes the nav's shape.
+function StackBackButton() {
+  const router = useRouter();
+  return <NavGlassButton icon="chevron-back" label="Go back" onPress={() => router.back()} />;
+}
+
 // ─── Shared header config ────────────────────────────────
+// No bar at all: transparent, no background element, three glass pieces.
 const HEADER_BASE = {
-  headerStyle: { backgroundColor: "#020805" },
+  headerTransparent: true,
+  headerBackground: () => null,
+  headerStyle: { backgroundColor: "transparent" },
   headerTintColor: "#f5f5f7",
   headerShadowVisible: false,
-  headerTitleStyle: { fontFamily: F.semibold, fontSize: S.body },
+  headerTitleAlign: "center",
+  headerLeft: () => <StackBackButton />,
+  headerTitle: ({ children }: { children: string }) => <NavGlassTitle>{children}</NavGlassTitle>,
   // Chevron only — never the previous screen's route name
   headerBackButtonDisplayMode: "minimal",
 } as const;
 
+// How far a screen's content has to start below the floating nav. The
+// header is absolutely positioned now, so every screen that isn't drawing
+// its own full-bleed backdrop needs this as padding.
+const NAV_BAR_HEIGHT = Platform.OS === "ios" ? 44 : 56;
+
 export default function RootLayout() {
+  const insets = useSafeAreaInsets();
+  // Screens that paint their own full-bleed backdrop (aurora, artwork) run
+  // edge to edge under the floating nav and pad themselves. Everything else
+  // gets pushed down to clear it.
+  const navTop = insets.top + NAV_BAR_HEIGHT + 8;
+
   const [fontsLoaded] = useFonts({
     "Switzer-Light": require("../assets/fonts/Switzer-Light.otf"),
     "Switzer-Regular": require("../assets/fonts/Switzer-Regular.otf"),
@@ -290,7 +398,7 @@ export default function RootLayout() {
               title: "Edit Profile",
               headerBackTitle: "",
               ...HEADER_BASE,
-              contentStyle: { flex: 1, backgroundColor: "#000000" },
+              contentStyle: { flex: 1, backgroundColor: "#000000", paddingTop: navTop },
             }}
           />
           <Stack.Screen
@@ -301,7 +409,7 @@ export default function RootLayout() {
               title: "Email",
               headerBackTitle: "",
               ...HEADER_BASE,
-              contentStyle: { flex: 1, backgroundColor: "#000000" },
+              contentStyle: { flex: 1, backgroundColor: "#000000", paddingTop: navTop },
             }}
           />
           <Stack.Screen
@@ -310,7 +418,6 @@ export default function RootLayout() {
               animation: "default",
               headerShown: true,
               headerBackTitle: "",
-              headerLeft: () => <HeaderBackButton />,
               ...HEADER_BASE,
               contentStyle: { flex: 1, backgroundColor: "#020805" },
             }}
@@ -321,8 +428,8 @@ export default function RootLayout() {
               animation: "default",
               headerShown: true,
               headerBackTitle: "",
-              headerLeft: () => <HeaderBackButton />,
               ...HEADER_BASE,
+              contentStyle: { flex: 1, backgroundColor: "#000000", paddingTop: navTop },
             }}
           />
           <Stack.Screen
@@ -333,7 +440,7 @@ export default function RootLayout() {
               title: "Sounds",
               headerBackTitle: "",
               ...HEADER_BASE,
-              contentStyle: { flex: 1, backgroundColor: "#000000" },
+              contentStyle: { flex: 1, backgroundColor: "#020805", paddingTop: navTop },
             }}
           />
           <Stack.Screen
@@ -388,7 +495,7 @@ export default function RootLayout() {
               title: "Alarm Debug",
               headerBackTitle: "",
               ...HEADER_BASE,
-              contentStyle: { flex: 1, backgroundColor: "#000000" },
+              contentStyle: { flex: 1, backgroundColor: "#000000", paddingTop: navTop },
             }}
           />
         </Stack>

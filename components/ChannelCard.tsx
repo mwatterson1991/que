@@ -2,17 +2,21 @@ import { View, Text, Image, Pressable, StyleSheet } from "react-native";
 import { Ionicons } from "@expo/vector-icons";
 import { F, S } from "@/lib/fonts";
 import { Glass } from "@/components/Glass";
-import { artworkFor, channelArtwork } from "@/lib/catalog";
+import { channelArtwork } from "@/lib/catalog";
 import { Scrim } from "@/components/SessionCard";
-import { CARD_W, CARD_H, tapFeedback } from "@/components/cardLayout";
+import { CARD_W, CARD_H, phaseFor, tapFeedback } from "@/components/cardLayout";
 import type { Session } from "@/lib/types";
 
 // The CHANNEL card: not a track, a subscription. Picking a channel means
 // we wake you with a DIFFERENT recording from it every morning, so the
 // card has to sell that promise in words — which is also why it looks
-// nothing like a SessionCard: glass sheet over a soft blurred collage
-// instead of one dominant photograph, and a text block instead of a
-// title. If you can mistake it for a sound at a glance, it has failed.
+// nothing like a SessionCard: a full sheet of liquid glass over ONE
+// deeply blurred photograph, and a text block instead of a title. If you
+// can mistake it for a sound at a glance, it has failed.
+//
+// It used to blur three photos side by side. Three unrelated macro shots
+// at 22px blur average out to gray sludge — one photograph blurs into a
+// single soft colour field, which is what glass wants behind it.
 
 const CHANNEL_COPY: Record<string, string> = {
   Naturescapes: "Real field recordings — dawn birds, rain, rivers, tide.",
@@ -24,20 +28,16 @@ const CHANNEL_COPY: Record<string, string> = {
 
 const FALLBACK_COPY = "A hand-picked collection, growing every week.";
 
-/** Three artworks for the collage, padded when the channel is thin. */
-function collageFor(channel: string, sessions: Session[]): string[] {
-  const art = sessions.slice(0, 3).map(artworkFor);
-  while (art.length < 3) art.push(channelArtwork(channel));
-  return art;
-}
-
 export default function ChannelCard({
   channel,
   sessions,
+  index = 0,
   onPress,
 }: {
   channel: string;
   sessions: Session[];
+  /** Position in its rail — only used to offset the glass shimmer. */
+  index?: number;
   onPress?: (channel: string) => void;
 }) {
   const count = sessions.length;
@@ -47,23 +47,17 @@ export default function ChannelCard({
 
   const body = (
     <View style={styles.frame}>
-      {/* Blurred collage is a SIBLING under the glass sheet, not a child
-          of it — a GlassView only refracts what is drawn behind it, and
-          "no single photo dominates" is this card's main visual tell. */}
-      <View style={styles.collage} pointerEvents="none">
-        {collageFor(channel, sessions).map((uri, i) => (
-          <Image
-            key={`${uri}-${i}`}
-            source={{ uri }}
-            style={styles.collageTile}
-            blurRadius={22}
-            resizeMode="cover"
-          />
-        ))}
-      </View>
+      {/* The photograph is a SIBLING under the glass sheet, not a child
+          of it — a GlassView only refracts what is drawn behind it. */}
+      <Image
+        source={{ uri: channelArtwork(channel) }}
+        style={styles.photo}
+        blurRadius={20}
+        resizeMode="cover"
+      />
       <View style={styles.wash} pointerEvents="none" />
-      <Glass style={styles.sheet} pointerEvents="none" />
-      <Scrim id={`channel-${channel.replace(/\W+/g, "-")}`} height="78%" />
+      <Glass liquid phase={phaseFor(index)} style={styles.sheet} pointerEvents="none" />
+      <Scrim id={`channel-${channel.replace(/\W+/g, "-")}`} height="72%" />
 
       <View style={styles.inner}>
         <View style={styles.kicker}>
@@ -151,8 +145,9 @@ const styles = StyleSheet.create({
     overflow: "hidden",
     backgroundColor: "#0a0d0a",
   },
-  // Full-bleed glass pane over the collage — the channel card is
-  // glass-forward where the sound card is only glass-framed.
+  // Full-bleed glass pane over the photograph — the channel card is
+  // glass-forward where the sound card is only glass-framed. Nothing is
+  // drawn inside it, so its sheen sweeps the entire card.
   sheet: {
     position: "absolute",
     top: 0,
@@ -162,28 +157,26 @@ const styles = StyleSheet.create({
     borderRadius: 30,
   },
 
-  collage: {
+  // Scaled past the frame because a blur samples beyond its own edges
+  // and would otherwise leave a pale halo around the card.
+  photo: {
     position: "absolute",
     top: 0,
     left: 0,
     right: 0,
     bottom: 0,
-    flexDirection: "row",
+    opacity: 0.85,
+    transform: [{ scale: 1.12 }],
   },
-  collageTile: {
-    flex: 1,
-    height: "100%",
-    opacity: 0.75,
-  },
-  // Flattens the collage's contrast so the text below has a predictable
-  // floor no matter which three photos land here.
+  // Flattens the photo's contrast so the text has a predictable floor
+  // no matter which channel this is.
   wash: {
     position: "absolute",
     top: 0,
     left: 0,
     right: 0,
     bottom: 0,
-    backgroundColor: "rgba(4,10,6,0.42)",
+    backgroundColor: "rgba(4,10,6,0.46)",
   },
 
   inner: {
@@ -214,11 +207,14 @@ const styles = StyleSheet.create({
   copyBlock: {
     gap: 8,
   },
+  // The rail heading directly above already says this word at 28. The
+  // card repeats it one step down so the shelf reads as a heading with
+  // a card under it, not as the same title printed twice.
   name: {
     color: "#ffffff",
-    fontSize: S.heading,
+    fontSize: S.title,
     fontFamily: F.bold,
-    lineHeight: 33,
+    lineHeight: 27,
   },
   desc: {
     color: "rgba(255,255,255,0.9)",

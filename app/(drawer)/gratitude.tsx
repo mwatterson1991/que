@@ -16,6 +16,7 @@ import { useFocusEffect, useRouter } from "expo-router";
 import { Ionicons } from "@expo/vector-icons";
 import { useGratitudeEntries } from "@/lib/useSupabase";
 import { useAuth } from "@/lib/auth";
+import { GlassButton } from "@/components/Glass";
 import { F, S } from "@/lib/fonts";
 
 const TOTAL = 7;
@@ -152,12 +153,13 @@ export default function GratitudeScreen() {
           your streak safe.
         </Text>
         <Pressable
-          style={styles.gateButton}
           onPress={() => router.push("/auth")}
           accessibilityRole="button"
           accessibilityLabel="Create a free account"
         >
-          <Text style={styles.gateButtonText}>Create a free account</Text>
+          <GlassButton tone="bright">
+            <Text style={styles.gateButtonText}>Create a free account</Text>
+          </GlassButton>
         </Pressable>
       </View>
     );
@@ -260,12 +262,13 @@ export default function GratitudeScreen() {
               </Text>
               <Pressable
                 onPress={() => router.push("/profile-page" as any)}
-                style={styles.progressButton}
                 accessibilityRole="button"
                 accessibilityLabel="See your positivity graph"
               >
-                <Text style={styles.progressButtonText}>See your graph</Text>
-                <Ionicons name="trending-up" size={18} color="#0a0a0a" />
+                <GlassButton tone="bright" phase={0.3} style={styles.progressButton}>
+                  <Text style={styles.progressButtonText}>See your graph</Text>
+                  <Ionicons name="trending-up" size={18} color="#ffffff" />
+                </GlassButton>
               </Pressable>
             </View>
           ) : savedCount > 0 ? (
@@ -478,15 +481,12 @@ const styles = StyleSheet.create({
   },
   progressButton: {
     flexDirection: "row",
-    alignItems: "center",
     gap: 8,
-    backgroundColor: INK,
-    borderRadius: 999,
     paddingVertical: 13,
     paddingHorizontal: 24,
   },
   progressButtonText: {
-    color: "#0a0a0a",
+    color: "#ffffff",
     fontSize: S.secondary,
     fontFamily: F.semibold,
   },
@@ -536,14 +536,8 @@ const styles = StyleSheet.create({
     fontFamily: F.regular,
     marginBottom: 28,
   },
-  gateButton: {
-    backgroundColor: INK,
-    borderRadius: 999,
-    paddingVertical: 16,
-    alignItems: "center",
-  },
   gateButtonText: {
-    color: "#0a0a0a",
+    color: "#ffffff",
     fontSize: S.body,
     fontFamily: F.semibold,
   },

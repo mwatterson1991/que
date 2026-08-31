@@ -64,6 +64,10 @@ function Sheen({
   intensity: number;
 }) {
   const t = useSharedValue(0);
+  // Measured, not assumed: a fixed sweep distance makes a 56pt button
+  // glint for half a second while a full-width dock washes properly.
+  // Scaling travel to the surface gives every size the same gesture.
+  const w = useSharedValue(260);
 
   useEffect(() => {
     t.value = withDelay(
@@ -75,13 +79,14 @@ function Sheen({
   const style = useAnimatedStyle(() => ({
     // Travels well past both edges so the band enters and leaves rather
     // than appearing in place
-    transform: [{ translateX: interpolate(t.value, [0, 1], [-1.5, 1.5]) * 260 }],
+    transform: [{ translateX: interpolate(t.value, [0, 1], [-1.3, 1.3]) * w.value }],
     opacity: interpolate(t.value, [0, 0.14, 0.5, 0.86, 1], [0, 1, 1, 1, 0]),
   }));
 
   return (
     <View
       pointerEvents="none"
+      onLayout={(e) => { w.value = Math.max(48, e.nativeEvent.layout.width); }}
       style={[StyleSheet.absoluteFill, { borderRadius: radius, overflow: "hidden" }]}
     >
       <Animated.View style={[StyleSheet.absoluteFill, style]}>

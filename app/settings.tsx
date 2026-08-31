@@ -1,6 +1,7 @@
 import { View, Text, Pressable, ScrollView, Switch, Alert, StyleSheet, Linking } from "react-native";
 import { Ionicons } from "@expo/vector-icons";
 import { useRouter } from "expo-router";
+import { useSafeAreaInsets } from "react-native-safe-area-context";
 import { useState, useEffect } from "react";
 import { F, S } from "@/lib/fonts";
 import { useAuth } from "@/lib/auth";
@@ -56,6 +57,7 @@ function SettingsRow({ icon, label, value, hasToggle, toggleValue, onToggle, onP
 
 export default function SettingsScreen() {
   const router = useRouter();
+  const insets = useSafeAreaInsets();
   const { user, signOut } = useAuth();
   const { profile } = useProfile();
   const { prefs, update: updatePrefs } = usePreferences();
@@ -91,7 +93,12 @@ export default function SettingsScreen() {
     : "";
 
   return (
-    <ScrollView style={styles.container} contentContainerStyle={styles.scroll}>
+    <ScrollView
+      style={styles.container}
+      // The rows scroll under the floating glass nav, so the list starts
+      // below it rather than being clipped by a bar.
+      contentContainerStyle={[styles.scroll, { paddingTop: insets.top + 56 }]}
+    >
       {/* Account */}
       <Text style={styles.sectionTitle}>ACCOUNT</Text>
       <SettingsRow

@@ -4,6 +4,7 @@ import { useRouter, useLocalSearchParams } from "expo-router";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 import { Ionicons } from "@expo/vector-icons";
 import { Svg, Defs, LinearGradient, Stop, Rect } from "react-native-svg";
+import { Glass, GlassButton } from "@/components/Glass";
 import { F, S } from "@/lib/fonts";
 import { useSessions } from "@/lib/useSupabase";
 import { artworkFor } from "@/lib/catalog";
@@ -70,6 +71,8 @@ export default function PaywallScreen() {
         </Svg>
       </View>
 
+      {/* Same floating glass control the nav uses — the modal has no header
+          bar, so the one piece of chrome it needs is a single glass button. */}
       <Pressable
         style={[styles.close, { top: insets.top + 8 }]}
         onPress={() => router.back()}
@@ -77,7 +80,9 @@ export default function PaywallScreen() {
         accessibilityRole="button"
         accessibilityLabel="Close"
       >
-        <Ionicons name="close" size={22} color="#f5f5f7" />
+        <Glass liquid phase={0.1} intensity={1.1} scrim="soft" style={styles.closeGlass}>
+          <Ionicons name="close" size={22} color="#ffffff" />
+        </Glass>
       </Pressable>
 
       <View style={[styles.content, { paddingBottom: Math.max(insets.bottom, 16) + 16 }]}>
@@ -105,9 +110,9 @@ export default function PaywallScreen() {
             <Text style={styles.planTitle}>Yearly</Text>
             <Text style={styles.planSub}>{PRICE_YEARLY} / year · 2 months free</Text>
           </View>
-          <View style={styles.bestBadge}>
+          <Glass liquid phase={0.6} intensity={1.2} scrim="none" style={styles.bestBadge}>
             <Text style={styles.bestBadgeText}>BEST VALUE</Text>
-          </View>
+          </Glass>
         </Pressable>
         <Pressable
           style={[styles.plan, plan === "monthly" && styles.planActive]}
@@ -123,12 +128,14 @@ export default function PaywallScreen() {
         </Pressable>
 
         <Pressable
-          style={styles.cta}
+          style={styles.ctaWrap}
           onPress={startPremium}
           accessibilityRole="button"
           accessibilityLabel="Start premium"
         >
-          <Text style={styles.ctaText}>Start Premium</Text>
+          <GlassButton tone="bright" phase={0.35} style={styles.cta}>
+            <Text style={styles.ctaText}>Start Premium</Text>
+          </GlassButton>
         </Pressable>
         <Text style={styles.finePrint} maxFontSizeMultiplier={1.3}>
           Cancel anytime. The free tier keeps working forever.
@@ -154,10 +161,12 @@ const styles = StyleSheet.create({
     position: "absolute",
     left: 16,
     zIndex: 2,
-    width: 36,
-    height: 36,
-    borderRadius: 18,
-    backgroundColor: "rgba(0,0,0,0.5)",
+  },
+  closeGlass: {
+    width: 40,
+    height: 40,
+    borderRadius: 20,
+    overflow: "hidden",
     alignItems: "center",
     justifyContent: "center",
   },
@@ -222,26 +231,25 @@ const styles = StyleSheet.create({
     marginTop: 2,
   },
   bestBadge: {
-    backgroundColor: "#f5f5f7",
     borderRadius: 999,
+    overflow: "hidden",
     paddingHorizontal: 10,
     paddingVertical: 4,
   },
   bestBadgeText: {
-    color: "#0a0a0a",
+    color: "#ffffff",
     fontSize: S.micro,
     fontFamily: F.semibold,
     letterSpacing: 1,
   },
-  cta: {
-    backgroundColor: "#f5f5f7",
-    borderRadius: 999,
-    paddingVertical: 17,
-    alignItems: "center",
+  ctaWrap: {
     marginTop: 8,
   },
+  cta: {
+    paddingVertical: 17,
+  },
   ctaText: {
-    color: "#0a0a0a",
+    color: "#ffffff",
     fontSize: S.body,
     fontFamily: F.semibold,
   },

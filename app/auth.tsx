@@ -12,6 +12,7 @@ import {
 import { Ionicons } from "@expo/vector-icons";
 import { useRouter } from "expo-router";
 import { useAuth } from "@/lib/auth";
+import { Glass, GlassButton } from "@/components/Glass";
 import { F, S } from "@/lib/fonts";
 
 const PHRASES = [
@@ -141,7 +142,9 @@ export default function AuthScreen() {
           accessibilityRole="button"
           accessibilityLabel="Back"
         >
-          <Ionicons name="arrow-back" size={24} color="#f5f5f7" />
+          <Glass liquid intensity={1.1} scrim="soft" style={styles.closeGlass}>
+            <Ionicons name="arrow-back" size={22} color="#ffffff" />
+          </Glass>
         </Pressable>
         <View style={styles.center}>
           <Text style={styles.logoText}>Morning Que</Text>
@@ -149,12 +152,16 @@ export default function AuthScreen() {
         </View>
 
         <View style={styles.bottomSheet}>
-          <Pressable style={styles.primaryButton} onPress={() => setMode("signup")} accessibilityRole="button" accessibilityLabel="Create account">
-            <Text style={styles.primaryButtonText}>Create account</Text>
+          <Pressable onPress={() => setMode("signup")} accessibilityRole="button" accessibilityLabel="Create account">
+            <GlassButton tone="bright" phase={0.15} style={styles.sheetButton}>
+              <Text style={styles.primaryButtonText}>Create account</Text>
+            </GlassButton>
           </Pressable>
 
-          <Pressable style={styles.darkButton} onPress={() => setMode("login")} accessibilityRole="button" accessibilityLabel="Log in">
-            <Text style={styles.darkButtonText}>Log in</Text>
+          <Pressable onPress={() => setMode("login")} accessibilityRole="button" accessibilityLabel="Log in">
+            <GlassButton tone="quiet" phase={0.55} style={styles.sheetButton}>
+              <Text style={styles.darkButtonText}>Log in</Text>
+            </GlassButton>
           </Pressable>
 
           <Text style={styles.legalText}>
@@ -174,7 +181,9 @@ export default function AuthScreen() {
       style={styles.container}
     >
       <Pressable onPress={() => setMode("landing")} style={styles.closeButton} hitSlop={16} accessibilityRole="button" accessibilityLabel="Back">
-        <Ionicons name="arrow-back" size={24} color="#f5f5f7" />
+        <Glass liquid intensity={1.1} scrim="soft" style={styles.closeGlass}>
+          <Ionicons name="arrow-back" size={22} color="#ffffff" />
+        </Glass>
       </Pressable>
 
       <View style={styles.formCenter}>
@@ -222,13 +231,17 @@ export default function AuthScreen() {
         />
 
         <Pressable
-          style={[styles.submitButton, busy && { opacity: 0.5 }]}
+          style={[styles.submitWrap, busy && { opacity: 0.5 }]}
           onPress={isSignUp ? handleSignUp : handleLogin}
           disabled={busy}
+          accessibilityRole="button"
+          accessibilityState={{ disabled: busy }}
         >
-          <Text style={styles.submitText}>
-            {busy ? "Please wait..." : isSignUp ? "Create account" : "Log in"}
-          </Text>
+          <GlassButton tone="bright" phase={0.25} style={styles.submitButton}>
+            <Text style={styles.submitText}>
+              {busy ? "Please wait..." : isSignUp ? "Create account" : "Log in"}
+            </Text>
+          </GlassButton>
         </Pressable>
 
         <Pressable onPress={() => setMode(isSignUp ? "login" : "signup")}>
@@ -251,7 +264,14 @@ const styles = StyleSheet.create({
     top: 60,
     left: 20,
     zIndex: 99,
-    padding: 12,
+  },
+  closeGlass: {
+    width: 40,
+    height: 40,
+    borderRadius: 20,
+    overflow: "hidden",
+    alignItems: "center",
+    justifyContent: "center",
   },
   center: {
     flex: 1,
@@ -292,28 +312,15 @@ const styles = StyleSheet.create({
     paddingBottom: 48,
     gap: 12,
   },
-  primaryButton: {
-    flexDirection: "row",
-    alignItems: "center",
-    justifyContent: "center",
-    backgroundColor: "#f5f5f7",
+  sheetButton: {
     borderRadius: 16,
     height: 58,
+    paddingVertical: 0,
   },
   primaryButtonText: {
     fontSize: S.body,
     fontFamily: F.semibold,
-    color: "#000000",
-  },
-  darkButton: {
-    flexDirection: "row",
-    alignItems: "center",
-    justifyContent: "center",
-    backgroundColor: "transparent",
-    borderRadius: 16,
-    height: 58,
-    borderWidth: 1,
-    borderColor: "#2c2c2e",
+    color: "#ffffff",
   },
   darkButtonText: {
     fontSize: S.body,
@@ -356,18 +363,18 @@ const styles = StyleSheet.create({
     borderWidth: 1,
     borderColor: "#2c2c2e",
   },
+  submitWrap: {
+    marginTop: 8,
+  },
   submitButton: {
-    backgroundColor: "#f5f5f7",
     borderRadius: 14,
     height: 56,
-    alignItems: "center",
-    justifyContent: "center",
-    marginTop: 8,
+    paddingVertical: 0,
   },
   submitText: {
     fontSize: S.body,
     fontFamily: F.semibold,
-    color: "#000000",
+    color: "#ffffff",
   },
   switchText: {
     color: "#8b8b93",

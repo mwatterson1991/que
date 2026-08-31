@@ -51,7 +51,7 @@ import {
 } from "@/lib/ambient";
 import { artworkFor, isHypnotherapy } from "@/lib/catalog";
 import { usePremium, isLocked } from "@/lib/premium";
-import { Glass } from "@/components/Glass";
+import { Glass, GlassButton } from "@/components/Glass";
 
 let Haptics: any = null;
 try { Haptics = require("expo-haptics"); } catch {}
@@ -264,6 +264,48 @@ function MantraTeleprompter({
   );
 }
 
+// ─── Scrubber fill ───────────────────────────────────────
+// A flat orange bar is paint; liquid is LIT. The fill runs from deep ember
+// at its tail to near-white at its leading edge, and the parent view carries
+// a warm shadow so the light spills past the bar itself.
+function ScrubFill() {
+  return (
+    <Svg width="100%" height="100%">
+      <Defs>
+        <LinearGradient id="gScrub" x1="0" y1="0" x2="1" y2="0">
+          <Stop offset="0%" stopColor="#C22E00" stopOpacity="0.9" />
+          <Stop offset="55%" stopColor="#FF5500" stopOpacity="1" />
+          <Stop offset="92%" stopColor="#FF9A4D" stopOpacity="1" />
+          <Stop offset="100%" stopColor="#FFE2C2" stopOpacity="1" />
+        </LinearGradient>
+      </Defs>
+      {/* Rounded here rather than clipping the parent: a view that clips
+          can't cast the warm shadow that makes the fill look lit. */}
+      <Rect x="0" y="0" width="100%" height="100%" rx="3" ry="3" fill="url(#gScrub)" />
+    </Svg>
+  );
+}
+
+// The dock's own body: lit along the top face, weighted at the base, so the
+// panel has thickness instead of being a translucent rectangle.
+function DockSlab() {
+  return (
+    <View pointerEvents="none" style={styles.dockSlab}>
+      <Svg width="100%" height="100%">
+        <Defs>
+          <LinearGradient id="gDock" x1="0" y1="0" x2="0" y2="1">
+            <Stop offset="0%" stopColor="#ffffff" stopOpacity="0.16" />
+            <Stop offset="14%" stopColor="#ffffff" stopOpacity="0.04" />
+            <Stop offset="60%" stopColor="#000000" stopOpacity="0.05" />
+            <Stop offset="100%" stopColor="#000000" stopOpacity="0.24" />
+          </LinearGradient>
+        </Defs>
+        <Rect x="0" y="0" width="100%" height="100%" fill="url(#gDock)" />
+      </Svg>
+    </View>
+  );
+}
+
 // ─── Screen ──────────────────────────────────────────────
 export default function PlayerScreen() {
   const { id, alarm, pick } = useLocalSearchParams<{ id: string; alarm?: string; pick?: string }>();
@@ -471,16 +513,18 @@ export default function PlayerScreen() {
             </Pressable>
             {!completed && (
               <Pressable
-                style={styles.selectPill}
+                style={styles.selectPillHit}
                 onPress={handleSetAsAlarm}
                 hitSlop={8}
                 accessibilityRole="button"
                 accessibilityLabel={isPickMode ? "Use for this alarm" : "Set as alarm"}
               >
-                <Ionicons name="checkmark" size={16} color="#0a0a0a" />
-                <Text style={styles.selectPillText}>
-                  {isPickMode ? "Use" : "Set as alarm"}
-                </Text>
+                <GlassButton tone="bright" phase={0.45} style={styles.selectPill}>
+                  <Ionicons name="checkmark" size={16} color="#ffffff" />
+                  <Text style={styles.selectPillText}>
+                    {isPickMode ? "Use" : "Set as alarm"}
+                  </Text>
+                </GlassButton>
               </Pressable>
             )}
           </View>
@@ -509,16 +553,18 @@ export default function PlayerScreen() {
           </Pressable>
           {!completed && (
             <Pressable
-              style={[styles.selectPill, styles.selectPillOverArt, { top: insets.top + 8 }]}
+              style={[styles.selectPillHit, styles.selectPillOverArt, { top: insets.top + 8 }]}
               onPress={handleSetAsAlarm}
               hitSlop={8}
               accessibilityRole="button"
               accessibilityLabel={isPickMode ? "Use for this alarm" : "Set as alarm"}
             >
-              <Ionicons name="checkmark" size={16} color="#0a0a0a" />
-              <Text style={styles.selectPillText}>
-                {isPickMode ? "Use" : "Set as alarm"}
-              </Text>
+              <GlassButton tone="bright" phase={0.45} style={styles.selectPill}>
+                <Ionicons name="checkmark" size={16} color="#ffffff" />
+                <Text style={styles.selectPillText}>
+                  {isPickMode ? "Use" : "Set as alarm"}
+                </Text>
+              </GlassButton>
             </Pressable>
           )}
         </View>
@@ -527,95 +573,123 @@ export default function PlayerScreen() {
       {/* Transport dock — ONE glass layer, holding metadata + scrubber + controls */}
       <View style={[styles.dockWrap, { paddingBottom: Math.max(insets.bottom + 10, 22) }]}>
         {/* "strong" — the dock carries small type (timestamps, skip labels)
-            and in artwork mode it sits directly on the photo. */}
-        <Glass scrim="strong" style={styles.dock}>
-          {/* Title row */}
-          <View style={styles.titleRow}>
-            <Text style={styles.sessionTitle} numberOfLines={1}>
-              {session?.title ?? "Loading..."}
-            </Text>
-            <Pressable
-              style={styles.menuButton}
-              hitSlop={12}
-              onPress={() => Alert.alert(session?.title ?? "", session?.description ?? "")}
-              accessibilityRole="button"
-              accessibilityLabel="Session details"
-            >
-              <Ionicons name="ellipsis-horizontal" size={22} color="rgba(255,255,255,0.7)" />
-            </Pressable>
-          </View>
-          <Text style={styles.narrator} numberOfLines={1}>{session?.narrator}</Text>
+            and in artwork mode it sits directly on the photo.
+            The shadow host wraps it because the dock itself clips, and a
+            clipping layer cannot cast a shadow. */}
+        <View style={styles.dockShadow}>
+          <Glass liquid phase={0.12} intensity={1.1} scrim="strong" style={styles.dock}>
+            <DockSlab />
+            <View style={styles.dockTopEdge} pointerEvents="none" />
+            {/* Title row */}
+            <View style={styles.titleRow}>
+              <Text style={styles.sessionTitle} numberOfLines={1}>
+                {session?.title ?? "Loading..."}
+              </Text>
+              <Pressable
+                style={styles.menuButton}
+                hitSlop={12}
+                onPress={() => Alert.alert(session?.title ?? "", session?.description ?? "")}
+                accessibilityRole="button"
+                accessibilityLabel="Session details"
+              >
+                <Ionicons name="ellipsis-horizontal" size={22} color="rgba(255,255,255,0.7)" />
+              </Pressable>
+            </View>
+            <Text style={styles.narrator} numberOfLines={1}>{session?.narrator}</Text>
 
-          {/* Progress bar — no thumb */}
-          <View style={styles.progressContainer}>
-            <View
-              ref={trackRef}
-              onLayout={() => {
-                trackRef.current?.measureInWindow((x) => { trackXRef.current = x; });
-              }}
-              style={styles.progressTrackOuter}
-              {...panResponder.panHandlers}
-              accessible={true}
-              accessibilityRole="adjustable"
-              accessibilityLabel="Playback position"
-              accessibilityValue={{ text: `${formatTime(displayElapsed)} of ${formatTime(duration)}` }}
-            >
-              <View style={styles.progressTrack}>
-                <View style={[styles.progressFill, { width: `${progress * 100}%` }]} />
+            {/* Progress bar — glowing fill, luminous thumb */}
+            <View style={styles.progressContainer}>
+              <View
+                ref={trackRef}
+                onLayout={() => {
+                  trackRef.current?.measureInWindow((x) => { trackXRef.current = x; });
+                }}
+                style={styles.progressTrackOuter}
+                {...panResponder.panHandlers}
+                accessible={true}
+                accessibilityRole="adjustable"
+                accessibilityLabel="Playback position"
+                accessibilityValue={{ text: `${formatTime(displayElapsed)} of ${formatTime(duration)}` }}
+              >
+                <View style={styles.progressTrack}>
+                  <View style={[styles.progressFill, { width: `${progress * 100}%` }]}>
+                    <ScrubFill />
+                  </View>
+                </View>
+                {/* The thumb rides OUTSIDE the track so its halo isn't clipped;
+                    it swells while scrubbing so the finger has something that
+                    responds, not just a bar that changes length. */}
+                <View
+                  style={[
+                    styles.thumb,
+                    { left: `${progress * 100}%` },
+                    scrubbing && styles.thumbActive,
+                  ]}
+                  pointerEvents="none"
+                />
+              </View>
+              <View style={styles.timeRow}>
+                <Text style={styles.timeText} maxFontSizeMultiplier={1.4}>{formatTime(displayElapsed)}</Text>
+                <Text style={styles.timeText} maxFontSizeMultiplier={1.4}>{formatTime(duration)}</Text>
               </View>
             </View>
-            <View style={styles.timeRow}>
-              <Text style={styles.timeText} maxFontSizeMultiplier={1.4}>{formatTime(displayElapsed)}</Text>
-              <Text style={styles.timeText} maxFontSizeMultiplier={1.4}>{formatTime(duration)}</Text>
+
+            {/* Transport — all three controls are glass now. The play button
+                earns its primacy from a brighter tint, a stronger sheen and a
+                cool halo rather than from being a solid white disc. Phases are
+                staggered so the light crosses the row instead of flashing it. */}
+            <View style={styles.transport}>
+              <Pressable
+                style={styles.skipBtn}
+                onPress={() => skip(-15)}
+                hitSlop={10}
+                accessibilityRole="button"
+                accessibilityLabel="Back 15 seconds"
+              >
+                <Glass interactive liquid phase={0} intensity={0.85} scrim="soft" style={styles.skipGlass}>
+                  <Ionicons name="play-back" size={20} color="#f5f5f7" />
+                  <Text style={styles.skipLabel} maxFontSizeMultiplier={1.2}>15</Text>
+                </Glass>
+              </Pressable>
+
+              <Pressable
+                style={({ pressed }) => [styles.playBtnWrap, pressed && { transform: [{ scale: 0.94 }] }]}
+                onPress={togglePlay}
+                accessibilityRole="button"
+                accessibilityLabel={playing ? "Pause session" : "Play session"}
+              >
+                <Glass interactive liquid phase={0.3} intensity={1.4} scrim="none" style={styles.playBtn}>
+                  <Ionicons
+                    name={playing ? "pause" : "play"}
+                    size={30}
+                    color="#ffffff"
+                    style={[styles.playGlyph, !playing ? { marginLeft: 3 } : null]}
+                  />
+                </Glass>
+              </Pressable>
+
+              <Pressable
+                style={styles.skipBtn}
+                onPress={() => skip(15)}
+                hitSlop={10}
+                accessibilityRole="button"
+                accessibilityLabel="Forward 15 seconds"
+              >
+                <Glass interactive liquid phase={0.6} intensity={0.85} scrim="soft" style={styles.skipGlass}>
+                  <Ionicons name="play-forward" size={20} color="#f5f5f7" />
+                  <Text style={styles.skipLabel} maxFontSizeMultiplier={1.2}>15</Text>
+                </Glass>
+              </Pressable>
             </View>
-          </View>
 
-          {/* Transport — solid white play button so it reads on clear glass */}
-          <View style={styles.transport}>
-            <Pressable
-              style={styles.skipBtn}
-              onPress={() => skip(-15)}
-              hitSlop={10}
-              accessibilityRole="button"
-              accessibilityLabel="Back 15 seconds"
-            >
-              <Ionicons name="play-back" size={22} color="#f5f5f7" />
-              <Text style={styles.skipLabel} maxFontSizeMultiplier={1.2}>15</Text>
-            </Pressable>
-
-            <Pressable
-              style={({ pressed }) => [styles.playBtn, pressed && { transform: [{ scale: 0.94 }] }]}
-              onPress={togglePlay}
-              accessibilityRole="button"
-              accessibilityLabel={playing ? "Pause session" : "Play session"}
-            >
-              <Ionicons
-                name={playing ? "pause" : "play"}
-                size={30}
-                color="#0a0a0a"
-                style={!playing ? { marginLeft: 3 } : undefined}
-              />
-            </Pressable>
-
-            <Pressable
-              style={styles.skipBtn}
-              onPress={() => skip(15)}
-              hitSlop={10}
-              accessibilityRole="button"
-              accessibilityLabel="Forward 15 seconds"
-            >
-              <Ionicons name="play-forward" size={22} color="#f5f5f7" />
-              <Text style={styles.skipLabel} maxFontSizeMultiplier={1.2}>15</Text>
-            </Pressable>
-          </View>
-
-          {completed && (
-            <View style={styles.completedBanner}>
-              <Ionicons name="checkmark-circle" size={20} color="#34d399" style={{ marginRight: 8 }} />
-              <Text style={styles.completedText}>SESSION COMPLETE</Text>
-            </View>
-          )}
-        </Glass>
+            {completed && (
+              <Glass liquid phase={0.8} intensity={0.9} scrim="soft" style={styles.completedBanner}>
+                <Ionicons name="checkmark-circle" size={20} color="#34d399" style={{ marginRight: 8 }} />
+                <Text style={styles.completedText}>SESSION COMPLETE</Text>
+              </Glass>
+            )}
+          </Glass>
+        </View>
       </View>
     </View>
   );
@@ -628,26 +702,35 @@ const styles = StyleSheet.create({
   },
 
   // Nav
+  // Positioning lives on the Pressable, looks on the GlassButton inside it —
+  // otherwise the pill's own margins would fight the glass's clipping.
+  selectPillHit: {
+    marginLeft: "auto",
+    marginRight: 16,
+  },
   selectPill: {
     flexDirection: "row",
     alignItems: "center",
     gap: 5,
-    backgroundColor: "#f5f5f7",
     borderRadius: 999,
+    overflow: "hidden",
     paddingHorizontal: 14,
     paddingVertical: 8,
-    marginLeft: "auto",
-    marginRight: 16,
   },
   selectPillOverArt: {
     position: "absolute",
     right: 12,
+    marginLeft: 0,
     marginRight: 0,
   },
   selectPillText: {
-    color: "#0a0a0a",
+    color: "#ffffff",
     fontSize: S.caption,
     fontFamily: F.semibold,
+    // The pill is transparent now, so the label carries its own scrim
+    textShadowColor: "rgba(0,0,0,0.55)",
+    textShadowOffset: { width: 0, height: 1 },
+    textShadowRadius: 5,
   },
   navBar: {
     flexDirection: "row",
@@ -738,6 +821,18 @@ const styles = StyleSheet.create({
   dockWrap: {
     paddingHorizontal: DOCK_MARGIN,
   },
+  // Outside the clip so the shadow survives; the dark fill both gives iOS a
+  // clean shadow path and lands the dock's text on something deep when the
+  // artwork behind it is bright.
+  dockShadow: {
+    borderRadius: 28,
+    backgroundColor: "rgba(6,8,10,0.34)",
+    shadowColor: "#000000",
+    shadowOpacity: 0.5,
+    shadowRadius: 22,
+    shadowOffset: { width: 0, height: 12 },
+    elevation: 10,
+  },
   dock: {
     borderRadius: 28,
     overflow: "hidden",
@@ -745,6 +840,25 @@ const styles = StyleSheet.create({
     paddingTop: 14,
     borderWidth: StyleSheet.hairlineWidth,
     borderColor: "rgba(255,255,255,0.16)",
+  },
+  dockSlab: {
+    position: "absolute",
+    top: 0,
+    left: 0,
+    right: 0,
+    bottom: 0,
+    borderRadius: 28,
+    overflow: "hidden",
+  },
+  // Light catching the dock's top face
+  dockTopEdge: {
+    position: "absolute",
+    top: 1,
+    left: 30,
+    right: 30,
+    height: 1,
+    borderRadius: 1,
+    backgroundColor: "rgba(255,255,255,0.42)",
   },
   titleRow: {
     flexDirection: "row",
@@ -775,24 +889,51 @@ const styles = StyleSheet.create({
     textShadowRadius: 5,
   },
 
-  // Progress (no thumb)
+  // Progress — a lit channel with a luminous thumb
   progressContainer: {
     marginBottom: 14,
   },
   progressTrackOuter: {
-    height: 20,
+    height: 22,
     justifyContent: "center",
   },
+  // No overflow clip: the fill's warm shadow has to spill past the channel,
+  // which is the whole point of it looking lit rather than painted.
   progressTrack: {
-    height: 3,
-    backgroundColor: "rgba(255,255,255,0.22)",
-    borderRadius: 2,
-    overflow: "hidden",
+    height: 6,
+    backgroundColor: "rgba(255,255,255,0.14)",
+    borderRadius: 3,
+    borderWidth: StyleSheet.hairlineWidth,
+    borderColor: "rgba(255,255,255,0.20)",
   },
   progressFill: {
-    height: 3,
+    height: 6,
+    // Base colour under the gradient so iOS has a shadow path to trace
     backgroundColor: "#FF5500",
-    borderRadius: 2,
+    borderRadius: 3,
+    shadowColor: "#FF6A1F",
+    shadowOpacity: 0.65,
+    shadowRadius: 8,
+    shadowOffset: { width: 0, height: 0 },
+  },
+  thumb: {
+    position: "absolute",
+    top: 4,
+    width: 14,
+    height: 14,
+    marginLeft: -7,
+    borderRadius: 7,
+    backgroundColor: "#ffffff",
+    borderWidth: StyleSheet.hairlineWidth,
+    borderColor: "rgba(255,255,255,0.9)",
+    shadowColor: "#FF7A2F",
+    shadowOpacity: 0.9,
+    shadowRadius: 9,
+    shadowOffset: { width: 0, height: 0 },
+  },
+  thumbActive: {
+    transform: [{ scale: 1.35 }],
+    shadowRadius: 15,
   },
   timeRow: {
     flexDirection: "row",
@@ -817,16 +958,42 @@ const styles = StyleSheet.create({
   skipBtn: {
     width: 56,
     height: 56,
+  },
+  skipGlass: {
+    width: 56,
+    height: 56,
+    borderRadius: 28,
+    overflow: "hidden",
     alignItems: "center",
     justifyContent: "center",
+  },
+  // The halo does the work the old white disc used to do: it marks the
+  // primary control without putting an opaque object on a glass dock.
+  playBtnWrap: {
+    width: 66,
+    height: 66,
+    borderRadius: 33,
+    backgroundColor: "rgba(255,255,255,0.08)",
+    shadowColor: "#cfe9ff",
+    shadowOpacity: 0.45,
+    shadowRadius: 16,
+    shadowOffset: { width: 0, height: 0 },
+    elevation: 6,
   },
   playBtn: {
     width: 66,
     height: 66,
     borderRadius: 33,
-    backgroundColor: "#ffffff",
+    overflow: "hidden",
+    // Brighter tint than the skips — still transparent, just more lit
+    backgroundColor: "rgba(255,255,255,0.18)",
     alignItems: "center",
     justifyContent: "center",
+  },
+  playGlyph: {
+    textShadowColor: "rgba(0,0,0,0.45)",
+    textShadowOffset: { width: 0, height: 1 },
+    textShadowRadius: 7,
   },
   skipLabel: {
     color: "rgba(255,255,255,0.72)",
@@ -837,8 +1004,10 @@ const styles = StyleSheet.create({
 
   // Bottom actions
   completedBanner: {
-    backgroundColor: "rgba(10,31,21,0.85)",
+    // Glass now, with just enough green in it to stay the "you did it" colour
+    backgroundColor: "rgba(12,44,30,0.42)",
     borderRadius: 16,
+    overflow: "hidden",
     paddingVertical: 14,
     marginTop: 12,
     alignItems: "center",

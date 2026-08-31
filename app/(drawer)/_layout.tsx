@@ -9,7 +9,8 @@ import { useRouter, useNavigation, useLocalSearchParams } from "expo-router";
 // package's; the narrow shape below is all this component actually uses.
 type DrawerContentComponentProps = any;
 import { F, S } from "@/lib/fonts";
-import { Glass } from "@/components/Glass";
+import { Glass, GlassButton } from "@/components/Glass";
+import { NavGlassButton, NavGlassTitle } from "../_layout";
 import { useAuth } from "@/lib/auth";
 
 function CustomDrawerContent(props: DrawerContentComponentProps) {
@@ -85,12 +86,10 @@ function CustomDrawerContent(props: DrawerContentComponentProps) {
             <Text style={styles.bottomText}>
               Save your alarms, share mantras, and personalize your experience.
             </Text>
-            <Pressable
-              style={styles.signUpButton}
-              onPress={() => navigate("/auth")}
-              accessibilityRole="button"
-            >
-              <Text style={styles.signUpText}>Sign up or log in</Text>
+            <Pressable onPress={() => navigate("/auth")} accessibilityRole="button">
+              <GlassButton tone="bright" phase={0.2}>
+                <Text style={styles.signUpText}>Sign up or log in</Text>
+              </GlassButton>
             </Pressable>
           </>
         )}
@@ -99,6 +98,12 @@ function CustomDrawerContent(props: DrawerContentComponentProps) {
   );
 }
 
+// The nav's three pieces are all NavGlassButton / NavGlassTitle (defined in
+// the root layout) so the drawer and the stack render the identical shapes.
+// Only the phase differs left to right, so the sheen crosses the nav rather
+// than flashing across all of it at once.
+const RIGHT_PHASE = 0.68;
+
 function AdaptiveLeft() {
   const navigation = useNavigation();
   const router = useRouter();
@@ -106,15 +111,11 @@ function AdaptiveLeft() {
   const cameFromDrawer = from === "drawer";
 
   return (
-    <Pressable
+    <NavGlassButton
+      icon={cameFromDrawer ? "menu-outline" : "chevron-back"}
+      label={cameFromDrawer ? "Open menu" : "Go back"}
       onPress={() => (cameFromDrawer ? (navigation as any).openDrawer() : router.back())}
-      style={{ marginLeft: 16, padding: 4 }}
-      hitSlop={12}
-      accessibilityRole="button"
-      accessibilityLabel={cameFromDrawer ? "Open menu" : "Go back"}
-    >
-      <Ionicons name={cameFromDrawer ? "menu-outline" : "chevron-back"} size={26} color="#f5f5f7" />
-    </Pressable>
+    />
   );
 }
 
@@ -122,43 +123,36 @@ function SuggestButton() {
   const router = useRouter();
   // We pass a query param that search.tsx reads via useFocusEffect to open the modal
   return (
-    <Pressable
+    <NavGlassButton
+      icon="add"
+      label="Suggest a session"
+      phase={RIGHT_PHASE}
       onPress={() => router.setParams({ suggest: "1" })}
-      style={{ marginRight: 16, padding: 4 }}
-      hitSlop={8}
-      accessibilityRole="button"
-      accessibilityLabel="Suggest a session"
-    >
-      <Ionicons name="add" size={26} color="#f5f5f7" />
-    </Pressable>
+    />
   );
 }
 
 function AddAlarmButton() {
   const router = useRouter();
   return (
-    <Pressable onPress={() => router.push("/alarm-config" as any)} accessibilityRole="button" accessibilityLabel="Add alarm">
-      <Ionicons
-        name="add"
-        size={28}
-        color="#f5f5f7"
-        style={{ marginRight: 16 }}
-      />
-    </Pressable>
+    <NavGlassButton
+      icon="add"
+      label="Add alarm"
+      phase={RIGHT_PHASE}
+      iconSize={24}
+      onPress={() => router.push("/alarm-config" as any)}
+    />
   );
 }
 
 function HamburgerButton() {
   const navigation = useNavigation();
   return (
-    <Pressable
+    <NavGlassButton
+      icon="menu-outline"
+      label="Open menu"
       onPress={() => (navigation as any).openDrawer()}
-      style={{ marginLeft: 16, padding: 4 }}
-      accessibilityRole="button"
-      accessibilityLabel="Open menu"
-    >
-      <Ionicons name="menu-outline" size={26} color="#f5f5f7" />
-    </Pressable>
+    />
   );
 }
 
@@ -170,18 +164,19 @@ export default function DrawerLayout() {
       initialRouteName="alarms"
       drawerContent={(props) => <CustomDrawerContent {...props} />}
       screenOptions={{
+        // No bar: the header area is empty and the three glass pieces float
+        // over the aurora that the navigator itself is painting.
         headerTransparent: true,
-        headerBackground: () => <Glass style={{ flex: 1 }} />,
+        headerBackground: () => null,
         headerStyle: {
+          backgroundColor: "transparent",
           elevation: 0,
           shadowOpacity: 0,
           borderBottomWidth: 0,
         },
         headerTintColor: "#f5f5f7",
-        headerTitleStyle: {
-          fontFamily: F.semibold,
-          fontSize: S.body,
-        },
+        headerTitleAlign: "center",
+        headerTitle: ({ children }) => <NavGlassTitle>{children}</NavGlassTitle>,
         sceneStyle: { backgroundColor: "transparent" },
         drawerStyle: { backgroundColor: "transparent", width: 280 },
       }}
@@ -196,12 +191,7 @@ export default function DrawerLayout() {
         options={{
           title: "Morning Que",
           drawerItemStyle: { display: "none" },
-          headerTitleStyle: {
-            fontFamily: "Lora",
-            fontSize: S.title,
-            fontWeight: "400",
-            color: "#f5f5f7",
-          },
+          headerTitle: ({ children }) => <NavGlassTitle serif>{children}</NavGlassTitle>,
           headerLeft: () => <HamburgerButton />,
         }}
       />
@@ -235,6 +225,8 @@ export default function DrawerLayout() {
           title: "Gratitude",
           drawerItemStyle: { display: "none" },
           headerLeft: () => <AdaptiveLeft />,
+          // The writing surface keeps its solid black header — the glass
+          // pieces still float on it, but nothing shows through behind them.
           headerTransparent: false,
           headerBackground: undefined,
           headerStyle: { backgroundColor: "#000000" },
@@ -243,7 +235,11 @@ export default function DrawerLayout() {
       />
       <Drawer.Screen
         name="profile-page"
-        options={{ title: "Progress", drawerItemStyle: { display: "none" } }}
+        options={{
+          title: "Progress",
+          drawerItemStyle: { display: "none" },
+          headerLeft: () => <AdaptiveLeft />,
+        }}
       />
     </Drawer>
     </View>
@@ -289,14 +285,8 @@ const styles = StyleSheet.create({
     marginBottom: 16,
     fontFamily: F.regular,
   },
-  signUpButton: {
-    backgroundColor: "#f5f5f7",
-    borderRadius: 26,
-    paddingVertical: 16,
-    alignItems: "center",
-  },
   signUpText: {
-    color: "#000000",
+    color: "#ffffff",
     fontSize: S.body,
     fontFamily: F.semibold,
   },
