@@ -76,6 +76,14 @@
         "projectId": "d64998e2-be85-445a-8d37-bb29185735b1"
       }
     },
-    "owner": "mwatterson1991"
+    "owner": "mwatterson1991",
+    "updates": {
+      "url": "https://u.expo.dev/d64998e2-be85-445a-8d37-bb29185735b1",
+      "fallbackToCacheTimeout": 0,
+      "checkAutomatically": "ON_LOAD"
+    },
+    "runtimeVersion": {
+      "policy": "fingerprint"
+    }
   }
 }
