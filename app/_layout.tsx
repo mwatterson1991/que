@@ -360,6 +360,10 @@ export default function RootLayout() {
             options={{ contentStyle: { flex: 1, backgroundColor: "#000000" } }}
           />
           <Stack.Screen
+            name="glass-lab"
+            options={{ headerShown: false, animation: "fade" }}
+          />
+          <Stack.Screen
             name="goodnight"
             options={{
               headerShown: false,
