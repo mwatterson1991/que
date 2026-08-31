@@ -55,6 +55,16 @@ function CustomDrawerContent(props: DrawerContentComponentProps) {
 
         <Pressable
           style={styles.navItem}
+          onPress={() => navigate("/goodnight")}
+          accessibilityRole="button"
+          accessibilityLabel="Goodnight — wind down for sleep"
+        >
+          <Ionicons name="moon-outline" size={24} color="#f5f5f7" style={styles.navIcon} />
+          <Text style={styles.navText}>Goodnight</Text>
+        </Pressable>
+
+        <Pressable
+          style={styles.navItem}
           onPress={() => navigate("/settings")}
           accessibilityRole="button"
           accessibilityLabel="Settings"
