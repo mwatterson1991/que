@@ -4,6 +4,7 @@ import {
   Pressable,
   StyleSheet,
   ActivityIndicator,
+  Alert,
   Animated as RNAnimated,
   Image,
   ScrollView,
@@ -12,6 +13,16 @@ import { useRouter, useFocusEffect } from "expo-router";
 import { useCallback, useEffect, useRef } from "react";
 import AsyncStorage from "@react-native-async-storage/async-storage";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
+// The Reanimated Swipeable, not the legacy one: gesture-handler 2.31 ships the
+// old `Swipeable` as deprecated (it drives RN Animated), and this app is
+// already on Reanimated 4, so the reanimated variant is the one that
+// type-checks and shares the same UI-thread driver as the rest of the screen.
+import ReanimatedSwipeable from "react-native-gesture-handler/ReanimatedSwipeable";
+import type { SwipeableMethods } from "react-native-gesture-handler/ReanimatedSwipeable";
+import Reanimated, {
+  useAnimatedStyle,
+  type SharedValue,
+} from "react-native-reanimated";
 import { useAlarms, useSessions } from "@/lib/useSupabase";
 import { rollForward, scheduleAlarm, cancelAlarm, syncAlarms } from "@/lib/alarmScheduler";
 import { artworkFor } from "@/lib/catalog";
@@ -33,7 +44,7 @@ const PRESETS: Array<{ label: string; hour: number; minute: number; sessionTitle
   { label: "Calm & Centered Start", hour: 6, minute: 0, sessionTitle: "Calm & Centered Start" },
   { label: "High Performer Daily Activation", hour: 6, minute: 30, sessionTitle: "High Performer Daily Activation" },
   { label: "General Morning Mindset", hour: 7, minute: 0, sessionTitle: "General Morning Mindset" },
-  { label: "Dawn Chorus", hour: 7, minute: 30, sessionTitle: "Dawn Chorus" },
+  { label: "First Light", hour: 7, minute: 30, sessionTitle: "First Light" },
 ];
 
 function nextOccurrence(hour: number, minute: number): string {
@@ -108,62 +119,136 @@ function PillSwitch({
   );
 }
 
+// ─── Swipe-left delete action ──────────────────────────────
+// Its own component so the animated style lives in a real render, not
+// inside the renderRightActions callback.
+const DELETE_W = 92;
+
+function DeleteAction({
+  drag,
+  label,
+  onPress,
+}: {
+  drag: SharedValue<number>;
+  label: string;
+  onPress: () => void;
+}) {
+  const style = useAnimatedStyle(() => ({
+    transform: [{ translateX: drag.value + DELETE_W }],
+  }));
+
+  return (
+    <Reanimated.View style={[styles.deleteAction, style]}>
+      <Pressable
+        onPress={onPress}
+        style={styles.deleteHit}
+        accessibilityRole="button"
+        accessibilityLabel={`Delete ${label}`}
+      >
+        <Text style={styles.deleteText} maxFontSizeMultiplier={1.3}>Delete</Text>
+      </Pressable>
+    </Reanimated.View>
+  );
+}
+
 // ─── One alarm card (glass) ────────────────────────────────
 function AlarmCard({
   item,
   session,
   onToggle,
   onOpen,
+  onDelete,
 }: {
   item: Alarm;
   session?: Session;
   onToggle: (id: string, enabled: boolean) => void;
   onOpen: (item: Alarm) => void;
+  onDelete: (item: Alarm) => void;
 }) {
   const { hour, ampm } = formatTime(item.next_fire_at);
   const soundName = session?.title || "Default";
   const duration = session ? `${Math.round(session.duration_sec / 60)} min` : "10 min";
 
+  // Spring, not opacity — the card should feel like a physical object being
+  // pushed into the glass, and settle back rather than snap.
+  const scale = useRef(new RNAnimated.Value(1)).current;
+  const springTo = (to: number) =>
+    RNAnimated.spring(scale, {
+      toValue: to,
+      stiffness: 420,
+      damping: 24,
+      mass: 0.7,
+      useNativeDriver: true,
+    }).start();
+
   return (
-    <View style={styles.cardWrap}>
+    <ReanimatedSwipeable
+      containerStyle={styles.cardWrap}
+      friction={2}
+      rightThreshold={40}
+      overshootRight={false}
+      enableTrackpadTwoFingerGesture
+      renderRightActions={(_progress, drag, methods: SwipeableMethods) => (
+        <DeleteAction
+          drag={drag}
+          label={item.label || "alarm"}
+          onPress={() => {
+            methods.close();
+            onDelete(item);
+          }}
+        />
+      )}
+    >
       <Pressable
+        onPressIn={() => {
+          Haptics?.impactAsync?.(Haptics.ImpactFeedbackStyle?.Light);
+          springTo(0.955);
+        }}
+        onPressOut={() => springTo(1)}
         onPress={() => onOpen(item)}
         accessibilityRole="button"
         accessibilityLabel={`Edit ${item.label || "Alarm"}, ${hour} ${ampm}, ${soundName}, ${duration}`}
-        style={({ pressed }) => [pressed && { transform: [{ scale: 0.98 }] }]}
+        accessibilityHint="Swipe left to delete"
       >
-        <Glass interactive style={styles.card}>
-          {session && (
-            <Image
-              source={{ uri: artworkFor(session) }}
-              style={styles.cardArt}
-              resizeMode="cover"
-              accessible={false}
-            />
-          )}
-          <View style={styles.cardBody}>
-            <View style={styles.timeRow}>
-              <Text style={styles.time} maxFontSizeMultiplier={1.4}>{hour}</Text>
-              <Text style={styles.ampm} maxFontSizeMultiplier={1.4}>{ampm}</Text>
+        <RNAnimated.View style={{ transform: [{ scale }] }}>
+          {/* "soft" — mostly large clock type; the caption line leans on
+              its own text shadow rather than a heavier veil. */}
+          <Glass interactive scrim="soft" style={styles.card}>
+            {session && (
+              <Image
+                source={{ uri: artworkFor(session) }}
+                style={styles.cardArt}
+                resizeMode="cover"
+                accessible={false}
+              />
+            )}
+            {/* Text sits on CLEAR glass over a MOVING aurora, so weight alone
+                isn't enough — every string here carries its own soft shadow
+                (see styles.time / .ampm / .sublabel) as a per-glyph scrim. */}
+            <View style={styles.cardBody}>
+              <View style={styles.timeRow}>
+                <Text style={styles.time} maxFontSizeMultiplier={1.4}>{hour}</Text>
+                <Text style={styles.ampm} maxFontSizeMultiplier={1.4}>{ampm}</Text>
+              </View>
+              <Text style={styles.sublabel} numberOfLines={1}>
+                {soundName} · {duration}
+              </Text>
             </View>
-            <Text style={styles.sublabel} numberOfLines={1}>
-              {soundName} · {duration}
-            </Text>
-          </View>
-          <PillSwitch
-            value={item.enabled}
-            onValueChange={(val) => onToggle(item.id, val)}
-            accessibilityLabel={`${item.label || "Alarm"} at ${hour} ${ampm}`}
-          />
-        </Glass>
+            <PillSwitch
+              value={item.enabled}
+              onValueChange={(val) => onToggle(item.id, val)}
+              accessibilityLabel={`${item.label || "Alarm"} at ${hour} ${ampm}`}
+            />
+          </Glass>
+        </RNAnimated.View>
       </Pressable>
-    </View>
+    </ReanimatedSwipeable>
   );
 }
 
 // ─── Screen ────────────────────────────────────────────────
 export default function AlarmsScreen() {
-  const { alarms, loading, refresh, add, update } = useAlarms();
+  const { alarms, loading, refresh, add, update, remove } = useAlarms();
   const { sessions } = useSessions();
   const router = useRouter();
   const insets = useSafeAreaInsets();
@@ -176,10 +261,30 @@ export default function AlarmsScreen() {
   for (const s of sessions) sessionMap[s.id] = s;
 
   // One glass layer only: tapping a card travels to the alarm's own page.
+  // The light impact now fires on pressIn (inside AlarmCard) so the buzz
+  // lands with the squish rather than after it.
   const openAlarm = (item: Alarm) => {
-    Haptics?.impactAsync?.(Haptics.ImpactFeedbackStyle?.Light);
     router.push(`/alarm-config?id=${item.id}` as any);
   };
+
+  // Swipe reveals Delete; the Alert is the actual commit point, because a
+  // stray swipe should never silently drop someone's wake-up.
+  const confirmDelete = useCallback((item: Alarm) => {
+    Haptics?.notificationAsync?.(Haptics.NotificationFeedbackType?.Warning);
+    Alert.alert("Delete alarm?", item.label || "This alarm", [
+      { text: "Cancel", style: "cancel" },
+      {
+        text: "Delete",
+        style: "destructive",
+        onPress: async () => {
+          // Pull it out of the OS notification queue before the row goes,
+          // or the alarm keeps firing for a card that no longer exists.
+          await cancelAlarm(item.id);
+          await remove(item.id);
+        },
+      },
+    ]);
+  }, [remove]);
 
   useFocusEffect(
     useCallback(() => {
@@ -270,6 +375,7 @@ export default function AlarmsScreen() {
               session={sessionMap[item.mantra_id]}
               onToggle={handleToggle}
               onOpen={openAlarm}
+              onDelete={confirmDelete}
             />
           ))}
         </ScrollView>
@@ -292,6 +398,25 @@ const styles = StyleSheet.create({
   // Cards
   cardWrap: {
     borderRadius: 26,
+    // Clips the red action to the card's own corners as it slides in
+    overflow: "hidden",
+  },
+
+  // Swipe-to-delete
+  deleteAction: {
+    width: DELETE_W,
+    justifyContent: "center",
+  },
+  deleteHit: {
+    flex: 1,
+    backgroundColor: "#FF3B30",
+    alignItems: "center",
+    justifyContent: "center",
+  },
+  deleteText: {
+    color: "#ffffff",
+    fontSize: S.secondary,
+    fontFamily: F.semibold,
   },
   card: {
     flexDirection: "row",
@@ -320,18 +445,27 @@ const styles = StyleSheet.create({
     fontFamily: F.light,
     letterSpacing: -2,
     color: "#ffffff",
+    textShadowColor: "rgba(0,0,0,0.5)",
+    textShadowOffset: { width: 0, height: 1 },
+    textShadowRadius: 8,
   },
   ampm: {
     fontSize: S.title,
-    fontFamily: F.light,
+    fontFamily: F.medium,
     marginLeft: 3,
     color: "#ffffff",
+    textShadowColor: "rgba(0,0,0,0.5)",
+    textShadowOffset: { width: 0, height: 1 },
+    textShadowRadius: 8,
   },
   sublabel: {
-    color: "rgba(255,255,255,0.72)",
+    color: "rgba(255,255,255,0.86)",
     fontSize: S.caption,
     marginTop: 2,
-    fontFamily: F.regular,
+    fontFamily: F.medium,
+    textShadowColor: "rgba(0,0,0,0.5)",
+    textShadowOffset: { width: 0, height: 1 },
+    textShadowRadius: 6,
   },
 
   // Switch

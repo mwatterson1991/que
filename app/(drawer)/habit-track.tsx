@@ -10,13 +10,16 @@ import {
 } from "react-native";
 import { useRouter, useFocusEffect } from "expo-router";
 import { Ionicons } from "@expo/vector-icons";
+import { useSafeAreaInsets } from "react-native-safe-area-context";
 import { useHabits, useHabitLogs } from "@/lib/useSupabase";
 import { useAuth } from "@/lib/auth";
 import { F, S } from "@/lib/fonts";
 import AuroraBackground from "@/components/AuroraBackground";
+import HabitCell from "@/components/HabitCell";
 
 export default function HabitTrackScreen() {
   const router = useRouter();
+  const insets = useSafeAreaInsets();
   const { user, isGuest } = useAuth();
   const { habits, loading: habitsLoading, refresh: refreshHabits, archive } = useHabits();
   const { logs, loading: logsLoading, refresh: refreshLogs, logHabit, removeLog, todayCount } = useHabitLogs(31);
@@ -52,15 +55,15 @@ export default function HabitTrackScreen() {
     ]);
   };
 
-  const handleDotPress = async (habitId: string, timesPerDay: number) => {
+  // The whole cell is the target now, so this is what a tap on a habit means:
+  // add one completion, or — once the day's quota is met — undo the last one.
+  const toggleHabit = async (habitId: string, timesPerDay: number) => {
     const count = todayCount(habitId);
     const today = new Date().toLocaleDateString("en-CA");
 
     if (count < timesPerDay) {
-      // Increment — log one more completion
       await logHabit(habitId);
     } else {
-      // Already complete — tap again to undo last log
       const todayLogs = logs
         .filter((l) => l.habit_id === habitId && l.log_date === today)
         .sort((a, b) => b.logged_at.localeCompare(a.logged_at));
@@ -107,58 +110,31 @@ export default function HabitTrackScreen() {
       <FlatList
         data={habits}
         keyExtractor={(h) => h.id}
-        contentContainerStyle={styles.list}
+        contentContainerStyle={[styles.list, { paddingTop: insets.top + 60 }]}
         showsVerticalScrollIndicator={false}
-        renderItem={({ item }) => {
-          const count = todayCount(item.id);
-          const complete = count >= item.times_per_day;
-
-          const streak = streakFor(item.id);
-          return (
-            <Pressable
-              style={styles.row}
-              onLongPress={() => confirmArchive(item.id, item.title)}
-              delayLongPress={450}
-              accessibilityRole="button"
-              accessibilityLabel={`${item.title}. Long press to remove.`}
-            >
-              <View style={styles.rowLeft}>
-                <Text style={styles.habitTitle}>{item.title}</Text>
-                <Text style={styles.habitMeta}>
-                  {item.times_per_day > 1 ? `${count}/${item.times_per_day} today` : ""}
-                  {item.times_per_day > 1 && streak > 1 ? " · " : ""}
-                  {streak > 1 ? `${streak >= 31 ? "31+" : streak}-day streak 🔥` : ""}
-                </Text>
-              </View>
-              <Pressable
-                onPress={() => handleDotPress(item.id, item.times_per_day)}
-                hitSlop={12}
-                style={styles.dotWrap}
-                accessibilityRole="checkbox"
-                accessibilityState={{ checked: complete }}
-                accessibilityLabel={`${item.title}, ${count} of ${item.times_per_day} today`}
-              >
-                <View
-                  style={[
-                    styles.dot,
-                    complete
-                      ? { backgroundColor: item.color, borderColor: item.color }
-                      : { backgroundColor: "transparent", borderColor: item.color },
-                  ]}
-                />
-              </Pressable>
-            </Pressable>
-          );
-        }}
-        ItemSeparatorComponent={() => <View style={styles.separator} />}
+        renderItem={({ item }) => (
+          <HabitCell
+            title={item.title}
+            color={item.color}
+            timesPerDay={item.times_per_day}
+            count={todayCount(item.id)}
+            streak={streakFor(item.id)}
+            onToggle={() => toggleHabit(item.id, item.times_per_day)}
+            onRemove={() => confirmArchive(item.id, item.title)}
+          />
+        )}
+        ItemSeparatorComponent={() => <View style={styles.gap} />}
         ListEmptyComponent={
-          <Text style={styles.emptyText}>
-            No habits yet. Tap Add below to create your first one.
-          </Text>
+          <View style={styles.empty}>
+            <Ionicons name="checkmark-circle-outline" size={34} color="#6b6b73" />
+            <Text style={styles.emptyText}>
+              No habits yet. Add your first one below — one small thing you want
+              to do every morning.
+            </Text>
+          </View>
         }
         ListFooterComponent={
           <View>
-            {habits.length > 0 && <View style={styles.separator} />}
             {todayTotal > 0 && (
               <Pressable
                 onPress={() => router.push("/profile-page" as any)}
@@ -170,14 +146,20 @@ export default function HabitTrackScreen() {
                 <Text style={styles.todayPtsText}>+{todayTotal * 2} today · see your graph</Text>
               </Pressable>
             )}
+
+            {/* WHY a filled pill and not glass: this button sits over the
+                aurora with nothing behind it, and the old blue-on-glow row was
+                unreadable. A solid near-white pill with near-black text is the
+                app's existing primary-action shape (see the guest gate above)
+                and can't be washed out by a bright patch of the backdrop. */}
             <Pressable
-              style={styles.addRow}
+              style={({ pressed }) => [styles.addButton, pressed && styles.addButtonPressed]}
               onPress={() => router.push("/habit-add" as any)}
               accessibilityRole="button"
               accessibilityLabel="Add habit"
             >
-              <Ionicons name="add-circle" size={22} color="#3B82F6" style={{ marginRight: 10 }} />
-              <Text style={styles.addText}>Add habit</Text>
+              <Ionicons name="add" size={20} color="#0a0a0a" />
+              <Text style={styles.addButtonText}>Add habit</Text>
             </Pressable>
           </View>
         }
@@ -192,7 +174,7 @@ const styles = StyleSheet.create({
     alignItems: "center",
     justifyContent: "center",
     gap: 6,
-    paddingVertical: 14,
+    paddingVertical: 16,
   },
   todayPtsText: {
     color: "#34C759",
@@ -241,58 +223,44 @@ const styles = StyleSheet.create({
     justifyContent: "center",
   },
   list: {
-    paddingHorizontal: 24,
-    paddingTop: 8,
+    paddingHorizontal: 20,
+    paddingTop: 12,
     paddingBottom: 48,
   },
-  separator: {
-    height: StyleSheet.hairlineWidth,
-    backgroundColor: "#1c1c1e",
+  gap: {
+    height: 10, // glass cells need air between them or they read as one slab
   },
-  row: {
+  addButton: {
     flexDirection: "row",
     alignItems: "center",
-    paddingVertical: 18,
+    justifyContent: "center",
+    gap: 8,
+    backgroundColor: "#f5f5f7",
+    borderRadius: 999,
+    paddingVertical: 16,
+    marginTop: 8,
   },
-  rowLeft: {
-    flex: 1,
+  addButtonPressed: {
+    opacity: 0.8,
+    transform: [{ scale: 0.985 }],
   },
-  habitTitle: {
-    color: "#f5f5f7",
+  addButtonText: {
+    color: "#0a0a0a",
     fontSize: S.body,
-    fontFamily: F.regular,
+    fontFamily: F.semibold,
   },
-  habitMeta: {
-    color: "#52525b",
-    fontSize: S.caption,
-    fontFamily: F.regular,
-    marginTop: 2,
-  },
-  dotWrap: {
-    padding: 4,
-  },
-  dot: {
-    width: 22,
-    height: 22,
-    borderRadius: 11,
-    borderWidth: 2,
-  },
-  addRow: {
-    flexDirection: "row",
+  empty: {
     alignItems: "center",
-    paddingVertical: 18,
-  },
-  addText: {
-    color: "#3B82F6",
-    fontSize: S.body,
-    fontFamily: F.regular,
+    gap: 14,
+    marginTop: 56,
+    marginBottom: 24,
+    paddingHorizontal: 16,
   },
   emptyText: {
-    color: "#52525b",
+    color: "#c8c8d0",
     fontSize: S.secondary,
     fontFamily: F.regular,
     textAlign: "center",
-    marginTop: 48,
     lineHeight: 22,
   },
 });

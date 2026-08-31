@@ -2,7 +2,8 @@ import { useCallback, useEffect, useState } from "react";
 import { View, Text, Pressable, StyleSheet, Image, Alert } from "react-native";
 import { useRouter, useLocalSearchParams, useFocusEffect, useNavigation } from "expo-router";
 import { Ionicons } from "@expo/vector-icons";
-import { useAlarms, useSessions } from "@/lib/useSupabase";
+import AsyncStorage from "@react-native-async-storage/async-storage";
+import { useAlarms, useSessions, useHabits } from "@/lib/useSupabase";
 import { rollForward, scheduleAlarm, cancelAlarm } from "@/lib/alarmScheduler";
 import { artworkFor } from "@/lib/catalog";
 import { consumePickedSound } from "@/lib/soundPicker";
@@ -13,6 +14,11 @@ import { F, S } from "@/lib/fonts";
 let Haptics: any = null;
 try { Haptics = require("expo-haptics"); } catch {}
 
+// Setting an alarm is the moment habits make sense — you've just decided what
+// tomorrow morning looks like. But it's a nudge, not a nag: it appears only for
+// someone with zero habits, and only ever once.
+const HABIT_PROMPT_KEY = "habit_prompt_shown_v1";
+
 // The alarm's own page — one glass layer never sits over another.
 // Cards on the list are glass; this page is a PLACE, its controls flat
 // on the aurora, so tapping an alarm travels rather than stacks.
@@ -22,6 +28,7 @@ export default function AlarmConfigScreen() {
   const { id } = useLocalSearchParams<{ id?: string }>();
   const { alarms, add, update, remove } = useAlarms();
   const { sessions } = useSessions();
+  const { habits, loading: habitsLoading } = useHabits();
 
   const existing = alarms.find((a) => a.id === id);
   const isNew = !existing;
@@ -92,7 +99,28 @@ export default function AlarmConfigScreen() {
       });
     }
     Haptics?.notificationAsync?.(Haptics.NotificationFeedbackType?.Success);
-    router.back();
+    await leaveAfterSave();
+  };
+
+  // Leaving the screen after a save — with one optional detour.
+  const leaveAfterSave = async () => {
+    // Anyone already tracking habits knows the loop; don't explain it again.
+    // While habits are still loading we can't tell, so we stay silent.
+    if (habitsLoading || habits.length > 0) { router.back(); return; }
+    if (await AsyncStorage.getItem(HABIT_PROMPT_KEY)) { router.back(); return; }
+    // Written before showing, so a force-quit mid-prompt still burns the one shot.
+    await AsyncStorage.setItem(HABIT_PROMPT_KEY, "1");
+
+    Alert.alert(
+      "Alarm set",
+      "Add a habit to track each morning — every one you complete raises your positivity score.",
+      [
+        { text: "Not now", style: "cancel", onPress: () => router.back() },
+        // Pushed, not replaced: backing out of habit-add returns you to the
+        // alarm you just made, then to the list.
+        { text: "Track a habit", onPress: () => router.push("/habit-add" as any) },
+      ],
+    );
   };
 
   const confirmDelete = () => {

@@ -14,6 +14,7 @@ import * as SplashScreen from "expo-splash-screen";
 import * as Notifications from "expo-notifications";
 import AsyncStorage from "@react-native-async-storage/async-storage";
 import { AuthProvider, useAuth } from "@/lib/auth";
+import { BackdropProvider } from "@/lib/backdrop";
 import { requestAlarmPermissions, ensureAndroidChannel } from "@/lib/alarmScheduler";
 import { initBackgroundAudio } from "@/lib/backgroundAudio";
 import { WELCOME_COUNT_KEY, WELCOME_MAX_SHOWS } from "./welcome";
@@ -218,6 +219,7 @@ export default function RootLayout() {
 
   return (
     <AuthProvider>
+      <BackdropProvider>
       <GestureHandlerRootView
         style={{ flex: 1, backgroundColor: "#000000" }}
         onLayout={onLayoutReady}
@@ -246,6 +248,17 @@ export default function RootLayout() {
           <Stack.Screen
             name="(drawer)"
             options={{ contentStyle: { flex: 1, backgroundColor: "#000000" } }}
+          />
+          <Stack.Screen
+            name="background-picker"
+            options={{
+              animation: "default",
+              headerShown: true,
+              title: "Background",
+              headerBackTitle: "",
+              ...HEADER_BASE,
+              contentStyle: { flex: 1, backgroundColor: "#020805" },
+            }}
           />
           <Stack.Screen
             name="settings"
@@ -346,33 +359,11 @@ export default function RootLayout() {
             }}
           />
           <Stack.Screen
-            name="habit-track"
-            options={{
-              animation: "slide_from_right",
-              headerShown: true,
-              title: "Track",
-              headerBackTitle: "",
-              ...HEADER_BASE,
-              contentStyle: { flex: 1, backgroundColor: "#000000" },
-            }}
-          />
-          <Stack.Screen
             name="habit-add"
             options={{
               animation: "slide_from_right",
               headerShown: true,
-              title: "Add Habit",
-              headerBackTitle: "",
-              ...HEADER_BASE,
-              contentStyle: { flex: 1, backgroundColor: "#000000" },
-            }}
-          />
-          <Stack.Screen
-            name="gratitude"
-            options={{
-              animation: "slide_from_right",
-              headerShown: true,
-              title: "Gratitude",
+              title: "New Habit",
               headerBackTitle: "",
               ...HEADER_BASE,
               contentStyle: { flex: 1, backgroundColor: "#000000" },
@@ -391,6 +382,7 @@ export default function RootLayout() {
           />
         </Stack>
       </GestureHandlerRootView>
+      </BackdropProvider>
     </AuthProvider>
   );
 }

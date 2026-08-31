@@ -118,11 +118,11 @@ const local = (
 });
 
 export const LOCAL_SESSIONS: Session[] = [
-  local("local-dawn-birds", "Dawn Chorus", "A real dawn breaking over a German lakeside, birds waking one by one", "ambient-dawn-birds", 150),
-  local("local-river", "River", "A glacial river running through Icelandic highland, recorded in the field", "ambient-river", 150),
-  local("local-ocean-waves", "Ocean Waves", "Baltic Sea waves rolling onto the shore, recorded at the water\u2019s edge", "ambient-ocean-waves", 150),
-  local("local-rain", "Soft Rain", "Gentle rain on a quiet rooftop \u2014 a real storm, softly recorded", "ambient-rain", 150),
-  local("local-crickets", "Night Crickets", "Night in the Sian Ka\u2019an jungle reserve, Mexico \u2014 crickets and warm air", "ambient-crickets", 150),
+  local("local-dawn-birds", "First Light", "A real dawn breaking over a German lakeside, birds waking one by one", "ambient-dawn-birds", 150),
+  local("local-river", "Meltwater", "A glacial river running through Icelandic highland, recorded in the field", "ambient-river", 150),
+  local("local-ocean-waves", "Tideline", "Baltic Sea waves rolling onto the shore, recorded at the water\u2019s edge", "ambient-ocean-waves", 150),
+  local("local-rain", "Roofsong", "Gentle rain on a quiet rooftop \u2014 a real storm, softly recorded", "ambient-rain", 150),
+  local("local-crickets", "Nightfield", "Night in the Sian Ka\u2019an jungle reserve, Mexico \u2014 crickets and warm air", "ambient-crickets", 150),
   local("local-theta", "Theta 6 Hz", "Low binaural hum tuned to the theta brain state", "theta-binaural", 120, "Frequencies", "Binaural tone"),
   local("local-freq-alpha", "Alpha 10 Hz", "Bright binaural pulse for relaxed, wakeful focus", "freq-alpha", 120, "Frequencies", "Binaural tone"),
   local("local-freq-delta", "Delta 2 Hz", "Slow binaural pulse that mirrors deep sleep", "freq-delta", 120, "Frequencies", "Binaural tone"),

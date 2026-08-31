@@ -9,101 +9,42 @@ import {
   ScrollView,
   StyleSheet,
   ActivityIndicator,
-  Image,
 } from "react-native";
 import { Ionicons } from "@expo/vector-icons";
 import { F, S } from "@/lib/fonts";
 import { useSessions } from "@/lib/useSupabase";
-import { artworkFor, groupIntoRails, channelArtwork } from "@/lib/catalog";
+import { groupIntoRails } from "@/lib/catalog";
 import { usePremium, isLocked } from "@/lib/premium";
 import { Glass } from "@/components/Glass";
 import AuroraBackground from "@/components/AuroraBackground";
+import SessionCard from "@/components/SessionCard";
+import ChannelCard from "@/components/ChannelCard";
+import {
+  CARD_W,
+  RAIL_EDGE,
+  RAIL_GAP,
+  RAIL_TAIL,
+  SNAP_INTERVAL,
+} from "@/components/cardLayout";
 import type { Session } from "@/lib/types";
 
 // One browser, two jobs: the drawer's Sounds screen (tap → player) and
 // the alarm editor's picker (tap → select). Same rails, same cards.
+//
+// Every rail leads with its CHANNEL card and then lists the individual
+// SOUND cards, so the two card types always sit side by side and the
+// channel promise is the first thing you meet in each shelf.
 
-const CARD_W = 150;
-const CARD_H = 150;
+type RailItem =
+  | { kind: "channel"; channel: string; sessions: Session[] }
+  | { kind: "session"; session: Session };
 
-function formatDuration(sec: number) {
-  const min = Math.round(sec / 60);
-  return `${min} min`;
-}
-
-function SessionCard({
-  session,
-  wide,
-  selected,
-  locked,
-  onPress,
-}: {
-  session: Session;
-  wide?: boolean;
-  selected?: boolean;
-  locked?: boolean;
-  onPress: (session: Session) => void;
-}) {
-  const width = wide ? undefined : CARD_W;
-  return (
-    <Pressable
-      onPress={() => onPress(session)}
-      style={({ pressed }) => [
-        styles.card,
-        wide && styles.cardWide,
-        { width },
-        pressed && { transform: [{ scale: 0.97 }], opacity: 0.9 },
-      ]}
-      accessibilityRole="button"
-      accessibilityState={selected !== undefined ? { selected } : undefined}
-      accessibilityLabel={`${session.title}, ${formatDuration(session.duration_sec)}${locked ? ", premium" : ""}`}
-    >
-      <View>
-        <Image
-          source={{ uri: artworkFor(session) }}
-          style={[styles.cardArt, wide && styles.cardArtWide, selected && styles.cardArtSelected]}
-          resizeMode="cover"
-        />
-        {selected && (
-          <View style={styles.selectedBadge}>
-            <Ionicons name="checkmark-circle" size={22} color="#f5f5f7" />
-          </View>
-        )}
-        {locked && !selected && (
-          <View style={styles.lockBadge}>
-            <Ionicons name="lock-closed" size={12} color="#f5f5f7" />
-          </View>
-        )}
-      </View>
-      <Text style={styles.cardTitle} numberOfLines={1} maxFontSizeMultiplier={1.4}>
-        {session.title}
-      </Text>
-      <Text style={styles.cardMeta} maxFontSizeMultiplier={1.4}>
-        {formatDuration(session.duration_sec)}
-      </Text>
-    </Pressable>
-  );
-}
-
-function ComingSoonCard({ channel }: { channel: string }) {
-  return (
-    <View style={styles.card} accessible accessibilityLabel={`${channel}, coming soon`}>
-      <View>
-        <Image
-          source={{ uri: channelArtwork(channel) }}
-          style={[styles.cardArt, styles.comingSoonArt]}
-          resizeMode="cover"
-        />
-        <View style={styles.comingSoonBadge}>
-          <Text style={styles.comingSoonText} maxFontSizeMultiplier={1.4}>Coming soon</Text>
-        </View>
-      </View>
-      <Text style={styles.cardTitle} numberOfLines={1} maxFontSizeMultiplier={1.4}>
-        {channel}
-      </Text>
-      <Text style={styles.cardMeta} maxFontSizeMultiplier={1.4}>In the works</Text>
-    </View>
-  );
+// A channel is a promise, not a track: tapping one starts today's
+// recording from it. Keyed to the calendar day so the pick is genuinely
+// fresh each morning but never reshuffles under you mid-session.
+function recordingOfTheDay(list: Session[]): Session | undefined {
+  if (list.length === 0) return undefined;
+  return list[Math.floor(Date.now() / 86_400_000) % list.length];
 }
 
 export default function SoundsBrowser({
@@ -146,6 +87,25 @@ export default function SoundsBrowser({
     );
   }, [sessions, query]);
 
+  const renderRailItem = (item: RailItem) =>
+    item.kind === "channel" ? (
+      <ChannelCard
+        channel={item.channel}
+        sessions={item.sessions}
+        onPress={() => {
+          const pick = recordingOfTheDay(item.sessions);
+          if (pick) handlePress(pick);
+        }}
+      />
+    ) : (
+      <SessionCard
+        session={item.session}
+        selected={selectedId !== undefined ? item.session.id === selectedId : undefined}
+        locked={isLocked(item.session, unlocked)}
+        onPress={handlePress}
+      />
+    );
+
   return (
     <View style={[styles.container, { paddingTop: topPad }]}>
       {withAurora && <AuroraBackground dim={0.8} />}
@@ -174,16 +134,14 @@ export default function SoundsBrowser({
       {loading ? (
         <ActivityIndicator color="#f5f5f7" style={{ marginTop: 40 }} />
       ) : query ? (
-        // ── Search results: grid of cards ──
+        // ── Search results: one full-width card per row ──
         <FlatList
           data={searchResults}
           keyExtractor={(s) => s.id}
-          numColumns={2}
-          columnWrapperStyle={styles.gridRow}
           renderItem={({ item }) => (
             <SessionCard
               session={item}
-              wide
+              variant="wide"
               selected={selectedId !== undefined ? item.id === selectedId : undefined}
               locked={isLocked(item, unlocked)}
               onPress={handlePress}
@@ -202,32 +160,43 @@ export default function SoundsBrowser({
           showsVerticalScrollIndicator={false}
           contentContainerStyle={styles.railsScroll}
         >
-          {rails.map(([channel, list]) => (
-            <View key={channel} style={styles.rail}>
-              <Text style={styles.railTitle} maxFontSizeMultiplier={1.4}>{channel}</Text>
-              {list.length === 0 ? (
-                <View style={styles.railContent}>
-                  <ComingSoonCard channel={channel} />
-                </View>
-              ) : (
+          {rails.map(([channel, list]) => {
+            const items: RailItem[] = [
+              { kind: "channel", channel, sessions: list },
+              ...list.map((session) => ({ kind: "session" as const, session })),
+            ];
+            return (
+              <View key={channel} style={styles.rail}>
+                <Text style={styles.railTitle} maxFontSizeMultiplier={1.4}>
+                  {channel}
+                </Text>
                 <FlatList
-                  data={list}
+                  data={items}
                   horizontal
-                  keyExtractor={(s) => s.id}
+                  keyExtractor={(item) =>
+                    item.kind === "channel" ? `ch:${item.channel}` : item.session.id
+                  }
                   showsHorizontalScrollIndicator={false}
                   contentContainerStyle={styles.railContent}
-                  renderItem={({ item }) => (
-                    <SessionCard
-                      session={item}
-                      selected={selectedId !== undefined ? item.id === selectedId : undefined}
-                      locked={isLocked(item, unlocked)}
-                      onPress={handlePress}
-                    />
-                  )}
+                  // One swipe = one card. The interval is card + gap, and
+                  // the leading gutter matches the first card's offset so
+                  // every snap lands flush against the left edge.
+                  snapToInterval={SNAP_INTERVAL}
+                  snapToAlignment="start"
+                  decelerationRate="fast"
+                  disableIntervalMomentum
+                  getItemLayout={(_, index) => ({
+                    length: CARD_W,
+                    // Offsets are measured from content start, so the
+                    // leading gutter counts toward the first card.
+                    offset: RAIL_EDGE + SNAP_INTERVAL * index,
+                    index,
+                  })}
+                  renderItem={({ item }) => renderRailItem(item)}
                 />
-              )}
-            </View>
-          ))}
+              </View>
+            );
+          })}
           {footer}
         </ScrollView>
       )}
@@ -267,108 +236,26 @@ const styles = StyleSheet.create({
     paddingBottom: 40,
   },
   rail: {
-    marginBottom: 26,
+    marginBottom: 24,
   },
   railTitle: {
     color: "#f5f5f7",
     fontSize: S.title,
     fontFamily: F.semibold,
-    paddingHorizontal: 16,
+    paddingHorizontal: RAIL_EDGE,
     marginBottom: 12,
   },
   railContent: {
-    paddingHorizontal: 16,
-    gap: 12,
+    paddingLeft: RAIL_EDGE,
+    paddingRight: RAIL_TAIL,
+    gap: RAIL_GAP,
   },
 
-  // Cards
-  card: {
-    width: CARD_W,
-  },
-  cardWide: {
-    flex: 1,
-    maxWidth: "48%",
-    marginBottom: 20,
-  },
-  cardArt: {
-    width: CARD_W,
-    height: CARD_H,
-    borderRadius: 14,
-    backgroundColor: "#1c1c1e",
-    marginBottom: 8,
-    borderWidth: StyleSheet.hairlineWidth,
-    borderColor: "rgba(255,255,255,0.10)",
-  },
-  cardArtWide: {
-    width: "100%",
-    height: 160,
-  },
-  cardArtSelected: {
-    borderWidth: 2,
-    borderColor: "#f5f5f7",
-  },
-  lockBadge: {
-    position: "absolute",
-    top: 8,
-    right: 8,
-    width: 24,
-    height: 24,
-    borderRadius: 12,
-    backgroundColor: "rgba(0,0,0,0.55)",
-    alignItems: "center",
-    justifyContent: "center",
-  },
-  selectedBadge: {
-    position: "absolute",
-    top: 8,
-    right: 8,
-    backgroundColor: "rgba(0,0,0,0.55)",
-    borderRadius: 999,
-  },
-  cardTitle: {
-    color: "#f5f5f7",
-    fontSize: S.secondary,
-    fontFamily: F.medium,
-    marginBottom: 2,
-  },
-  cardMeta: {
-    color: "#8b8b93",
-    fontSize: S.caption,
-    fontFamily: F.regular,
-  },
-
-  comingSoonArt: {
-    opacity: 0.45,
-  },
-  comingSoonBadge: {
-    position: "absolute",
-    top: 0,
-    left: 0,
-    right: 0,
-    bottom: 8,
-    alignItems: "center",
-    justifyContent: "center",
-  },
-  comingSoonText: {
-    color: "#f5f5f7",
-    fontSize: S.micro,
-    fontFamily: F.semibold,
-    letterSpacing: 1,
-    backgroundColor: "rgba(0,0,0,0.55)",
-    paddingHorizontal: 10,
-    paddingVertical: 5,
-    borderRadius: 999,
-    overflow: "hidden",
-  },
-
-  // Search results grid
+  // Search results
   grid: {
-    paddingHorizontal: 16,
+    paddingHorizontal: RAIL_EDGE,
     paddingTop: 8,
     paddingBottom: 32,
-  },
-  gridRow: {
-    justifyContent: "space-between",
   },
 
   emptyText: {
