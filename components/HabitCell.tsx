@@ -25,6 +25,7 @@ export default function HabitCell({
   timesPerDay,
   count,
   streak,
+  phase = 0,
   onToggle,
   onRemove,
 }: {
@@ -33,6 +34,8 @@ export default function HabitCell({
   timesPerDay: number;
   count: number;
   streak: number;
+  /** 0–1 sheen offset so a stack of cells doesn't shimmer in lockstep. */
+  phase?: number;
   onToggle: () => void;
   onRemove: () => void;
 }) {
@@ -72,7 +75,7 @@ export default function HabitCell({
         accessibilityLabel={`${title}, ${count} of ${timesPerDay} today${streak > 1 ? `, ${streak} day streak` : ""}`}
         accessibilityHint="Tap to mark complete. Long press to remove."
       >
-        <Glass interactive style={styles.cell}>
+        <Glass interactive liquid phase={phase} intensity={0.85} style={styles.cell}>
           {/* A wash of the habit's own color once it's done — the cell itself
               reads as complete, so the checkmark isn't carrying it alone. */}
           {complete && (

@@ -9,10 +9,12 @@ import {
 } from "react-native";
 import { useRouter, useNavigation } from "expo-router";
 import { Ionicons } from "@expo/vector-icons";
+import { useSafeAreaInsets } from "react-native-safe-area-context";
 import { useHabits } from "@/lib/useSupabase";
 import { F, S } from "@/lib/fonts";
 import AuroraBackground from "@/components/AuroraBackground";
 import { Glass } from "@/components/Glass";
+import { NavGlassButton } from "./_layout";
 import { HabitIcon, iconForHabit } from "@/components/HabitIcon";
 
 // One-tap starters — the blank input is the biggest reason people bail
@@ -100,6 +102,7 @@ const stepperStyles = StyleSheet.create({
 export default function HabitAddScreen() {
   const router = useRouter();
   const navigation = useNavigation();
+  const insets = useSafeAreaInsets();
   const { add } = useHabits();
 
   const [title, setTitle] = useState("");
@@ -121,9 +124,13 @@ export default function HabitAddScreen() {
   useEffect(() => {
     navigation.setOptions({
       headerRight: () => (
-        <Pressable onPress={save} disabled={!canSave} style={{ marginRight: 4, padding: 4 }} accessibilityRole="button" accessibilityLabel="Save habit" accessibilityState={{ disabled: !canSave }}>
-          <Ionicons name="checkmark" size={24} color={canSave ? "#f5f5f7" : "#6b6b73"} />
-        </Pressable>
+        <NavGlassButton
+          icon="checkmark"
+          label="Save habit"
+          phase={0.68}
+          disabled={!canSave}
+          onPress={save}
+        />
       ),
     });
   }, [title, timesPerDay, factor, color, saving]);
@@ -133,7 +140,8 @@ export default function HabitAddScreen() {
       <AuroraBackground dim={0.45} />
       <ScrollView
         style={styles.container}
-        contentContainerStyle={styles.scroll}
+        // The nav floats now, so the page runs under it and starts below.
+        contentContainerStyle={[styles.scroll, { paddingTop: insets.top + 60 }]}
         keyboardShouldPersistTaps="handled"
       >
         {/* Starter suggestions — each carries the icon it will actually get on
@@ -142,14 +150,20 @@ export default function HabitAddScreen() {
           <View style={styles.suggestSection}>
             <Text style={styles.sectionLabel}>Start with one of these</Text>
             <View style={styles.suggestWrap}>
-              {SUGGESTIONS.map((sug) => (
+              {SUGGESTIONS.map((sug, i) => (
                 <Pressable
                   key={sug}
                   onPress={() => setTitle(sug)}
                   accessibilityRole="button"
                   accessibilityLabel={`Use suggestion: ${sug}`}
                 >
-                  <Glass interactive style={styles.suggestChip}>
+                  <Glass
+                    interactive
+                    liquid
+                    phase={(i * 0.13) % 1}
+                    intensity={0.75}
+                    style={styles.suggestChip}
+                  >
                     <Ionicons name={iconForHabit(sug)} size={16} color={color} />
                     <Text style={styles.suggestText}>{sug}</Text>
                   </Glass>
@@ -159,7 +173,7 @@ export default function HabitAddScreen() {
           </View>
         )}
 
-        <Glass style={styles.card}>
+        <Glass liquid phase={0.55} intensity={0.7} style={styles.card}>
           {/* Title — full width and left aligned, with the derived icon sitting
               beside it so the habit takes its final shape as you type. */}
           <View style={styles.titleRow}>

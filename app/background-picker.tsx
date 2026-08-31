@@ -1,4 +1,5 @@
 import { View, Text, Pressable, ScrollView, StyleSheet, Switch, useWindowDimensions } from "react-native";
+import { useSafeAreaInsets } from "react-native-safe-area-context";
 import Svg, { Defs, RadialGradient, Stop, Rect, Ellipse } from "react-native-svg";
 import { Ionicons } from "@expo/vector-icons";
 import AuroraBackground from "@/components/AuroraBackground";
@@ -50,6 +51,7 @@ function PresetSwatch({ preset, size }: { preset: BackdropPreset; size: number }
 
 export default function BackgroundPickerScreen() {
   const { width } = useWindowDimensions();
+  const insets = useSafeAreaInsets();
   const {
     preset,
     presetId,
@@ -88,13 +90,16 @@ export default function BackgroundPickerScreen() {
   return (
     <View style={styles.container}>
       <AuroraBackground />
-      <ScrollView contentContainerStyle={styles.scroll} showsVerticalScrollIndicator={false}>
+      <ScrollView
+        contentContainerStyle={[styles.scroll, { paddingTop: insets.top + 60 }]}
+        showsVerticalScrollIndicator={false}
+      >
         <Text style={styles.lead}>
           The background is the room you wake up in. Pick the light.
         </Text>
 
         <View style={styles.grid}>
-          {all.map((p) => {
+          {all.map((p, i) => {
             const selected = presetId === p.id;
             return (
               <Pressable
@@ -105,7 +110,13 @@ export default function BackgroundPickerScreen() {
                 accessibilityLabel={`${p.name}. ${p.description}`}
                 style={({ pressed }) => [pressed && { transform: [{ scale: 0.97 }] }]}
               >
-                <Glass scrim="strong" style={[styles.card, selected && styles.cardSelected, { width: cardW }]}>
+                <Glass
+                  scrim="strong"
+                  liquid
+                  phase={(i * 0.19) % 1}
+                  intensity={0.8}
+                  style={[styles.card, selected && styles.cardSelected, { width: cardW }]}
+                >
                   <View style={styles.swatchWrap}>
                     <PresetSwatch preset={p} size={cardW - 24} />
                   </View>
@@ -126,7 +137,7 @@ export default function BackgroundPickerScreen() {
 
         {/* Build your own */}
         <Text style={styles.sectionTitle}>MAKE YOUR OWN</Text>
-        <Glass scrim="strong" style={styles.panel}>
+        <Glass scrim="strong" liquid phase={0.4} intensity={0.7} style={styles.panel}>
           <Text style={styles.panelBody}>
             Choose up to three colours. They become drifting fields of light,
             never a flat gradient.
@@ -157,7 +168,7 @@ export default function BackgroundPickerScreen() {
 
         {/* Lighting */}
         <Text style={styles.sectionTitle}>LIGHTING</Text>
-        <Glass scrim="strong" style={styles.panel}>
+        <Glass scrim="strong" liquid phase={0.85} intensity={0.7} style={styles.panel}>
           <View style={styles.toggleRow}>
             <View style={styles.toggleText}>
               <Text style={styles.toggleLabel}>Wind down</Text>

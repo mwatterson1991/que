@@ -10,7 +10,7 @@ import {
   ScrollView,
 } from "react-native";
 import { useRouter, useFocusEffect } from "expo-router";
-import { useCallback, useEffect, useRef } from "react";
+import { useCallback, useEffect, useRef, useState } from "react";
 import AsyncStorage from "@react-native-async-storage/async-storage";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 // The Reanimated Swipeable, not the legacy one: gesture-handler 2.31 ships the
@@ -23,6 +23,7 @@ import Reanimated, {
   useAnimatedStyle,
   type SharedValue,
 } from "react-native-reanimated";
+import Svg, { Defs, LinearGradient, Stop, Rect } from "react-native-svg";
 import { useAlarms, useSessions } from "@/lib/useSupabase";
 import { rollForward, scheduleAlarm, cancelAlarm, syncAlarms } from "@/lib/alarmScheduler";
 import { artworkFor } from "@/lib/catalog";
@@ -151,15 +152,43 @@ function DeleteAction({
   );
 }
 
+// ─── The slab ──────────────────────────────────────────────
+// A translucent rectangle has no thickness. Real glass is lit from above
+// and pools darkness at its base, so the card gets a vertical gradient
+// INSIDE it: a bright top edge falling off fast, near-clear through the
+// middle (so the moving sheen and the aurora behind still read), then
+// weight at the bottom. This is what turns the panel into a slab.
+const CARD_RADIUS = 26;
+
+function Slab() {
+  return (
+    <View pointerEvents="none" style={styles.slab}>
+      <Svg width="100%" height="100%">
+        <Defs>
+          <LinearGradient id="alarmSlab" x1="0" y1="0" x2="0" y2="1">
+            <Stop offset="0%" stopColor="#ffffff" stopOpacity="0.18" />
+            <Stop offset="16%" stopColor="#ffffff" stopOpacity="0.05" />
+            <Stop offset="52%" stopColor="#000000" stopOpacity="0.04" />
+            <Stop offset="100%" stopColor="#000000" stopOpacity="0.28" />
+          </LinearGradient>
+        </Defs>
+        <Rect x="0" y="0" width="100%" height="100%" fill="url(#alarmSlab)" />
+      </Svg>
+    </View>
+  );
+}
+
 // ─── One alarm card (glass) ────────────────────────────────
 function AlarmCard({
   item,
+  index,
   session,
   onToggle,
   onOpen,
   onDelete,
 }: {
   item: Alarm;
+  index: number;
   session?: Session;
   onToggle: (id: string, enabled: boolean) => void;
   onOpen: (item: Alarm) => void;
@@ -168,6 +197,11 @@ function AlarmCard({
   const { hour, ampm } = formatTime(item.next_fire_at);
   const soundName = session?.title || "Default";
   const duration = session ? `${Math.round(session.duration_sec / 60)} min` : "10 min";
+
+  // Measured, not a fixed percentage: the gloss bands clip the numeral copies,
+  // and a % height against an auto-height row resolves to auto (no clip at
+  // all). Measuring also keeps the sheen aligned when Dynamic Type scales up.
+  const [rowH, setRowH] = useState(0);
 
   // Spring, not opacity — the card should feel like a physical object being
   // pushed into the glass, and settle back rather than snap.
@@ -182,67 +216,120 @@ function AlarmCard({
     }).start();
 
   return (
-    <ReanimatedSwipeable
-      containerStyle={styles.cardWrap}
-      friction={2}
-      rightThreshold={40}
-      overshootRight={false}
-      enableTrackpadTwoFingerGesture
-      renderRightActions={(_progress, drag, methods: SwipeableMethods) => (
-        <DeleteAction
-          drag={drag}
-          label={item.label || "alarm"}
-          onPress={() => {
-            methods.close();
-            onDelete(item);
-          }}
-        />
-      )}
-    >
-      <Pressable
-        onPressIn={() => {
-          Haptics?.impactAsync?.(Haptics.ImpactFeedbackStyle?.Light);
-          springTo(0.955);
-        }}
-        onPressOut={() => springTo(1)}
-        onPress={() => onOpen(item)}
-        accessibilityRole="button"
-        accessibilityLabel={`Edit ${item.label || "Alarm"}, ${hour} ${ampm}, ${soundName}, ${duration}`}
-        accessibilityHint="Swipe left to delete"
+    // The shadow lives on an OUTER host: cardWrap clips (so the red delete
+    // action takes the card's corners) and a clipping layer can't cast a
+    // shadow. The host's dark fill doubles as the slab's body — clear glass
+    // over a near-black backing is what "wet black glass" actually is.
+    <View style={styles.cardShadow}>
+      <ReanimatedSwipeable
+        containerStyle={styles.cardWrap}
+        friction={2}
+        rightThreshold={40}
+        overshootRight={false}
+        enableTrackpadTwoFingerGesture
+        renderRightActions={(_progress, drag, methods: SwipeableMethods) => (
+          <DeleteAction
+            drag={drag}
+            label={item.label || "alarm"}
+            onPress={() => {
+              methods.close();
+              onDelete(item);
+            }}
+          />
+        )}
       >
-        <RNAnimated.View style={{ transform: [{ scale }] }}>
-          {/* "soft" — mostly large clock type; the caption line leans on
-              its own text shadow rather than a heavier veil. */}
-          <Glass interactive scrim="soft" style={styles.card}>
-            {session && (
-              <Image
-                source={{ uri: artworkFor(session) }}
-                style={styles.cardArt}
-                resizeMode="cover"
-                accessible={false}
-              />
-            )}
-            {/* Text sits on CLEAR glass over a MOVING aurora, so weight alone
-                isn't enough — every string here carries its own soft shadow
-                (see styles.time / .ampm / .sublabel) as a per-glyph scrim. */}
-            <View style={styles.cardBody}>
-              <View style={styles.timeRow}>
-                <Text style={styles.time} maxFontSizeMultiplier={1.4}>{hour}</Text>
-                <Text style={styles.ampm} maxFontSizeMultiplier={1.4}>{ampm}</Text>
+        <Pressable
+          onPressIn={() => {
+            Haptics?.impactAsync?.(Haptics.ImpactFeedbackStyle?.Light);
+            springTo(0.955);
+          }}
+          onPressOut={() => springTo(1)}
+          onPress={() => onOpen(item)}
+          accessibilityRole="button"
+          accessibilityLabel={`Edit ${item.label || "Alarm"}, ${hour} ${ampm}, ${soundName}, ${duration}`}
+          accessibilityHint="Swipe left to delete"
+        >
+          <RNAnimated.View style={{ transform: [{ scale }] }}>
+            {/* "soft" — mostly large clock type; the caption line leans on
+                its own text shadow rather than a heavier veil.
+                The phase offset is what stops a stack of cards shimmering in
+                lockstep, which reads as a screen flicker rather than light
+                travelling; the modulo keeps long lists inside one sweep. */}
+            <Glass
+              interactive
+              liquid
+              phase={(index % 6) * 0.19}
+              intensity={1.15}
+              scrim="soft"
+              style={styles.card}
+            >
+              {/* Above the sheen, below the content: body first, then the
+                  hard specular line that sells the top edge as an EDGE. */}
+              <Slab />
+              <View style={styles.innerTopEdge} pointerEvents="none" />
+              {session && (
+                <Image
+                  source={{ uri: artworkFor(session) }}
+                  style={styles.cardArt}
+                  resizeMode="cover"
+                  accessible={false}
+                />
+              )}
+              {/* Text sits on CLEAR glass over a MOVING aurora, so weight alone
+                  isn't enough — every string here carries its own soft shadow
+                  (see styles.time / .ampm / .sublabel) as a per-glyph scrim. */}
+              <View style={styles.cardBody}>
+                <View
+                  style={styles.timeRow}
+                  onLayout={(e) => setRowH(e.nativeEvent.layout.height)}
+                >
+                  <Text style={styles.time} maxFontSizeMultiplier={1.4}>{hour}</Text>
+                  <Text style={styles.ampm} maxFontSizeMultiplier={1.4}>{ampm}</Text>
+                  {/* Numeral sheen. No masking library ships in this app, so the
+                      gradient is two clipped copies of the same glyphs stacked
+                      over a slightly-dimmer base: bright at the top of the
+                      numerals, falling to 0.8 white at their feet. Pinned
+                      top/left as an absolute overlay so it cannot move the real
+                      text by a pixel, and hidden from screen readers. */}
+                  {rowH > 0 && (
+                    <>
+                      <View
+                        style={[styles.glossBand, { height: rowH * 0.62 }]}
+                        pointerEvents="none"
+                        accessibilityElementsHidden
+                        importantForAccessibility="no-hide-descendants"
+                      >
+                        <Text style={[styles.time, styles.glossMid]} maxFontSizeMultiplier={1.4}>
+                          {hour}
+                        </Text>
+                      </View>
+                      <View
+                        style={[styles.glossBand, { height: rowH * 0.46 }]}
+                        pointerEvents="none"
+                        accessibilityElementsHidden
+                        importantForAccessibility="no-hide-descendants"
+                      >
+                        <Text style={[styles.time, styles.glossTop]} maxFontSizeMultiplier={1.4}>
+                          {hour}
+                        </Text>
+                      </View>
+                    </>
+                  )}
+                </View>
+                <Text style={styles.sublabel} numberOfLines={1}>
+                  {soundName} · {duration}
+                </Text>
               </View>
-              <Text style={styles.sublabel} numberOfLines={1}>
-                {soundName} · {duration}
-              </Text>
-            </View>
-            <PillSwitch
-              value={item.enabled}
-              onValueChange={(val) => onToggle(item.id, val)}
-              accessibilityLabel={`${item.label || "Alarm"} at ${hour} ${ampm}`}
-            />
-          </Glass>
-        </RNAnimated.View>
-      </Pressable>
-    </ReanimatedSwipeable>
+              <PillSwitch
+                value={item.enabled}
+                onValueChange={(val) => onToggle(item.id, val)}
+                accessibilityLabel={`${item.label || "Alarm"} at ${hour} ${ampm}`}
+              />
+            </Glass>
+          </RNAnimated.View>
+        </Pressable>
+      </ReanimatedSwipeable>
+    </View>
   );
 }
 
@@ -368,10 +455,11 @@ export default function AlarmsScreen() {
           contentContainerStyle={[styles.list, { paddingTop: headerPad + 8 }]}
           showsVerticalScrollIndicator={false}
         >
-          {alarms.map((item) => (
+          {alarms.map((item, i) => (
             <AlarmCard
               key={item.id}
               item={item}
+              index={i}
               session={sessionMap[item.mantra_id]}
               onToggle={handleToggle}
               onOpen={openAlarm}
@@ -396,10 +484,42 @@ const styles = StyleSheet.create({
   },
 
   // Cards
+  // Sits OUTSIDE the clipping layer so the drop shadow survives, and its
+  // near-black fill gives iOS a clean shadow path to trace as well as the
+  // dark body the clear glass sits on.
+  cardShadow: {
+    borderRadius: CARD_RADIUS,
+    backgroundColor: "rgba(6,8,10,0.30)",
+    shadowColor: "#000000",
+    shadowOpacity: 0.55,
+    shadowRadius: 18,
+    shadowOffset: { width: 0, height: 10 },
+    elevation: 8,
+  },
   cardWrap: {
-    borderRadius: 26,
+    borderRadius: CARD_RADIUS,
     // Clips the red action to the card's own corners as it slides in
     overflow: "hidden",
+  },
+  slab: {
+    position: "absolute",
+    top: 0,
+    left: 0,
+    right: 0,
+    bottom: 0,
+    borderRadius: CARD_RADIUS,
+    overflow: "hidden",
+  },
+  // The specular line along the top face. Inset from the corners so it
+  // reads as light catching a flat edge, not as a drawn border.
+  innerTopEdge: {
+    position: "absolute",
+    top: 1,
+    left: 24,
+    right: 24,
+    height: 1,
+    borderRadius: 1,
+    backgroundColor: "rgba(255,255,255,0.45)",
   },
 
   // Swipe-to-delete
@@ -432,6 +552,9 @@ const styles = StyleSheet.create({
     height: 84,
     borderRadius: 18,
     backgroundColor: "rgba(255,255,255,0.08)",
+    // A lit rim so the thumbnail reads as set INTO the slab
+    borderWidth: StyleSheet.hairlineWidth,
+    borderColor: "rgba(255,255,255,0.22)",
   },
   cardBody: {
     flex: 1,
@@ -444,10 +567,30 @@ const styles = StyleSheet.create({
     fontSize: S.clock,
     fontFamily: F.light,
     letterSpacing: -2,
-    color: "#ffffff",
+    // Base is deliberately under full white; the two gloss bands stack back
+    // up to ~1.0 at the top of the glyphs, which is the gradient.
+    color: "rgba(255,255,255,0.80)",
     textShadowColor: "rgba(0,0,0,0.5)",
     textShadowOffset: { width: 0, height: 1 },
     textShadowRadius: 8,
+  },
+  // Absolute overlays pinned to the row's top-left — the same origin the
+  // real numerals get, so the copies land exactly on top of them.
+  glossBand: {
+    position: "absolute",
+    top: 0,
+    left: 0,
+    overflow: "hidden",
+  },
+  glossMid: {
+    color: "rgba(255,255,255,0.55)",
+    textShadowColor: "transparent",
+    textShadowRadius: 0,
+  },
+  glossTop: {
+    color: "#ffffff",
+    textShadowColor: "transparent",
+    textShadowRadius: 0,
   },
   ampm: {
     fontSize: S.title,

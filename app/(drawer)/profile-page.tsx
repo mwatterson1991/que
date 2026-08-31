@@ -12,8 +12,8 @@ import {
 } from "react-native-svg";
 import { useRouter, useNavigation, useLocalSearchParams } from "expo-router";
 import { F, S } from "@/lib/fonts";
-import { Glass } from "@/components/Glass";
-import { buildPositivitySeries } from "@/lib/positivity";
+import { Ticker } from "@/components/Ticker";
+import { TICKER_HISTORY_DAYS } from "@/lib/positivity";
 import { useHabits, useHabitLogs, useProfile, useActivity, useGratitudeEntries } from "@/lib/useSupabase";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 
@@ -22,101 +22,16 @@ import { useSafeAreaInsets } from "react-native-safe-area-context";
 let ViewShot: any = null;
 try { ViewShot = require("react-native-view-shot"); } catch {}
 
-// ─── Positivity chart ────────────────────────────────────
-// A stock ticker on yourself, with weather. The baseline sits mid-
-// chart: gratitude and habits push the line up, missed days pull it
-// below zero. Built from the same data guests have on-device.
-function PositivityChart({ chartRef, lifetimeScore }: { chartRef: any; lifetimeScore: number }) {
+// ─── Positivity ticker ───────────────────────────────────
+// The top card is a stock ticker on yourself: current value, signed
+// change, 1D/1W/1M/3M/1Y. It pulls one generous window of history and
+// slices every range out of it client-side, so switching range is
+// instant and every range agrees on where today sits.
+function PositivityTicker({ chartRef, lifetimeScore }: { chartRef: any; lifetimeScore: number }) {
   const { entries } = useGratitudeEntries();
-  const { logs } = useHabitLogs(31);
-  const { width } = useWindowDimensions();
-  const W = width - 40;
-  const H = 180;
-  const padX = 8;
-  const padY = 18;
+  const { logs } = useHabitLogs(TICKER_HISTORY_DAYS);
 
-  const series = useMemo(
-    () =>
-      buildPositivitySeries(
-        entries.map((e) => e.entry_date),
-        logs.map((l) => l.log_date),
-        31,
-      ),
-    [entries, logs],
-  );
-
-  const { points, total, weekDelta, todayPts } = series;
-  // Symmetric range so zero is always the visual midline
-  const amp = Math.max(...points.map(Math.abs), 10);
-
-  const toXY = (v: number, i: number) => {
-    const x = padX + (i / Math.max(points.length - 1, 1)) * (W - padX * 2);
-    const y = padY + (1 - (v + amp) / (2 * amp)) * (H - padY * 2);
-    return { x, y };
-  };
-  const poly = points.map((v, i) => { const { x, y } = toXY(v, i); return `${x},${y}`; }).join(" ");
-  const zeroY = toXY(0, 0).y;
-  const up = weekDelta >= 0;
-
-  return (
-    <Glass
-      style={styles.posCard}
-      accessible
-      accessibilityLabel={`Positivity score ${total}, ${up ? "up" : "down"} ${Math.abs(weekDelta)} this week, last 30 days`}
-    >
-      <View ref={chartRef} collapsable={false} style={styles.posInner}>
-      <View style={styles.posHeader}>
-        <View>
-          <Text style={styles.posLabel} maxFontSizeMultiplier={1.3}>POSITIVITY</Text>
-          <Text style={styles.posTotal} maxFontSizeMultiplier={1.2}>{total}</Text>
-          {/* The lifetime number that used to float in a bare card above this
-              chart. It lives here now, labelled, so it can't be mistaken for
-              the 30-day figure above it. */}
-          <Text style={styles.posLifetime} maxFontSizeMultiplier={1.3}>
-            {lifetimeScore} points all-time
-          </Text>
-        </View>
-        <View style={{ alignItems: "flex-end", gap: 4 }}>
-          <View style={styles.posGain}>
-            <Ionicons name={up ? "trending-up" : "trending-down"} size={14} color={up ? "#34C759" : "#ff6b6b"} />
-            <Text style={[styles.posGainText, !up && { color: "#ff6b6b" }]} maxFontSizeMultiplier={1.3}>
-              {up ? "+" : ""}{weekDelta} this week
-            </Text>
-          </View>
-          {todayPts > 0 && (
-            <Text style={styles.posToday} maxFontSizeMultiplier={1.3}>+{todayPts} today</Text>
-          )}
-        </View>
-      </View>
-      <Svg width={W - 32} height={H} viewBox={`0 0 ${W - 32} ${H}`}>
-        <Defs>
-          <LinearGradient id="posLine" x1="0" y1="0" x2="1" y2="0">
-            <Stop offset="0%" stopColor="#34C759" stopOpacity="0.5" />
-            <Stop offset="100%" stopColor="#34C759" stopOpacity="1" />
-          </LinearGradient>
-        </Defs>
-        {/* Baseline — the line you're above or below */}
-        <Line
-          x1={padX} y1={zeroY} x2={W - 32 - padX} y2={zeroY}
-          stroke="rgba(255,255,255,0.25)"
-          strokeWidth="1"
-          strokeDasharray="3 5"
-        />
-        <Polyline
-          points={poly}
-          fill="none"
-          stroke="url(#posLine)"
-          strokeWidth="3"
-          strokeLinecap="round"
-          strokeLinejoin="round"
-        />
-      </Svg>
-      <Text style={styles.posFooter} maxFontSizeMultiplier={1.3}>
-        Last 30 days · above the line you're building, below it you're drifting
-      </Text>
-      </View>
-    </Glass>
-  );
+  return <Ticker gratitude={entries} habitLogs={logs} lifetimeScore={lifetimeScore} chartRef={chartRef} />;
 }
 
 const TIME_RANGES = ["1W", "1M", "3M", "6M", "1Y"];
@@ -399,10 +314,9 @@ export default function ProfileScreen() {
       showsVerticalScrollIndicator={false}
       nestedScrollEnabled={true}
     >
-      {/* The positivity graph leads the page — it's the one thing here that
-          explains itself. (The bare score/+score row that used to sit above it
-          showed the same number twice; its value moved into the card header.) */}
-      <PositivityChart chartRef={chartRef} lifetimeScore={profile?.score ?? 0} />
+      {/* The ticker leads the page — it names itself, so nobody has to guess
+          what the number is. */}
+      <PositivityTicker chartRef={chartRef} lifetimeScore={profile?.score ?? 0} />
       <HabitChart />
 
       {/* Stats */}
@@ -442,68 +356,6 @@ export default function ProfileScreen() {
 }
 
 const styles = StyleSheet.create({
-  posCard: {
-    borderRadius: 20,
-    marginHorizontal: 20,
-    marginBottom: 18,
-    overflow: "hidden",
-  },
-  posInner: {
-    paddingTop: 16,
-    paddingBottom: 12,
-    paddingHorizontal: 16,
-  },
-  posToday: {
-    color: "#34C759",
-    fontSize: S.caption,
-    fontFamily: F.semibold,
-  },
-  posHeader: {
-    flexDirection: "row",
-    justifyContent: "space-between",
-    alignItems: "flex-start",
-    paddingHorizontal: 16,
-    marginBottom: 4,
-  },
-  posLabel: {
-    color: "#52525b",
-    fontSize: S.micro,
-    fontFamily: F.semibold,
-    letterSpacing: 2,
-    marginBottom: 4,
-  },
-  posTotal: {
-    color: "#f5f5f7",
-    fontSize: S.display,
-    fontFamily: F.light,
-  },
-  posLifetime: {
-    color: "#8b8b93",
-    fontSize: S.micro,
-    fontFamily: F.medium,
-    marginTop: 2,
-  },
-  posGain: {
-    flexDirection: "row",
-    alignItems: "center",
-    gap: 5,
-    backgroundColor: "rgba(52,199,89,0.12)",
-    borderRadius: 999,
-    paddingHorizontal: 10,
-    paddingVertical: 5,
-  },
-  posGainText: {
-    color: "#34C759",
-    fontSize: S.caption,
-    fontFamily: F.medium,
-  },
-  posFooter: {
-    color: "#3f3f46",
-    fontSize: S.micro,
-    fontFamily: F.regular,
-    paddingHorizontal: 16,
-    marginTop: 2,
-  },
   container: {
     flex: 1,
     backgroundColor: "transparent",

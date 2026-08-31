@@ -15,6 +15,7 @@ import { useHabits, useHabitLogs } from "@/lib/useSupabase";
 import { useAuth } from "@/lib/auth";
 import { F, S } from "@/lib/fonts";
 import AuroraBackground from "@/components/AuroraBackground";
+import { GlassButton } from "@/components/Glass";
 import HabitCell from "@/components/HabitCell";
 
 export default function HabitTrackScreen() {
@@ -93,12 +94,13 @@ export default function HabitTrackScreen() {
           account keeps your streaks safe across devices.
         </Text>
         <Pressable
-          style={styles.gateButton}
           onPress={() => router.push("/auth")}
           accessibilityRole="button"
           accessibilityLabel="Create a free account"
         >
-          <Text style={styles.gateButtonText}>Create a free account</Text>
+          <GlassButton tone="bright">
+            <Text style={styles.gateButtonText}>Create a free account</Text>
+          </GlassButton>
         </Pressable>
       </View>
     );
@@ -112,13 +114,16 @@ export default function HabitTrackScreen() {
         keyExtractor={(h) => h.id}
         contentContainerStyle={[styles.list, { paddingTop: insets.top + 60 }]}
         showsVerticalScrollIndicator={false}
-        renderItem={({ item }) => (
+        renderItem={({ item, index }) => (
           <HabitCell
             title={item.title}
             color={item.color}
             timesPerDay={item.times_per_day}
             count={todayCount(item.id)}
             streak={streakFor(item.id)}
+            // Staggered so the light travels down the list instead of
+            // every cell flashing at once.
+            phase={(index * 0.17) % 1}
             onToggle={() => toggleHabit(item.id, item.times_per_day)}
             onRemove={() => confirmArchive(item.id, item.title)}
           />
@@ -147,19 +152,19 @@ export default function HabitTrackScreen() {
               </Pressable>
             )}
 
-            {/* WHY a filled pill and not glass: this button sits over the
-                aurora with nothing behind it, and the old blue-on-glow row was
-                unreadable. A solid near-white pill with near-black text is the
-                app's existing primary-action shape (see the guest gate above)
-                and can't be washed out by a bright patch of the backdrop. */}
+            {/* The primary action is a bright glass pill: the lifted veil and
+                stronger rim keep it the most confident thing on the page even
+                over a bright patch of aurora, with no solid white slab. */}
             <Pressable
-              style={({ pressed }) => [styles.addButton, pressed && styles.addButtonPressed]}
+              style={({ pressed }) => [styles.addButtonWrap, pressed && styles.addButtonPressed]}
               onPress={() => router.push("/habit-add" as any)}
               accessibilityRole="button"
               accessibilityLabel="Add habit"
             >
-              <Ionicons name="add" size={20} color="#0a0a0a" />
-              <Text style={styles.addButtonText}>Add habit</Text>
+              <GlassButton tone="bright" phase={0.5} style={styles.addButton}>
+                <Ionicons name="add" size={20} color="#ffffff" />
+                <Text style={styles.addButtonText}>Add habit</Text>
+              </GlassButton>
             </Pressable>
           </View>
         }
@@ -201,14 +206,8 @@ const styles = StyleSheet.create({
     fontFamily: F.regular,
     marginBottom: 28,
   },
-  gateButton: {
-    backgroundColor: "#f5f5f7",
-    borderRadius: 999,
-    paddingVertical: 16,
-    alignItems: "center",
-  },
   gateButtonText: {
-    color: "#0a0a0a",
+    color: "#ffffff",
     fontSize: S.body,
     fontFamily: F.semibold,
   },
@@ -230,22 +229,19 @@ const styles = StyleSheet.create({
   gap: {
     height: 10, // glass cells need air between them or they read as one slab
   },
+  addButtonWrap: {
+    marginTop: 8,
+  },
   addButton: {
     flexDirection: "row",
-    alignItems: "center",
-    justifyContent: "center",
     gap: 8,
-    backgroundColor: "#f5f5f7",
-    borderRadius: 999,
-    paddingVertical: 16,
-    marginTop: 8,
   },
   addButtonPressed: {
     opacity: 0.8,
     transform: [{ scale: 0.985 }],
   },
   addButtonText: {
-    color: "#0a0a0a",
+    color: "#ffffff",
     fontSize: S.body,
     fontFamily: F.semibold,
   },

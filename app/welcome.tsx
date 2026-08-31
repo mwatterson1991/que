@@ -5,6 +5,7 @@ import { useSafeAreaInsets } from "react-native-safe-area-context";
 import { VideoView, useVideoPlayer } from "expo-video";
 import AsyncStorage from "@react-native-async-storage/async-storage";
 import { Svg, Defs, LinearGradient, Stop, Rect } from "react-native-svg";
+import { GlassButton } from "@/components/Glass";
 import { F, S } from "@/lib/fonts";
 import { ensureGuestSession } from "@/lib/guestAuth";
 import { useAuth } from "@/lib/auth";
@@ -98,18 +99,20 @@ export default function WelcomeScreen() {
 
         <View>
           <Pressable
-            style={({ pressed }) => [styles.enterButton, pressed && { transform: [{ scale: 0.98 }] }]}
+            style={({ pressed }) => [pressed && { transform: [{ scale: 0.98 }] }]}
             onPress={handleEnter}
             disabled={entering}
             accessibilityRole="button"
             accessibilityLabel="Enter Morning Que"
             accessibilityState={{ disabled: entering }}
           >
-            {entering ? (
-              <ActivityIndicator color="#0a0a0a" />
-            ) : (
-              <Text style={styles.enterText} maxFontSizeMultiplier={1.2}>Enter</Text>
-            )}
+            <GlassButton tone="bright" style={styles.enterButton}>
+              {entering ? (
+                <ActivityIndicator color="#ffffff" />
+              ) : (
+                <Text style={styles.enterText} maxFontSizeMultiplier={1.2}>Enter</Text>
+              )}
+            </GlassButton>
           </Pressable>
           <Pressable
             style={styles.loginLink}
@@ -154,14 +157,10 @@ const styles = StyleSheet.create({
     color: "#f5f5f7",
   },
   enterButton: {
-    backgroundColor: "#f5f5f7",
-    borderRadius: 999,
     paddingVertical: 17,
-    alignItems: "center",
-    justifyContent: "center",
   },
   enterText: {
-    color: "#0a0a0a",
+    color: "#ffffff",
     fontSize: S.body,
     fontFamily: F.semibold,
     letterSpacing: 0.3,

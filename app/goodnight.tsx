@@ -23,6 +23,7 @@ import { createAudioPlayer, type AudioPlayer } from "expo-audio";
 import { fadePlayerTo, releasePlayer, configureAudio } from "@/lib/audio";
 import { useAlarms } from "@/lib/useSupabase";
 import { useBackdrop } from "@/lib/backdrop";
+import { Glass, GlassButton } from "@/components/Glass";
 import { F, S } from "@/lib/fonts";
 
 let Haptics: any = null;
@@ -63,6 +64,10 @@ const FRAMES: { uri: string; line?: string }[] = [
 
 const PER_FRAME_MS = 2500;
 const TOTAL_MS = FRAMES.length * PER_FRAME_MS;
+
+// Which slots actually carry words — the panel below has to know when to be
+// there, and it can't ask the FRAMES array from inside a worklet.
+const LINE_INDICES = FRAMES.map((f, i) => (f.line ? i : -1)).filter((i) => i >= 0);
 
 function formatTime(iso: string) {
   const d = new Date(iso);
@@ -117,7 +122,58 @@ function Line({ text, index, t }: { text: string; index: number; t: SharedValue<
   }));
   return (
     <Animated.View style={[styles.lineWrap, style]} pointerEvents="none">
-      <Text style={styles.line}>{text}</Text>
+      <Text style={styles.line} numberOfLines={3} maxFontSizeMultiplier={1.2}>
+        {text}
+      </Text>
+    </Animated.View>
+  );
+}
+
+/**
+ * The surface the words live on.
+ *
+ * The lines used to sit straight on the photographs, so they read as
+ * captions burned into someone else's picture. Now they cross-fade inside
+ * one piece of glass that stays put: the panel arrives a beat BEFORE the
+ * first word of a line and leaves a beat after the last, so a line never
+ * has to fade up onto bare photograph, and between lines the glass goes
+ * with them rather than hanging there empty.
+ *
+ * Its opacity is the loudest of all the line windows, computed on the UI
+ * thread from the same clock the lines use — no second timeline to drift.
+ */
+function LinePanel({
+  t,
+  reduceMotion,
+  children,
+}: {
+  t: SharedValue<number>;
+  reduceMotion: boolean;
+  children: React.ReactNode;
+}) {
+  const style = useAnimatedStyle(() => {
+    let o = 0;
+    for (let k = 0; k < LINE_INDICES.length; k++) {
+      const i = LINE_INDICES[k];
+      const v = interpolate(
+        t.value,
+        [i - 0.8, i - 0.35, i + 0.95, i + 1.5],
+        [0, 1, 1, 0],
+        Extrapolation.CLAMP,
+      );
+      if (v > o) o = v;
+    }
+    return { opacity: o };
+  });
+
+  return (
+    <Animated.View style={[styles.panelWrap, style]} pointerEvents="none">
+      {/* Reduce Motion kills the travelling sheen but keeps the surface —
+          the point of the panel is legibility, not the shimmer. */}
+      <Glass liquid={!reduceMotion} phase={0.35} intensity={1.05} scrim="soft" style={styles.panel}>
+        <View style={styles.panelTopEdge} pointerEvents="none" />
+        {children}
+      </Glass>
     </Animated.View>
   );
 }
@@ -202,41 +258,60 @@ export default function GoodnightScreen() {
       {/* The light going down */}
       <Animated.View style={[StyleSheet.absoluteFill, styles.veil, veilStyle]} pointerEvents="none" />
 
-      {FRAMES.map((f, i) =>
-        f.line ? <Line key={`l-${i}`} text={f.line} index={i} t={t} /> : null,
+      {/* The words, on glass. Gated on !done so a tap-to-skip doesn't leave
+          an orphan panel sitting under the end card. */}
+      {!done && (
+        <LinePanel t={t} reduceMotion={reduceMotion}>
+          {FRAMES.map((f, i) =>
+            f.line ? <Line key={`l-${i}`} text={f.line} index={i} t={t} /> : null,
+          )}
+        </LinePanel>
       )}
 
       {/* The end card */}
       {done && (
         <Animated.View style={[StyleSheet.absoluteFill, styles.endWrap, endStyle]}>
-          <Ionicons name="moon" size={30} color="rgba(255,255,255,0.85)" />
-          <Text style={styles.goodnight}>Goodnight</Text>
-          {nextAlarm ? (
-            <Text style={styles.endMeta}>
-              {formatTime(nextAlarm.next_fire_at)} · {nextAlarm.label}
-            </Text>
-          ) : (
-            <Text style={styles.endMeta}>No alarm set for the morning</Text>
-          )}
+          <View style={styles.endShadow}>
+            <Glass
+              liquid={!reduceMotion}
+              phase={0.2}
+              intensity={1.15}
+              scrim="soft"
+              style={styles.endCard}
+            >
+              <View style={styles.panelTopEdge} pointerEvents="none" />
+              <Ionicons name="moon" size={30} color="rgba(255,255,255,0.85)" />
+              <Text style={styles.goodnight}>Goodnight</Text>
+              {nextAlarm ? (
+                <Text style={styles.endMeta}>
+                  {formatTime(nextAlarm.next_fire_at)} · {nextAlarm.label}
+                </Text>
+              ) : (
+                <Text style={styles.endMeta}>No alarm set for the morning</Text>
+              )}
 
-          <View style={{ height: 34 }} />
+              <View style={{ height: 30 }} />
 
-          <Pressable
-            onPress={() => leave(true)}
-            style={styles.primary}
-            accessibilityRole="button"
-            accessibilityLabel="Lights out and close"
-          >
-            <Text style={styles.primaryText}>Lights out</Text>
-          </Pressable>
-          <Pressable
-            onPress={() => leave(false)}
-            style={styles.secondary}
-            accessibilityRole="button"
-            accessibilityLabel="Close"
-          >
-            <Text style={styles.secondaryText}>Not yet</Text>
-          </Pressable>
+              <Pressable
+                onPress={() => leave(true)}
+                style={styles.primaryHit}
+                accessibilityRole="button"
+                accessibilityLabel="Lights out and close"
+              >
+                <GlassButton tone="bright" phase={0.6} style={styles.primary}>
+                  <Text style={styles.primaryText}>Lights out</Text>
+                </GlassButton>
+              </Pressable>
+              <Pressable
+                onPress={() => leave(false)}
+                style={styles.secondary}
+                accessibilityRole="button"
+                accessibilityLabel="Close"
+              >
+                <Text style={styles.secondaryText}>Not yet</Text>
+              </Pressable>
+            </Glass>
+          </View>
         </Animated.View>
       )}
 
@@ -252,12 +327,39 @@ export default function GoodnightScreen() {
 const styles = StyleSheet.create({
   container: { flex: 1, backgroundColor: "#000000" },
   veil: { backgroundColor: "#000000" },
-  lineWrap: {
+  panelWrap: {
     position: "absolute",
+    left: 22,
+    right: 22,
+    bottom: "18%",
+  },
+  panel: {
+    // Fixed, not min: every line is absolutely positioned so they can
+    // cross-fade in the same place, which leaves the panel no intrinsic
+    // height of its own. Sized for the longest line at two lines of 34.
+    height: 124,
+    borderRadius: 28,
+    overflow: "hidden",
+  },
+  // Light catching the panel's top face
+  panelTopEdge: {
+    position: "absolute",
+    top: 1,
     left: 34,
     right: 34,
-    bottom: "22%",
+    height: 1,
+    borderRadius: 1,
+    backgroundColor: "rgba(255,255,255,0.38)",
+  },
+  lineWrap: {
+    position: "absolute",
+    top: 0,
+    left: 0,
+    right: 0,
+    bottom: 0,
+    paddingHorizontal: 20,
     alignItems: "center",
+    justifyContent: "center",
   },
   line: {
     color: "#ffffff",
@@ -272,7 +374,26 @@ const styles = StyleSheet.create({
   endWrap: {
     alignItems: "center",
     justifyContent: "center",
-    paddingHorizontal: 40,
+    paddingHorizontal: 26,
+  },
+  // Outside the clipping glass so the shadow lands, and its dark fill sets
+  // the card off the photograph underneath.
+  endShadow: {
+    alignSelf: "stretch",
+    borderRadius: 32,
+    backgroundColor: "rgba(6,8,10,0.34)",
+    shadowColor: "#000000",
+    shadowOpacity: 0.55,
+    shadowRadius: 24,
+    shadowOffset: { width: 0, height: 14 },
+    elevation: 10,
+  },
+  endCard: {
+    borderRadius: 32,
+    overflow: "hidden",
+    alignItems: "center",
+    paddingVertical: 34,
+    paddingHorizontal: 24,
   },
   goodnight: {
     color: "#ffffff",
@@ -286,16 +407,23 @@ const styles = StyleSheet.create({
     fontFamily: F.regular,
     marginTop: 8,
   },
+  primaryHit: {
+    alignSelf: "stretch",
+  },
   primary: {
-    backgroundColor: "#f5f5f7",
     borderRadius: 999,
+    overflow: "hidden",
     paddingVertical: 15,
     paddingHorizontal: 44,
   },
   primaryText: {
-    color: "#0a0a0a",
+    color: "#ffffff",
     fontSize: S.body,
     fontFamily: F.semibold,
+    // The button is transparent now, so the label carries its own scrim
+    textShadowColor: "rgba(0,0,0,0.5)",
+    textShadowOffset: { width: 0, height: 1 },
+    textShadowRadius: 6,
   },
   secondary: {
     paddingVertical: 16,

@@ -2,6 +2,7 @@ import { useCallback, useEffect, useState } from "react";
 import { View, Text, Pressable, StyleSheet, Image, Alert } from "react-native";
 import { useRouter, useLocalSearchParams, useFocusEffect, useNavigation } from "expo-router";
 import { Ionicons } from "@expo/vector-icons";
+import { useSafeAreaInsets } from "react-native-safe-area-context";
 import AsyncStorage from "@react-native-async-storage/async-storage";
 import { useAlarms, useSessions, useHabits } from "@/lib/useSupabase";
 import { rollForward, scheduleAlarm, cancelAlarm } from "@/lib/alarmScheduler";
@@ -9,6 +10,7 @@ import { artworkFor } from "@/lib/catalog";
 import { consumePickedSound } from "@/lib/soundPicker";
 import { WheelColumn, HOURS, MINUTES, MERIDIEM } from "@/components/TimeWheel";
 import AuroraBackground from "@/components/AuroraBackground";
+import { GlassButton } from "@/components/Glass";
 import { F, S } from "@/lib/fonts";
 
 let Haptics: any = null;
@@ -25,6 +27,7 @@ const HABIT_PROMPT_KEY = "habit_prompt_shown_v1";
 export default function AlarmConfigScreen() {
   const router = useRouter();
   const navigation = useNavigation();
+  const insets = useSafeAreaInsets();
   const { id } = useLocalSearchParams<{ id?: string }>();
   const { alarms, add, update, remove } = useAlarms();
   const { sessions } = useSessions();
@@ -140,76 +143,85 @@ export default function AlarmConfigScreen() {
   };
 
   return (
-    <View style={styles.container}>
+    <View style={styles.root}>
       <AuroraBackground dim={0.8} />
 
-      {/* Sound — tap to change */}
-      <Pressable
-        onPress={() => router.push(`/sounds?current=${sessionId}` as any)}
-        style={styles.soundRow}
-        accessibilityRole="button"
-        accessibilityLabel={session ? `Wake-up sound, ${session.title}. Change sound` : "Choose sound"}
-      >
-        {session ? (
-          <Image source={{ uri: artworkFor(session) }} style={styles.art} resizeMode="cover" />
-        ) : (
-          <View style={[styles.art, styles.artEmpty]}>
-            <Ionicons name="add" size={22} color="#ffffff" />
-          </View>
-        )}
-        <View style={{ flex: 1 }}>
-          <Text style={styles.soundTitle} numberOfLines={1}>
-            {session?.title ?? "Choose sound"}
-          </Text>
-          {session && (
-            <Text style={styles.soundMeta}>
-              {session.category} · {Math.round(session.duration_sec / 60)} min
+      {/* The nav is three floating pieces of glass now, so the page runs
+          under it and starts its own content below. */}
+      <View style={[styles.container, { paddingTop: insets.top + 60 }]}>
+        {/* Sound — tap to change */}
+        <Pressable
+          onPress={() => router.push(`/sounds?current=${sessionId}` as any)}
+          style={styles.soundRow}
+          accessibilityRole="button"
+          accessibilityLabel={session ? `Wake-up sound, ${session.title}. Change sound` : "Choose sound"}
+        >
+          {session ? (
+            <Image source={{ uri: artworkFor(session) }} style={styles.art} resizeMode="cover" />
+          ) : (
+            <View style={[styles.art, styles.artEmpty]}>
+              <Ionicons name="add" size={22} color="#ffffff" />
+            </View>
+          )}
+          <View style={{ flex: 1 }}>
+            <Text style={styles.soundTitle} numberOfLines={1}>
+              {session?.title ?? "Choose sound"}
             </Text>
+            {session && (
+              <Text style={styles.soundMeta}>
+                {session.category} · {Math.round(session.duration_sec / 60)} min
+              </Text>
+            )}
+          </View>
+          <Ionicons name="chevron-forward" size={18} color="rgba(255,255,255,0.6)" />
+        </Pressable>
+
+        {/* Time wheel */}
+        <View style={styles.wheelWrap} accessible accessibilityLabel="Alarm time">
+          <View style={styles.wheelHighlight} />
+          <View style={styles.wheelColumns}>
+            <WheelColumn data={HOURS} selected={hourIdx} onSelect={setHourIdx} width={52} label="Hour" light />
+            <Text style={styles.wheelColon}>:</Text>
+            <WheelColumn data={MINUTES} selected={minIdx} onSelect={setMinIdx} width={52} label="Minute" light />
+            <WheelColumn data={MERIDIEM} selected={merIdx} onSelect={setMerIdx} width={52} label="AM or PM" light />
+          </View>
+        </View>
+
+        {/* Save + delete */}
+        <View style={styles.footer}>
+          <Pressable
+            onPress={save}
+            style={({ pressed }) => [pressed && { transform: [{ scale: 0.98 }] }]}
+            accessibilityRole="button"
+            accessibilityLabel="Save alarm"
+          >
+            <GlassButton tone="bright" phase={0.1}>
+              <Text style={styles.saveText}>Save</Text>
+            </GlassButton>
+          </Pressable>
+          {!isNew && (
+            <Pressable
+              onPress={confirmDelete}
+              style={styles.deleteButton}
+              accessibilityRole="button"
+              accessibilityLabel="Delete alarm"
+            >
+              <Text style={styles.deleteText}>Delete alarm</Text>
+            </Pressable>
           )}
         </View>
-        <Ionicons name="chevron-forward" size={18} color="rgba(255,255,255,0.6)" />
-      </Pressable>
-
-      {/* Time wheel */}
-      <View style={styles.wheelWrap} accessible accessibilityLabel="Alarm time">
-        <View style={styles.wheelHighlight} />
-        <View style={styles.wheelColumns}>
-          <WheelColumn data={HOURS} selected={hourIdx} onSelect={setHourIdx} width={52} label="Hour" light />
-          <Text style={styles.wheelColon}>:</Text>
-          <WheelColumn data={MINUTES} selected={minIdx} onSelect={setMinIdx} width={52} label="Minute" light />
-          <WheelColumn data={MERIDIEM} selected={merIdx} onSelect={setMerIdx} width={52} label="AM or PM" light />
-        </View>
-      </View>
-
-      {/* Save + delete */}
-      <View style={styles.footer}>
-        <Pressable
-          onPress={save}
-          style={({ pressed }) => [styles.saveButton, pressed && { transform: [{ scale: 0.98 }] }]}
-          accessibilityRole="button"
-          accessibilityLabel="Save alarm"
-        >
-          <Text style={styles.saveText}>Save</Text>
-        </Pressable>
-        {!isNew && (
-          <Pressable
-            onPress={confirmDelete}
-            style={styles.deleteButton}
-            accessibilityRole="button"
-            accessibilityLabel="Delete alarm"
-          >
-            <Text style={styles.deleteText}>Delete alarm</Text>
-          </Pressable>
-        )}
       </View>
     </View>
   );
 }
 
 const styles = StyleSheet.create({
-  container: {
+  root: {
     flex: 1,
     backgroundColor: "#020805",
+  },
+  container: {
+    flex: 1,
     padding: 20,
   },
   soundRow: {
@@ -269,14 +281,8 @@ const styles = StyleSheet.create({
     paddingBottom: 12,
     gap: 4,
   },
-  saveButton: {
-    backgroundColor: "#ffffff",
-    borderRadius: 999,
-    paddingVertical: 16,
-    alignItems: "center",
-  },
   saveText: {
-    color: "#0a0a0a",
+    color: "#ffffff",
     fontSize: S.body,
     fontFamily: F.semibold,
     letterSpacing: 0.3,
