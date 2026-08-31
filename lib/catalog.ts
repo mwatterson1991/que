@@ -12,20 +12,22 @@ const pex = (id: number) =>
 
 const ARTWORK_BY_ID: Record<string, string> = {
   // Brand pass: macro photography — zoomed-in, detailed, tactile.
+  // Naturescapes carry the image of their PLACE, so sound and picture
+  // are one idea rather than two.
+  "local-river": pex(28129919), // glacier ice — Vatnajökull
+  "local-ocean-waves": pex(31216830), // Baltic shore
+  "local-crickets": pex(9411736), // wet tropical leaves at night — Sian Ka'an
   "local-dawn-birds": pex(36404660), // feather with morning dew, macro
-  "local-river": pex(14933322), // moss beside flowing water, close
-  "local-ocean-waves": pex(8335650), // seafoam lace on sand, macro
   "local-rain": pex(28961050), // raindrops hanging on a leaf edge
-  "local-crickets": pex(33155622), // dew on grass, night bokeh
   "local-theta": pex(5214569), // single water droplet, minimal
   "local-freq-alpha": pex(949587), // warm bokeh
   "local-freq-delta": pex(2115085), // leaf skeleton, backlit veins
-  "local-horo-star": pex(1257860), // milky way
-  "local-horo-cosmic": pex(355887), // night sky over trees
-  "local-horo-moon": pex(1287145), // moon over snowy peaks
-  "local-words-affirm": pex(736230), // rose petals, close
-  "local-words-grace": pex(10064818), // white feather, soft macro
-  "local-words-stoic": pex(35527794), // intricate leaf pattern, macro
+  "local-horo-star": pex(12863822), // the moon through cloud
+  "local-horo-cosmic": pex(12863822), // the moon through cloud
+  "local-horo-moon": pex(12863822), // the moon through cloud
+  "local-words-affirm": pex(261719), // a pen on paper
+  "local-words-grace": pex(261719), // a pen on paper
+  "local-words-stoic": pex(261719), // a pen on paper
 };
 
 const ARTWORK_BY_TITLE: Record<string, string> = {
@@ -50,8 +52,8 @@ const ARTWORK_BY_CATEGORY: Record<string, string> = {
   "Mental & Emotional": pex(34415000), // dew drops, ordered
   "Spiritual / Purpose-driven": pex(38445116), // intricate vein network
   Frequencies: pex(949587),
-  Horoscope: pex(355887),
-  "Positive Words": pex(736230),
+  Horoscope: pex(12863822), // the moon
+  "Positive Words": pex(261719), // a pen on paper
 };
 
 const ARTWORK_FALLBACK = pex(34415000);
@@ -59,17 +61,11 @@ const ARTWORK_FALLBACK = pex(34415000);
 // Scenic pool for the hypnotherapy library — every session gets its own
 // photo, assigned by a stable hash of its title so it never shuffles.
 // All macro: texture and detail, not postcards.
+// Hypnotherapy is a room, not a landscape: someone lying down with a
+// practitioner beside them, blurred and faceless so it reads as the
+// idea rather than as a stock portrait.
 const HYPNO_POOL = [
-  pex(785695), // dew on green
-  pex(34415000), // dew rows on leaf
-  pex(16086657), // single dew drop
-  pex(717412), // droplet on leaf
-  pex(6527380), // moss dew strands
-  pex(969044), // moss forest floor
-  pex(36148607), // fern leaf detail
-  pex(10064818), // white feather
-  pex(5840692), // ostrich feather softness
-  pex(33155622), // grass dew bokeh
+  pex(5699437), // blurred session, unrecognisable
 ];
 
 function stableIndex(text: string, mod: number): number {
@@ -119,13 +115,13 @@ const local = (
 
 export const LOCAL_SESSIONS: Session[] = [
   local("local-dawn-birds", "First Light", "A real dawn breaking over a German lakeside, birds waking one by one", "ambient-dawn-birds", 150),
-  local("local-river", "Meltwater", "A glacial river running through Icelandic highland, recorded in the field", "ambient-river", 150),
-  local("local-ocean-waves", "Tideline", "Baltic Sea waves rolling onto the shore, recorded at the water\u2019s edge", "ambient-ocean-waves", 150),
+  local("local-river", "Vatnaj\u00f6kull", "Glacial meltwater running off Europe\u2019s largest ice cap, Iceland", "ambient-river", 150),
+  local("local-ocean-waves", "The Baltic", "Waves arriving on a northern European shore, recorded at the waterline", "ambient-ocean-waves", 150),
   local("local-rain", "Roofsong", "Gentle rain on a quiet rooftop \u2014 a real storm, softly recorded", "ambient-rain", 150),
-  local("local-crickets", "Nightfield", "Night in the Sian Ka\u2019an jungle reserve, Mexico \u2014 crickets and warm air", "ambient-crickets", 150),
-  local("local-theta", "Theta 6 Hz", "Low binaural hum tuned to the theta brain state", "theta-binaural", 120, "Frequencies", "Binaural tone"),
-  local("local-freq-alpha", "Alpha 10 Hz", "Bright binaural pulse for relaxed, wakeful focus", "freq-alpha", 120, "Frequencies", "Binaural tone"),
-  local("local-freq-delta", "Delta 2 Hz", "Slow binaural pulse that mirrors deep sleep", "freq-delta", 120, "Frequencies", "Binaural tone"),
+  local("local-crickets", "Sian Ka\u2019an", "Night in the Mexican biosphere reserve \u2014 crickets, warm air, no wind", "ambient-crickets", 150),
+  local("local-theta", "Theta \u00b7 6 Hz", "The drowsy edge of sleep. Choose theta to drift back down, or to meditate deeply.", "theta-binaural", 120, "Frequencies", "Binaural tone"),
+  local("local-freq-alpha", "Alpha \u00b7 10 Hz", "Awake but unhurried. Choose alpha to come up gently and start thinking clearly.", "freq-alpha", 120, "Frequencies", "Binaural tone"),
+  local("local-freq-delta", "Delta \u00b7 2 Hz", "The slowest rhythm the brain keeps, the one of dreamless sleep. Choose delta to wind all the way down.", "freq-delta", 120, "Frequencies", "Binaural tone"),
   local("local-horo-star", "Morning Star Reading", "A hopeful read on the day the sky is offering you", "horo-star", 38, "Horoscope", "Lily"),
   local("local-horo-cosmic", "Cosmic Check-In", "A steady, unhurried alignment for the day ahead", "horo-cosmic", 35, "Horoscope", "Lily"),
   local("local-horo-moon", "Moon & Momentum", "What you start this morning gathers force today", "horo-moon", 32, "Horoscope", "Lily"),
@@ -149,10 +145,10 @@ const HYPNOTHERAPY_CATEGORIES = new Set([
 
 export const CHANNEL_ORDER = [
   "Naturescapes",
-  "Hypnotherapy",
   "Frequencies",
   "Horoscope",
   "Positive Words",
+  "Hypnotherapy",
 ];
 
 /** Which channel rail a session belongs to. */

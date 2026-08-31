@@ -23,6 +23,7 @@ import Reanimated, {
   useAnimatedStyle,
   type SharedValue,
 } from "react-native-reanimated";
+import Svg, { Defs, LinearGradient, Stop, Rect } from "react-native-svg";
 import { useAlarms, useSessions } from "@/lib/useSupabase";
 import { rollForward, scheduleAlarm, cancelAlarm, syncAlarms } from "@/lib/alarmScheduler";
 import { artworkFor } from "@/lib/catalog";
@@ -151,15 +152,43 @@ function DeleteAction({
   );
 }
 
+// ─── The slab ──────────────────────────────────────────────
+// A translucent rectangle has no thickness. Real glass is lit from above
+// and pools darkness at its base, so the card gets a vertical gradient
+// INSIDE it: a bright top edge falling off fast, near-clear through the
+// middle (so the moving sheen and the aurora behind still read), then
+// weight at the bottom. This is what turns the panel into a slab.
+const CARD_RADIUS = 26;
+
+function Slab() {
+  return (
+    <View pointerEvents="none" style={styles.slab}>
+      <Svg width="100%" height="100%">
+        <Defs>
+          <LinearGradient id="alarmSlab" x1="0" y1="0" x2="0" y2="1">
+            <Stop offset="0%" stopColor="#ffffff" stopOpacity="0.18" />
+            <Stop offset="16%" stopColor="#ffffff" stopOpacity="0.05" />
+            <Stop offset="52%" stopColor="#000000" stopOpacity="0.04" />
+            <Stop offset="100%" stopColor="#000000" stopOpacity="0.28" />
+          </LinearGradient>
+        </Defs>
+        <Rect x="0" y="0" width="100%" height="100%" fill="url(#alarmSlab)" />
+      </Svg>
+    </View>
+  );
+}
+
 // ─── One alarm card (glass) ────────────────────────────────
 function AlarmCard({
   item,
+  index,
   session,
   onToggle,
   onOpen,
   onDelete,
 }: {
   item: Alarm;
+  index: number;
   session?: Session;
   onToggle: (id: string, enabled: boolean) => void;
   onOpen: (item: Alarm) => void;
@@ -182,6 +211,11 @@ function AlarmCard({
     }).start();
 
   return (
+    // The shadow lives on an OUTER host: cardWrap clips (so the red delete
+    // action takes the card's corners) and a clipping layer can't cast a
+    // shadow. The host's dark fill doubles as the slab's body — clear glass
+    // over a near-black backing is what "wet black glass" actually is.
+    <View style={styles.cardShadow}>
     <ReanimatedSwipeable
       containerStyle={styles.cardWrap}
       friction={2}

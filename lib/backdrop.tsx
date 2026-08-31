@@ -46,6 +46,24 @@ export interface BackdropPreset {
 
 export const BACKDROP_PRESETS: BackdropPreset[] = [
   {
+    id: "obsidian",
+    name: "Obsidian",
+    description: "Black, with light moving under the surface",
+    base: "#000000",
+    swatch: ["#1b2b3a", "#2a1f38", "#0f2a26"],
+    // Deliberately dim and slow: these are not colour fields, they are
+    // reflections passing under black glass. Bright enough for the UI
+    // above to catch an edge, dark enough that the screen still reads
+    // as black in a dark room.
+    blobs: [
+      { color: "#2f6f8f", edge: "#000000", xPct: 0.22, yPct: 0.26, sizePct: 1.35, driftXPct: 0.26, driftYPct: 0.16, scaleTo: 1.3, durationMs: 15000, opacity: 0.5 },
+      { color: "#5b3f7a", edge: "#000000", xPct: 0.86, yPct: 0.6, sizePct: 1.5, driftXPct: -0.24, driftYPct: -0.18, scaleTo: 1.35, durationMs: 19000, delayMs: 2400, opacity: 0.42 },
+      { color: "#1f6b5e", edge: "#000000", xPct: 0.5, yPct: 0.94, sizePct: 1.2, driftXPct: 0.2, driftYPct: -0.24, scaleTo: 1.4, durationMs: 17000, delayMs: 1200, opacity: 0.38 },
+      { color: "#8a6b4a", edge: "#000000", xPct: 0.7, yPct: 0.12, sizePct: 0.8, driftXPct: -0.3, driftYPct: 0.3, scaleTo: 1.5, durationMs: 21000, delayMs: 3600, opacity: 0.3 },
+    ],
+    sparkle: { count: 22, opacity: 0.18 },
+  },
+  {
     id: "aurora",
     name: "Aurora",
     description: "Deep forest green, breathing slowly",
@@ -158,7 +176,7 @@ interface BackdropValue {
 const BackdropContext = createContext<BackdropValue | null>(null);
 
 export function BackdropProvider({ children }: { children: ReactNode }) {
-  const [presetId, setPresetIdState] = useState("aurora");
+  const [presetId, setPresetIdState] = useState("obsidian");
   const [customColors, setCustomColorsState] = useState<string[]>(["#2fbf71", "#3ad8f0", "#7b5cf0"]);
   const [stageDark, setStageDarkState] = useState(false);
   const [windDown, setWindDownState] = useState(true);
@@ -245,7 +263,7 @@ export function useBackdrop(): BackdropValue {
   if (ctx) return ctx;
   return {
     preset: BACKDROP_PRESETS[0],
-    presetId: "aurora",
+    presetId: "obsidian",
     setPresetId: () => {},
     customColors: [],
     setCustomColors: () => {},
