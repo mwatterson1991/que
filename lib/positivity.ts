@@ -62,6 +62,10 @@ function walkDaily(
 
   const points: number[] = [];
   const dates: string[] = [];
+  // Falling forever is not motivating, it is just punishment. After
+  // three quiet days in a row the score stops dropping and simply waits.
+  const MAX_CONSECUTIVE_MISSES = 3;
+  let missRun = 0;
   let running = 0;
   for (let i = days - 1; i >= 0; i--) {
     const date = localDate(i);
@@ -72,9 +76,11 @@ function walkDaily(
     const isToday = i === 0;
     if (earned > 0) {
       running += earned;
+      missRun = 0;
     } else if (started && !isToday) {
       // Today isn't over — no penalty until the day actually passes.
-      running += MISS_PENALTY;
+      if (missRun < MAX_CONSECUTIVE_MISSES) running += MISS_PENALTY;
+      missRun++;
     }
     points.push(running);
     dates.push(date);
