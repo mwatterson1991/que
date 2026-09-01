@@ -2,7 +2,6 @@ import { useRef, useState, useCallback, useMemo, useEffect } from "react";
 import {
   View,
   Text,
-  TextInput,
   ScrollView,
   Pressable,
   StyleSheet,
@@ -17,6 +16,7 @@ import { Ionicons } from "@expo/vector-icons";
 import { useGratitudeEntries } from "@/lib/useSupabase";
 import { useAuth } from "@/lib/auth";
 import { GlassButton } from "@/components/Glass";
+import { HandwritingField } from "@/components/HandwritingField";
 import { F, S } from "@/lib/fonts";
 
 const TOTAL = 7;
@@ -238,14 +238,18 @@ export default function GratitudeScreen() {
             .map((e) => (
               <View key={e.id} style={styles.row}>
                 <Text style={styles.rowIndex}>{e.entry_number}</Text>
-                <TextInput
-                  style={styles.rowInput}
+                {/* Already written, so it renders fully drawn — no animation,
+                    one merged <Path> per entry. Today's page stays in your
+                    hand; the days above it are the typed-up record. */}
+                <HandwritingField
                   value={getValue(e.entry_number)}
                   onChangeText={(t) =>
                     setDrafts((d) => ({ ...d, [e.entry_number]: t }))
                   }
                   onBlur={() => commit(e.entry_number)}
                   onSubmitEditing={() => commit(e.entry_number)}
+                  color={INK}
+                  strokeWidth={1.7}
                   returnKeyType="done"
                   submitBehavior="blurAndSubmit"
                   maxFontSizeMultiplier={1.6}
@@ -304,8 +308,10 @@ export default function GratitudeScreen() {
         {!isComplete && (
           <View style={[styles.composer, { paddingBottom: 12 + insets.bottom }]}>
             <Text style={styles.composerIndex}>{activeNumber}</Text>
-            <TextInput
-              style={styles.composerInput}
+            {/* The live line. Each letter you type is drawn stroke by stroke on
+                a single-stroke script face, so the entry appears to be written
+                rather than printed. The input underneath is untouched. */}
+            <HandwritingField
               value={composerText}
               onChangeText={(t) => setDrafts((d) => ({ ...d, [activeNumber]: t }))}
               onBlur={() => commit(activeNumber)}
@@ -313,7 +319,10 @@ export default function GratitudeScreen() {
               placeholder={
                 savedCount === 0 ? "Something small counts…" : "And one more…"
               }
-              placeholderTextColor={INK_DIM}
+              placeholderColor={INK_DIM}
+              color={INK}
+              strokeWidth={1.9}
+              animate
               // The cursor is already blinking when you land — nothing to tap
               // before you can write.
               autoFocus
@@ -424,15 +433,9 @@ const styles = StyleSheet.create({
     color: "#52525b",
     fontSize: S.secondary,
     fontFamily: F.regular,
-    lineHeight: 24,
-  },
-  rowInput: {
-    flex: 1,
-    color: INK,
-    fontSize: S.body,
-    fontFamily: F.regular,
-    paddingVertical: 0,
-    lineHeight: 24,
+    // Tuned so the numeral's baseline lands on the handwriting's first
+    // baseline, which sits one ascender (HW_SIZE px) below the top of the row.
+    lineHeight: 22,
   },
   historyText: {
     flex: 1,
@@ -445,7 +448,9 @@ const styles = StyleSheet.create({
   // Composer
   composer: {
     flexDirection: "row",
-    alignItems: "center",
+    // The handwriting line grows downward as an entry wraps, so the send button
+    // rides the bottom while the number stays pinned to the first line.
+    alignItems: "flex-end",
     gap: 12,
     paddingHorizontal: 24,
     paddingTop: 12,
@@ -455,16 +460,11 @@ const styles = StyleSheet.create({
   },
   composerIndex: {
     width: 14,
+    alignSelf: "flex-start",
     color: "#6b6b73",
     fontSize: S.secondary,
     fontFamily: F.medium,
-  },
-  composerInput: {
-    flex: 1,
-    color: INK,
-    fontSize: S.body,
-    fontFamily: F.regular,
-    paddingVertical: 6,
+    lineHeight: 22,
   },
 
   // Reward loop
