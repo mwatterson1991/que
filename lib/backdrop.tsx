@@ -97,7 +97,7 @@ export const BACKDROP_PRESETS: BackdropPreset[] = [
   {
     id: "obsidian",
     name: "Obsidian",
-    description: "Near-black — for sleep. The glass all but vanishes.",
+    description: "Near-black. Best with the matte material — glass disappears on it.",
     base: "#000000",
     swatch: ["#1b2b3a", "#2a1f38", "#0f2a26"],
     // Deliberately dim and slow: these are not colour fields, they are
@@ -240,7 +240,15 @@ export function BackdropProvider({ children }: { children: ReactNode }) {
           AsyncStorage.getItem(CUSTOM_KEY),
           AsyncStorage.getItem(WINDDOWN_KEY),
         ]);
-        if (p) setPresetIdState(p);
+        // Obsidian is near-black. Clear glass over it renders as a grey
+        // rectangle — anyone left on it was judging the app through the
+        // one setting that guarantees it cannot work.
+        if (p === "obsidian") {
+          setPresetIdState("amethyst");
+          AsyncStorage.setItem(PRESET_KEY, "amethyst").catch(() => {});
+        } else if (p) {
+          setPresetIdState(p);
+        }
         if (c) setCustomColorsState(JSON.parse(c));
         if (w !== null) setWindDownState(w === "1");
       } catch {}

@@ -7,6 +7,7 @@ import { F, S } from "@/lib/fonts";
 import { useAuth } from "@/lib/auth";
 import { useProfile, usePreferences } from "@/lib/useSupabase";
 import { supabase } from "@/lib/supabase";
+import { useMaterial } from "@/lib/material";
 import { AMBIENT_SOUNDS, AmbientSoundId } from "@/lib/ambient";
 
 type SettingsRowProps = {
@@ -56,6 +57,7 @@ function SettingsRow({ icon, label, value, hasToggle, toggleValue, onToggle, onP
 }
 
 export default function SettingsScreen() {
+  const { mode, setMode } = useMaterial();
   const router = useRouter();
   const insets = useSafeAreaInsets();
   const { user, signOut } = useAuth();
@@ -135,6 +137,13 @@ export default function SettingsScreen() {
 
       {/* App */}
       <Text style={styles.sectionTitle}>APP</Text>
+      <SettingsRow
+        icon="layers-outline"
+        label="Material"
+        value={mode === "matte" ? "Matte" : "Glass"}
+        onPress={() => setMode(mode === "matte" ? "glass" : "matte")}
+      />
+      <View style={styles.rowSep} />
       <SettingsRow
         icon="color-palette-outline"
         label="Background"

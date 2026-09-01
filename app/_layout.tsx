@@ -17,6 +17,7 @@ import * as Notifications from "expo-notifications";
 import AsyncStorage from "@react-native-async-storage/async-storage";
 import { AuthProvider, useAuth } from "@/lib/auth";
 import { BackdropProvider } from "@/lib/backdrop";
+import { MaterialProvider } from "@/lib/material";
 import { requestAlarmPermissions, ensureAndroidChannel } from "@/lib/alarmScheduler";
 import { initBackgroundAudio } from "@/lib/backgroundAudio";
 import { WELCOME_COUNT_KEY, WELCOME_MAX_SHOWS } from "./welcome";
@@ -329,6 +330,7 @@ export default function RootLayout() {
 
   return (
     <AuthProvider>
+      <MaterialProvider>
       <BackdropProvider>
       <GestureHandlerRootView
         style={{ flex: 1, backgroundColor: "#000000" }}
@@ -505,6 +507,7 @@ export default function RootLayout() {
         </Stack>
       </GestureHandlerRootView>
       </BackdropProvider>
+      </MaterialProvider>
     </AuthProvider>
   );
 }
