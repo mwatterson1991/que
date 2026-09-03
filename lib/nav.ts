@@ -1,5 +1,13 @@
-import type { NativeStackNavigationOptions } from "@react-navigation/native-stack";
+import type { ComponentProps } from "react";
+import type { Stack } from "expo-router";
 import { C, TYPE } from "@/lib/tokens";
+
+// The native-stack options type, reached through expo-router so this file
+// does not depend on a package that is only a transitive dependency.
+type NativeStackNavigationOptions = Exclude<
+  NonNullable<ComponentProps<typeof Stack>["screenOptions"]>,
+  (...args: any[]) => any
+>;
 
 /**
  * nav.ts — one header configuration for the whole app.
