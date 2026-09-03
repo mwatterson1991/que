@@ -45,6 +45,7 @@ import {
   type HandwritingLayout,
   type HandwritingStroke,
 } from "@/lib/hersheyFont";
+import { C } from "@/lib/tokens";
 
 const AnimatedPath = Animated.createAnimatedComponent(Path);
 
@@ -266,7 +267,7 @@ function HandwritingTextInner({
   text,
   width,
   fontSize = 19,
-  color = "#f5f5f7",
+  color = C.label,
   strokeWidth = 1.8,
   animate = false,
   caretIndex = null,

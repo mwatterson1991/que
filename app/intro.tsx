@@ -1,28 +1,19 @@
 import { useEffect, useRef, useState, useMemo } from "react";
-import {
-  View,
-  Text,
-  Pressable,
-  StyleSheet,
-  Image,
-  Animated,
-  Easing,
-  Dimensions,
-} from "react-native";
+import { View, StyleSheet, Image, Animated, Easing, Dimensions } from "react-native";
 import { useRouter } from "expo-router";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
-import { Svg, Defs, LinearGradient, Stop, Rect } from "react-native-svg";
-import { F, S } from "@/lib/fonts";
+import { Screen, Txt, Button } from "@/components/ui";
+import { C, R, SP } from "@/lib/tokens";
 import { useSessions } from "@/lib/useSupabase";
 import { artworkFor } from "@/lib/catalog";
 
 // ─── First-mile intro ──────────────────────────────────────
-// Apple-Music-ad energy: rails of session artwork drift horizontally
-// in alternating directions behind a three-step pitch.
+// Rails of session artwork drift horizontally in alternating directions
+// behind a three-step pitch that sits on a flat scrim at the foot.
 
 const { width: SCREEN_W } = Dimensions.get("window");
 const TILE = 104;
-const GAP = 10;
+const GAP = SP.sm;
 
 const STEPS = [
   {
@@ -73,15 +64,10 @@ function MarqueeRow({
   });
 
   return (
-    <View style={{ height: TILE, marginBottom: GAP, overflow: "hidden", width: SCREEN_W }}>
+    <View style={styles.rail}>
       <Animated.View style={{ flexDirection: "row", transform: [{ translateX }] }}>
         {[...images, ...images].map((uri, i) => (
-          <Image
-            key={i}
-            accessible={false}
-            source={{ uri }}
-            style={{ width: TILE, height: TILE, borderRadius: 16, marginRight: GAP, backgroundColor: "#1c1c1e" }}
-          />
+          <Image key={i} accessible={false} source={{ uri }} style={styles.tile} />
         ))}
       </Animated.View>
     </View>
@@ -90,7 +76,7 @@ function MarqueeRow({
 
 export default function IntroScreen() {
   const router = useRouter();
-  const insets = useSafeAreaInsets();
+  const { top, bottom } = useSafeAreaInsets();
   const { sessions } = useSessions();
   const [step, setStep] = useState(0);
 
@@ -112,44 +98,25 @@ export default function IntroScreen() {
   };
 
   return (
-    <View style={styles.container}>
+    <Screen>
       {/* Drifting artwork wall */}
-      <View style={styles.marqueeWall} pointerEvents="none">
+      <View style={[styles.wall, { top: top + SP.lg }]} pointerEvents="none">
         {rows.map((imgs, i) => (
-          <MarqueeRow
-            key={i}
-            images={imgs}
-            reverse={i % 2 === 1}
-            duration={38000 + i * 7000}
-          />
+          <MarqueeRow key={i} images={imgs} reverse={i % 2 === 1} duration={38000 + i * 7000} />
         ))}
       </View>
 
-      {/* Scrim so the words own the frame */}
-      <View style={StyleSheet.absoluteFill} pointerEvents="none">
-        <Svg width="100%" height="100%">
-          <Defs>
-            <LinearGradient id="introScrim" x1="0" y1="0" x2="0" y2="1">
-              <Stop offset="0%" stopColor="#000000" stopOpacity="0.35" />
-              <Stop offset="55%" stopColor="#000000" stopOpacity="0.72" />
-              <Stop offset="100%" stopColor="#000000" stopOpacity="0.97" />
-            </LinearGradient>
-          </Defs>
-          <Rect x="0" y="0" width="100%" height="100%" fill="url(#introScrim)" />
-        </Svg>
-      </View>
-
-      {/* Copy + controls */}
-      <View style={[styles.content, { paddingBottom: Math.max(insets.bottom, 16) + 18 }]}>
-        <Text style={styles.kicker} maxFontSizeMultiplier={1.2}>
+      {/* Copy + controls on a flat scrim */}
+      <View style={[styles.foot, { paddingBottom: bottom + SP.lg }]}>
+        <Txt kind="footnote" tone="secondary" maxFontSizeMultiplier={1.2} style={styles.kicker}>
           {STEPS[step].kicker}
-        </Text>
-        <Text style={styles.headline} maxFontSizeMultiplier={1.2}>
+        </Txt>
+        <Txt kind="title1" maxFontSizeMultiplier={1.2} style={styles.headline}>
           {STEPS[step].headline}
-        </Text>
-        <Text style={styles.body} maxFontSizeMultiplier={1.3}>
+        </Txt>
+        <Txt kind="body" tone="secondary" maxFontSizeMultiplier={1.3} style={styles.body}>
           {STEPS[step].body}
-        </Text>
+        </Txt>
 
         <View style={styles.dots}>
           {STEPS.map((_, i) => (
@@ -157,99 +124,74 @@ export default function IntroScreen() {
           ))}
         </View>
 
-        <Pressable
-          style={styles.cta}
+        <Button
+          title={last ? "Start your mornings" : "Next"}
           onPress={next}
-          accessibilityRole="button"
           accessibilityLabel={last ? "Start using Morning Que" : "Next"}
-        >
-          <Text style={styles.ctaText}>{last ? "Start your mornings" : "Next"}</Text>
-        </Pressable>
+        />
         {!last && (
-          <Pressable
+          <Button
+            title="Skip"
+            tone="plain"
             onPress={() => router.replace("/alarms")}
-            hitSlop={10}
-            style={styles.skip}
-            accessibilityRole="button"
             accessibilityLabel="Skip intro"
-          >
-            <Text style={styles.skipText}>Skip</Text>
-          </Pressable>
+            style={styles.skip}
+          />
         )}
       </View>
-    </View>
+    </Screen>
   );
 }
 
 const styles = StyleSheet.create({
-  container: {
-    flex: 1,
-    backgroundColor: "#000000",
-  },
-  marqueeWall: {
+  wall: {
     position: "absolute",
-    top: 40,
     left: 0,
     right: 0,
   },
-  content: {
-    flex: 1,
-    justifyContent: "flex-end",
-    paddingHorizontal: 28,
+  rail: {
+    height: TILE,
+    marginBottom: GAP,
+    overflow: "hidden",
+    width: SCREEN_W,
+  },
+  tile: {
+    width: TILE,
+    height: TILE,
+    borderRadius: R.lg,
+    marginRight: GAP,
+    backgroundColor: C.fill,
+  },
+  foot: {
+    marginTop: "auto",
+    paddingHorizontal: SP.screen,
+    paddingTop: SP.xxl,
+    backgroundColor: C.scrim,
   },
   kicker: {
-    color: "rgba(255,255,255,0.55)",
-    fontSize: S.micro,
-    fontFamily: F.semibold,
-    letterSpacing: 2.5,
-    marginBottom: 10,
+    marginBottom: SP.sm,
   },
   headline: {
-    color: "#f5f5f7",
-    fontSize: S.display,
-    lineHeight: 42,
-    fontFamily: "Lora",
-    marginBottom: 12,
+    marginBottom: SP.md,
   },
   body: {
-    color: "#a1a1aa",
-    fontSize: S.secondary,
-    lineHeight: 23,
-    fontFamily: F.regular,
-    marginBottom: 22,
+    marginBottom: SP.xl,
   },
   dots: {
     flexDirection: "row",
-    gap: 7,
-    marginBottom: 22,
+    gap: SP.sm,
+    marginBottom: SP.xl,
   },
   dot: {
     width: 7,
     height: 7,
-    borderRadius: 4,
-    backgroundColor: "#2c2c2e",
+    borderRadius: R.pill,
+    backgroundColor: C.fillHighest,
   },
   dotActive: {
-    backgroundColor: "#f5f5f7",
-  },
-  cta: {
-    backgroundColor: "#f5f5f7",
-    borderRadius: 999,
-    paddingVertical: 17,
-    alignItems: "center",
-  },
-  ctaText: {
-    color: "#0a0a0a",
-    fontSize: S.body,
-    fontFamily: F.semibold,
+    backgroundColor: C.label,
   },
   skip: {
-    alignItems: "center",
-    paddingTop: 14,
-  },
-  skipText: {
-    color: "rgba(255,255,255,0.45)",
-    fontSize: S.caption,
-    fontFamily: F.regular,
+    marginTop: SP.xs,
   },
 });

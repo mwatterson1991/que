@@ -1,4 +1,4 @@
-import { Pressable, View, Text, StyleSheet } from "react-native";
+import { Pressable, View, StyleSheet } from "react-native";
 import { Ionicons } from "@expo/vector-icons";
 import Animated, {
   useSharedValue,
@@ -6,9 +6,9 @@ import Animated, {
   withSequence,
   withSpring,
 } from "react-native-reanimated";
-import { Glass } from "@/components/Glass";
 import { HabitIcon } from "@/components/HabitIcon";
-import { F, S } from "@/lib/fonts";
+import { Txt } from "@/components/ui";
+import { C, R, SP } from "@/lib/tokens";
 
 let Haptics: any = null;
 try { Haptics = require("expo-haptics"); } catch {}
@@ -19,13 +19,17 @@ try { Haptics = require("expo-haptics"); } catch {}
 const POP = { damping: 12, stiffness: 420, mass: 0.5 };
 const SETTLE = { damping: 15, stiffness: 240, mass: 0.6 };
 
+/**
+ * A Reminders-style list cell on the black ground: the habit's icon in its
+ * own colour, title and meta, and a round check control on the right that
+ * fills with the accent once the day's quota is met.
+ */
 export default function HabitCell({
   title,
   color,
   timesPerDay,
   count,
   streak,
-  phase = 0,
   onToggle,
   onRemove,
 }: {
@@ -34,8 +38,6 @@ export default function HabitCell({
   timesPerDay: number;
   count: number;
   streak: number;
-  /** 0–1 sheen offset so a stack of cells doesn't shimmer in lockstep. */
-  phase?: number;
   onToggle: () => void;
   onRemove: () => void;
 }) {
@@ -70,49 +72,34 @@ export default function HabitCell({
         onPress={handlePress}
         onLongPress={onRemove}
         delayLongPress={450}
+        style={({ pressed }) => [styles.cell, pressed && styles.cellPressed]}
         accessibilityRole="checkbox"
         accessibilityState={{ checked: complete }}
         accessibilityLabel={`${title}, ${count} of ${timesPerDay} today${streak > 1 ? `, ${streak} day streak` : ""}`}
         accessibilityHint="Tap to mark complete. Long press to remove."
       >
-        <Glass interactive liquid phase={phase} intensity={0.85} style={styles.cell}>
-          {/* A wash of the habit's own color once it's done — the cell itself
-              reads as complete, so the checkmark isn't carrying it alone. */}
-          {complete && (
-            <View
-              style={[StyleSheet.absoluteFill, { backgroundColor: `${color}1F` }]}
-              pointerEvents="none"
-            />
+        <HabitIcon title={title} color={color} size={SP.xxxl} />
+
+        <View style={styles.body}>
+          <Txt kind="body" numberOfLines={1} maxFontSizeMultiplier={1.4}>
+            {title}
+          </Txt>
+          {!!meta && (
+            <Txt kind="footnote" tone="secondary" numberOfLines={1} maxFontSizeMultiplier={1.3}>
+              {meta}
+            </Txt>
           )}
+        </View>
 
-          <HabitIcon title={title} color={color} />
-
-          <View style={styles.body}>
-            <Text style={styles.title} numberOfLines={1} maxFontSizeMultiplier={1.4}>
-              {title}
-            </Text>
-            {!!meta && (
-              <Text style={styles.meta} numberOfLines={1} maxFontSizeMultiplier={1.3}>
-                {meta}
-              </Text>
-            )}
-          </View>
-
-          <View
-            style={[
-              styles.ring,
-              complete
-                ? { backgroundColor: color, borderColor: color }
-                : { backgroundColor: "transparent", borderColor: `${color}99` },
-            ]}
-          >
-            {complete ? (
-              <Ionicons name="checkmark" size={16} color="#0a0a0a" />
-            ) : count > 0 ? (
-              <Text style={[styles.ringCount, { color }]}>{count}</Text>
-            ) : null}
-          </View>
-        </Glass>
+        <View style={[styles.ring, complete ? styles.ringOn : count > 0 ? styles.ringPartial : null]}>
+          {complete ? (
+            <Ionicons name="checkmark" size={18} color={C.onAccent} />
+          ) : count > 0 ? (
+            <Txt kind="caption1" tone="accent">
+              {count}
+            </Txt>
+          ) : null}
+        </View>
       </Pressable>
     </Animated.View>
   );
@@ -122,37 +109,32 @@ const styles = StyleSheet.create({
   cell: {
     flexDirection: "row",
     alignItems: "center",
-    gap: 14,
-    borderRadius: 22,
-    overflow: "hidden",
-    paddingVertical: 14,
-    paddingHorizontal: 16,
-    minHeight: 68,
+    gap: SP.md,
+    minHeight: SP.row,
+    paddingHorizontal: SP.screen,
+    paddingVertical: SP.md,
+    backgroundColor: C.bg,
+  },
+  cellPressed: {
+    backgroundColor: C.fill,
   },
   body: {
     flex: 1,
   },
-  title: {
-    color: "#ffffff",
-    fontSize: S.body,
-    fontFamily: F.medium,
-  },
-  meta: {
-    color: "#c8c8d0", // light enough to survive a bright patch of aurora
-    fontSize: S.caption,
-    fontFamily: F.regular,
-    marginTop: 3,
-  },
   ring: {
-    width: 28,
-    height: 28,
-    borderRadius: 14,
+    width: SP.xxl,
+    height: SP.xxl,
+    borderRadius: R.pill,
     borderWidth: 2,
+    borderColor: C.fillHighest,
     alignItems: "center",
     justifyContent: "center",
   },
-  ringCount: {
-    fontSize: S.micro,
-    fontFamily: F.semibold,
+  ringPartial: {
+    borderColor: C.accent,
+  },
+  ringOn: {
+    backgroundColor: C.accent,
+    borderColor: C.accent,
   },
 });

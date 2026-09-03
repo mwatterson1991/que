@@ -1,28 +1,24 @@
-import { useCallback, useEffect, useRef, useState } from "react";
-import { F, S } from "@/lib/fonts";
-import { Alert, Text, TextInput, Pressable, Platform, LogBox, StyleSheet } from "react-native";
+import { useEffect, useRef, useState } from "react";
+import { Alert, LogBox } from "react-native";
 
 // view-shot's native half ships with the next dev build; hide its
 // missing-module warning until then.
 LogBox.ignoreLogs(["react-native-view-shot"]);
-import { Ionicons } from "@expo/vector-icons";
 import { Stack, useRouter, useSegments } from "expo-router";
 import { GestureHandlerRootView } from "react-native-gesture-handler";
-import { useSafeAreaInsets } from "react-native-safe-area-context";
-import { Glass } from "@/components/Glass";
 import { StatusBar } from "expo-status-bar";
-import { useFonts } from "expo-font";
 import * as SplashScreen from "expo-splash-screen";
 import * as Notifications from "expo-notifications";
 import AsyncStorage from "@react-native-async-storage/async-storage";
 import { AuthProvider, useAuth } from "@/lib/auth";
-import { BackdropProvider } from "@/lib/backdrop";
-import { MaterialProvider } from "@/lib/material";
 import { requestAlarmPermissions, ensureAndroidChannel } from "@/lib/alarmScheduler";
 import { initBackgroundAudio } from "@/lib/backgroundAudio";
+import { STACK, BARE, SHEET } from "@/lib/nav";
+import { C } from "@/lib/tokens";
 import { WELCOME_COUNT_KEY, WELCOME_MAX_SHOWS } from "./welcome";
 
 SplashScreen.preventAutoHideAsync();
+SplashScreen.setOptions({ fade: true });
 
 // Initialize background audio as early as possible so iOS allocates the
 // correct audio session category before any playback begins. Module scope
@@ -45,17 +41,6 @@ Notifications.setNotificationHandler({
     };
   },
 });
-
-const applyDefaultFont = (Component: any) => {
-  Component.defaultProps = Component.defaultProps || {};
-  const existing = Component.defaultProps.style;
-  Component.defaultProps.style = [
-    { fontFamily: F.regular },
-    existing,
-  ];
-};
-applyDefaultFont(Text);
-applyDefaultFont(TextInput);
 
 // ─── Notification listener setup ─────────────────────────
 // Handles tapping on a fired alarm notification → navigate to player.
@@ -177,337 +162,49 @@ function AuthGate() {
   return null;
 }
 
-// ─── The split glass nav ─────────────────────────────────
-// A full-width translucent bar still reads as chrome: one slab pinned to
-// the top of the screen. Liquid glass wants objects, so the nav is broken
-// into three separate pieces that float over whatever backdrop the screen
-// is running — a round control on the left, a pill holding the title, a
-// round control on the right when the screen has an action. Each piece
-// carries its own sheen at a different phase so they catch the light one
-// after another rather than blinking together.
-const NAV_PHASE = { left: 0, title: 0.34, right: 0.68 };
-
-export function NavGlassButton({
-  icon,
-  onPress,
-  label,
-  phase = NAV_PHASE.left,
-  disabled = false,
-  iconSize = 22,
-}: {
-  icon: keyof typeof Ionicons.glyphMap;
-  onPress: () => void;
-  label: string;
-  phase?: number;
-  disabled?: boolean;
-  iconSize?: number;
-}) {
-  return (
-    <Pressable
-      onPress={onPress}
-      disabled={disabled}
-      hitSlop={10}
-      accessibilityRole="button"
-      accessibilityLabel={label}
-      accessibilityState={{ disabled }}
-      style={({ pressed }) => [
-        navStyles.controlWrap,
-        pressed && { transform: [{ scale: 0.94 }], opacity: 0.9 },
-      ]}
-    >
-      <Glass liquid phase={phase} intensity={1.15} scrim="soft" style={navStyles.control}>
-        <Ionicons
-          name={icon}
-          size={iconSize}
-          color={disabled ? "rgba(245,245,247,0.35)" : "#ffffff"}
-        />
-      </Glass>
-    </Pressable>
-  );
-}
-
-export function NavGlassTitle({
-  children,
-  serif = false,
-}: {
-  children?: React.ReactNode;
-  serif?: boolean;
-}) {
-  return (
-    <Glass liquid phase={NAV_PHASE.title} intensity={0.95} scrim="soft" style={navStyles.pill}>
-      <Text
-        numberOfLines={1}
-        maxFontSizeMultiplier={1.3}
-        style={[navStyles.pillText, serif && navStyles.pillSerif]}
-      >
-        {children}
-      </Text>
-    </Glass>
-  );
-}
-
-const navStyles = StyleSheet.create({
-  controlWrap: {
-    marginHorizontal: 12,
-  },
-  control: {
-    width: 40,
-    height: 40,
-    borderRadius: 20,
-    overflow: "hidden",
-    alignItems: "center",
-    justifyContent: "center",
-  },
-  pill: {
-    borderRadius: 20,
-    overflow: "hidden",
-    maxWidth: 230,
-    paddingHorizontal: 18,
-    paddingVertical: 8,
-    alignItems: "center",
-    justifyContent: "center",
-  },
-  pillText: {
-    color: "#ffffff",
-    fontSize: S.body,
-    fontFamily: F.semibold,
-  },
-  pillSerif: {
-    fontFamily: "Lora",
-    fontSize: S.title,
-    fontWeight: "400",
-  },
-});
-
-// Back control for the stack screens — same glass piece the drawer uses,
-// so travelling between the two navigators never changes the nav's shape.
-function StackBackButton() {
-  const router = useRouter();
-  return <NavGlassButton icon="chevron-back" label="Go back" onPress={() => router.back()} />;
-}
-
-// ─── Shared header config ────────────────────────────────
-// No bar at all: transparent, no background element, three glass pieces.
-const HEADER_BASE = {
-  headerTransparent: true,
-  headerBackground: () => null,
-  headerStyle: { backgroundColor: "transparent" },
-  headerTintColor: "#f5f5f7",
-  headerShadowVisible: false,
-  headerTitleAlign: "center",
-  headerLeft: () => <StackBackButton />,
-  headerTitle: ({ children }: { children: string }) => <NavGlassTitle>{children}</NavGlassTitle>,
-  // Chevron only — never the previous screen's route name
-  headerBackButtonDisplayMode: "minimal",
-} as const;
-
-// How far a screen's content has to start below the floating nav. The
-// header is absolutely positioned now, so every screen that isn't drawing
-// its own full-bleed backdrop needs this as padding.
-const NAV_BAR_HEIGHT = Platform.OS === "ios" ? 44 : 56;
-
+// ─── Root ────────────────────────────────────────────────
+// No custom fonts: the system font is the point (see lib/tokens.ts), so
+// there is nothing to wait for before the splash comes down.
 export default function RootLayout() {
-  const insets = useSafeAreaInsets();
-  // Screens that paint their own full-bleed backdrop (aurora, artwork) run
-  // edge to edge under the floating nav and pad themselves. Everything else
-  // gets pushed down to clear it.
-  const navTop = insets.top + NAV_BAR_HEIGHT + 8;
-
-  const [fontsLoaded] = useFonts({
-    "Switzer-Light": require("../assets/fonts/Switzer-Light.otf"),
-    "Switzer-Regular": require("../assets/fonts/Switzer-Regular.otf"),
-    "Switzer-Medium": require("../assets/fonts/Switzer-Medium.otf"),
-    "Switzer-Semibold": require("../assets/fonts/Switzer-Semibold.otf"),
-    "Switzer-Bold": require("../assets/fonts/Switzer-Bold.otf"),
-    "Lora": require("../assets/fonts/Lora-Variable.ttf"),
-  });
-
-  const onLayoutReady = useCallback(async () => {
-    if (fontsLoaded) await SplashScreen.hideAsync();
-  }, [fontsLoaded]);
-
-  if (!fontsLoaded) return null;
+  useEffect(() => {
+    SplashScreen.hideAsync();
+  }, []);
 
   return (
     <AuthProvider>
-      <MaterialProvider>
-      <BackdropProvider>
-      <GestureHandlerRootView
-        style={{ flex: 1, backgroundColor: "#000000" }}
-        onLayout={onLayoutReady}
-      >
+      <GestureHandlerRootView style={{ flex: 1, backgroundColor: C.bg }}>
         <StatusBar style="light" />
         <AuthGate />
         <NotificationGate />
-        <Stack screenOptions={{ headerShown: false }}>
-          <Stack.Screen
-            name="auth"
-            options={{
-              headerShown: false,
-              animation: "none",
-              contentStyle: { backgroundColor: "#000000" },
-            }}
-          />
-          <Stack.Screen
-            name="onboarding"
-            options={{
-              headerShown: false,
-              animation: "fade",
-              gestureEnabled: false,
-              contentStyle: { backgroundColor: "#000000" },
-            }}
-          />
-          <Stack.Screen
-            name="(drawer)"
-            options={{ contentStyle: { flex: 1, backgroundColor: "#000000" } }}
-          />
-          <Stack.Screen
-            name="glass-lab"
-            options={{ headerShown: false, animation: "fade" }}
-          />
-          <Stack.Screen
-            name="goodnight"
-            options={{
-              headerShown: false,
-              animation: "fade",
-              gestureEnabled: true,
-              contentStyle: { flex: 1, backgroundColor: "#000000" },
-            }}
-          />
-          <Stack.Screen
-            name="background-picker"
-            options={{
-              animation: "fade",
-              headerShown: true,
-              title: "Background",
-              headerBackTitle: "",
-              ...HEADER_BASE,
-              contentStyle: { flex: 1, backgroundColor: "#020805" },
-            }}
-          />
-          <Stack.Screen
-            name="settings"
-            options={{
-              animation: "fade",
-              headerShown: true,
-              title: "Settings",
-              headerBackTitle: "",
-              ...HEADER_BASE,
-              contentStyle: { flex: 1, backgroundColor: "#000000" },
-            }}
-          />
-          <Stack.Screen
-            name="edit-profile"
-            options={{
-              animation: "fade",
-              headerShown: true,
-              title: "Edit Profile",
-              headerBackTitle: "",
-              ...HEADER_BASE,
-              contentStyle: { flex: 1, backgroundColor: "#000000", paddingTop: navTop },
-            }}
-          />
-          <Stack.Screen
-            name="edit-email"
-            options={{
-              animation: "fade",
-              headerShown: true,
-              title: "Email",
-              headerBackTitle: "",
-              ...HEADER_BASE,
-              contentStyle: { flex: 1, backgroundColor: "#000000", paddingTop: navTop },
-            }}
-          />
-          <Stack.Screen
-            name="alarm-config"
-            options={{
-              animation: "fade",
-              headerShown: true,
-              headerBackTitle: "",
-              ...HEADER_BASE,
-              contentStyle: { flex: 1, backgroundColor: "#020805" },
-            }}
-          />
-          <Stack.Screen
-            name="edit-alarm"
-            options={{
-              animation: "fade",
-              headerShown: true,
-              headerBackTitle: "",
-              ...HEADER_BASE,
-              contentStyle: { flex: 1, backgroundColor: "#000000", paddingTop: navTop },
-            }}
-          />
-          <Stack.Screen
-            name="sounds"
-            options={{
-              animation: "fade",
-              headerShown: true,
-              title: "Sounds",
-              headerBackTitle: "",
-              ...HEADER_BASE,
-              contentStyle: { flex: 1, backgroundColor: "#020805", paddingTop: navTop },
-            }}
-          />
-          <Stack.Screen
-            name="paywall"
-            options={{
-              presentation: "modal",
-              animation: "slide_from_bottom",
-              headerShown: false,
-              contentStyle: { flex: 1, backgroundColor: "#000000" },
-            }}
-          />
-          <Stack.Screen
-            name="intro"
-            options={{
-              animation: "fade",
-              headerShown: false,
-              contentStyle: { flex: 1, backgroundColor: "#000000" },
-            }}
-          />
-          <Stack.Screen
-            name="welcome"
-            options={{
-              animation: "fade",
-              headerShown: false,
-              contentStyle: { flex: 1, backgroundColor: "#000000" },
-            }}
-          />
-          <Stack.Screen
-            name="player"
-            options={{
-              animation: "fade",
-              headerShown: false,
-              contentStyle: { flex: 1, backgroundColor: "#000000" },
-            }}
-          />
-          <Stack.Screen
-            name="habit-add"
-            options={{
-              animation: "fade",
-              headerShown: true,
-              title: "New Habit",
-              headerBackTitle: "",
-              ...HEADER_BASE,
-              contentStyle: { flex: 1, backgroundColor: "#000000" },
-            }}
-          />
-          <Stack.Screen
-            name="alarm-debug"
-            options={{
-              animation: "fade",
-              headerShown: true,
-              title: "Alarm Debug",
-              headerBackTitle: "",
-              ...HEADER_BASE,
-              contentStyle: { flex: 1, backgroundColor: "#000000", paddingTop: navTop },
-            }}
-          />
+        <Stack screenOptions={STACK}>
+          {/* Entry */}
+          <Stack.Screen name="index" options={BARE} />
+          <Stack.Screen name="welcome" options={{ ...BARE, animation: "fade" }} />
+          <Stack.Screen name="intro" options={{ ...BARE, animation: "fade" }} />
+          <Stack.Screen name="onboarding" options={{ ...BARE, animation: "fade", gestureEnabled: false }} />
+          <Stack.Screen name="auth" options={{ ...BARE, animation: "none" }} />
+
+          {/* Home */}
+          <Stack.Screen name="(tabs)" options={BARE} />
+
+          {/* Full-screen surfaces */}
+          <Stack.Screen name="player" options={{ ...BARE, animation: "fade" }} />
+          <Stack.Screen name="goodnight" options={{ ...BARE, animation: "fade" }} />
+          <Stack.Screen name="paywall" options={{ ...BARE, presentation: "modal", animation: "slide_from_bottom" }} />
+
+          {/* Editors present as sheets */}
+          <Stack.Screen name="alarm-config" options={SHEET} />
+          <Stack.Screen name="habit-add" options={{ ...SHEET, title: "New Habit" }} />
+
+          {/* Pushed pages */}
+          <Stack.Screen name="sounds" options={{ title: "Choose Sound" }} />
+          <Stack.Screen name="settings" options={{ title: "Settings" }} />
+          <Stack.Screen name="edit-profile" options={{ title: "Profile" }} />
+          <Stack.Screen name="edit-email" options={{ title: "Email" }} />
+          <Stack.Screen name="ambient-picker" options={{ title: "Ambient Sound" }} />
+          <Stack.Screen name="alarm-debug" options={{ title: "Alarm Debug" }} />
         </Stack>
       </GestureHandlerRootView>
-      </BackdropProvider>
-      </MaterialProvider>
     </AuthProvider>
   );
 }

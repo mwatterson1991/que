@@ -1,19 +1,10 @@
-import { useState, useEffect, useRef } from "react";
-import {
-  View,
-  Text,
-  TextInput,
-  Pressable,
-  Alert,
-  KeyboardAvoidingView,
-  Platform,
-  StyleSheet,
-} from "react-native";
-import { Ionicons } from "@expo/vector-icons";
+import { useState, useEffect, useRef, type ComponentProps } from "react";
+import { View, TextInput, Alert, KeyboardAvoidingView, Platform, StyleSheet, ScrollView } from "react-native";
 import { useRouter } from "expo-router";
+import { useSafeAreaInsets } from "react-native-safe-area-context";
 import { useAuth } from "@/lib/auth";
-import { Glass, GlassButton } from "@/components/Glass";
-import { F, S } from "@/lib/fonts";
+import { Screen, Txt, Section, Button, IconButton } from "@/components/ui";
+import { C, SP, TYPE } from "@/lib/tokens";
 
 const PHRASES = [
   "Your mind is trainable.",
@@ -70,12 +61,26 @@ function CyclingTagline() {
 
   return (
     <View style={styles.taglineRow}>
-      <Text style={[styles.taglineText, { opacity: visible ? 1 : 0 }]}>
+      <Txt kind="body" style={{ opacity: visible ? 1 : 0 }}>
         {displayed}
         {visible && displayed.length > 0 && displayed.length < PHRASES[phraseIndex].length && (
-          <Text style={styles.cursor}>|</Text>
+          <Txt kind="body" tone="tertiary">|</Txt>
         )}
-      </Text>
+      </Txt>
+    </View>
+  );
+}
+
+// ─── Field (a TextInput inside a grouped-list cell) ──────
+function Field(props: ComponentProps<typeof TextInput>) {
+  return (
+    <View style={styles.cell}>
+      <TextInput
+        placeholderTextColor={C.labelTertiary}
+        selectionColor={C.accent}
+        {...props}
+        style={[TYPE.body, { color: C.label }]}
+      />
     </View>
   );
 }
@@ -85,6 +90,7 @@ type Mode = "landing" | "login" | "signup";
 
 export default function AuthScreen() {
   const router = useRouter();
+  const { top, bottom } = useSafeAreaInsets();
   const { signInWithEmail, signUpWithEmail } = useAuth();
 
   const [mode, setMode] = useState<Mode>("landing");
@@ -134,41 +140,27 @@ export default function AuthScreen() {
   // ─── Landing (buttons only) ─────────────────────────────
   if (mode === "landing") {
     return (
-      <View style={styles.container}>
-        <Pressable
-          onPress={() => (router.canGoBack() ? router.back() : router.replace("/welcome" as any))}
-          style={styles.closeButton}
-          hitSlop={16}
-          accessibilityRole="button"
-          accessibilityLabel="Back"
-        >
-          <Glass liquid intensity={1.1} scrim="soft" style={styles.closeGlass}>
-            <Ionicons name="arrow-back" size={22} color="#ffffff" />
-          </Glass>
-        </Pressable>
+      <Screen>
+        <View style={[styles.topBar, { paddingTop: top }]}>
+          <IconButton
+            icon="chevron-back"
+            label="Back"
+            onPress={() => (router.canGoBack() ? router.back() : router.replace("/welcome" as any))}
+          />
+        </View>
         <View style={styles.center}>
-          <Text style={styles.logoText}>Morning Que</Text>
+          <Txt kind="editorial" style={styles.wordmark}>Morning Que</Txt>
           <CyclingTagline />
         </View>
 
-        <View style={styles.bottomSheet}>
-          <Pressable onPress={() => setMode("signup")} accessibilityRole="button" accessibilityLabel="Create account">
-            <GlassButton tone="bright" phase={0.15} style={styles.sheetButton}>
-              <Text style={styles.primaryButtonText}>Create account</Text>
-            </GlassButton>
-          </Pressable>
-
-          <Pressable onPress={() => setMode("login")} accessibilityRole="button" accessibilityLabel="Log in">
-            <GlassButton tone="quiet" phase={0.55} style={styles.sheetButton}>
-              <Text style={styles.darkButtonText}>Log in</Text>
-            </GlassButton>
-          </Pressable>
-
-          <Text style={styles.legalText}>
+        <View style={[styles.footer, { paddingBottom: bottom + SP.lg }]}>
+          <Button title="Create account" onPress={() => setMode("signup")} />
+          <Button title="Log in" tone="plain" onPress={() => setMode("login")} style={styles.link} />
+          <Txt kind="caption1" tone="tertiary" style={styles.legal}>
             By continuing you agree to our Terms & Privacy Policy.
-          </Text>
+          </Txt>
         </View>
-      </View>
+      </Screen>
     );
   }
 
@@ -176,211 +168,107 @@ export default function AuthScreen() {
   const isSignUp = mode === "signup";
 
   return (
-    <KeyboardAvoidingView
-      behavior={Platform.OS === "ios" ? "padding" : undefined}
-      style={styles.container}
-    >
-      <Pressable onPress={() => setMode("landing")} style={styles.closeButton} hitSlop={16} accessibilityRole="button" accessibilityLabel="Back">
-        <Glass liquid intensity={1.1} scrim="soft" style={styles.closeGlass}>
-          <Ionicons name="arrow-back" size={22} color="#ffffff" />
-        </Glass>
-      </Pressable>
+    <Screen>
+      <KeyboardAvoidingView behavior={Platform.OS === "ios" ? "padding" : undefined} style={styles.flex}>
+        <View style={[styles.topBar, { paddingTop: top }]}>
+          <IconButton icon="chevron-back" label="Back" onPress={() => setMode("landing")} />
+        </View>
 
-      <View style={styles.formCenter}>
-        <Text style={styles.formTitle}>{isSignUp ? "Create account" : "Welcome back"}</Text>
+        <ScrollView
+          style={styles.flex}
+          contentContainerStyle={[styles.form, { paddingBottom: bottom + SP.xl }]}
+          keyboardShouldPersistTaps="handled"
+        >
+          <Txt kind="title1" style={styles.formTitle}>
+            {isSignUp ? "Create account" : "Welcome back"}
+          </Txt>
 
-        {isSignUp && (
-          <View style={styles.nameRow}>
-            <TextInput
-              value={firstName}
-              onChangeText={setFirstName}
-              placeholder="First name"
-              placeholderTextColor="#52525b"
-              style={[styles.input, { flex: 1 }]}
-              autoCapitalize="words"
+          {isSignUp && (
+            <Section header="Name">
+              <Field value={firstName} onChangeText={setFirstName} placeholder="First name" autoCapitalize="words" />
+              <Field value={lastName} onChangeText={setLastName} placeholder="Last name" autoCapitalize="words" />
+            </Section>
+          )}
+
+          <Section header="Account">
+            <Field
+              value={email}
+              onChangeText={setEmail}
+              placeholder="Email"
+              keyboardType="email-address"
+              autoCapitalize="none"
+              autoCorrect={false}
             />
-            <TextInput
-              value={lastName}
-              onChangeText={setLastName}
-              placeholder="Last name"
-              placeholderTextColor="#52525b"
-              style={[styles.input, { flex: 1 }]}
-              autoCapitalize="words"
+            <Field value={password} onChangeText={setPassword} placeholder="Password" secureTextEntry />
+          </Section>
+
+          <View style={styles.footer}>
+            <Button
+              title={busy ? "Please wait..." : isSignUp ? "Create account" : "Log in"}
+              onPress={isSignUp ? handleSignUp : handleLogin}
+              disabled={busy}
+            />
+            <Button
+              title={isSignUp ? "Already have an account? Log in" : "Don't have an account? Sign up"}
+              tone="plain"
+              onPress={() => setMode(isSignUp ? "login" : "signup")}
+              style={styles.link}
             />
           </View>
-        )}
-
-        <TextInput
-          value={email}
-          onChangeText={setEmail}
-          placeholder="Email"
-          placeholderTextColor="#52525b"
-          style={styles.input}
-          keyboardType="email-address"
-          autoCapitalize="none"
-          autoCorrect={false}
-        />
-
-        <TextInput
-          value={password}
-          onChangeText={setPassword}
-          placeholder="Password"
-          placeholderTextColor="#52525b"
-          style={styles.input}
-          secureTextEntry
-        />
-
-        <Pressable
-          style={[styles.submitWrap, busy && { opacity: 0.5 }]}
-          onPress={isSignUp ? handleSignUp : handleLogin}
-          disabled={busy}
-          accessibilityRole="button"
-          accessibilityState={{ disabled: busy }}
-        >
-          <GlassButton tone="bright" phase={0.25} style={styles.submitButton}>
-            <Text style={styles.submitText}>
-              {busy ? "Please wait..." : isSignUp ? "Create account" : "Log in"}
-            </Text>
-          </GlassButton>
-        </Pressable>
-
-        <Pressable onPress={() => setMode(isSignUp ? "login" : "signup")}>
-          <Text style={styles.switchText}>
-            {isSignUp ? "Already have an account? Log in" : "Don't have an account? Sign up"}
-          </Text>
-        </Pressable>
-      </View>
-    </KeyboardAvoidingView>
+        </ScrollView>
+      </KeyboardAvoidingView>
+    </Screen>
   );
 }
 
 const styles = StyleSheet.create({
-  container: {
+  flex: {
     flex: 1,
-    backgroundColor: "#000000",
   },
-  closeButton: {
-    position: "absolute",
-    top: 60,
-    left: 20,
-    zIndex: 99,
-  },
-  closeGlass: {
-    width: 40,
-    height: 40,
-    borderRadius: 20,
-    overflow: "hidden",
+  topBar: {
+    flexDirection: "row",
     alignItems: "center",
-    justifyContent: "center",
+    paddingHorizontal: SP.xs,
   },
   center: {
     flex: 1,
     alignItems: "center",
     justifyContent: "center",
+    paddingHorizontal: SP.screen,
   },
-  logoText: {
-    fontFamily: "Lora",
-    fontSize: S.display,
-    fontWeight: "400",
-    color: "#f5f5f7",
-    marginBottom: 12,
+  wordmark: {
+    marginBottom: SP.md,
+    textAlign: "center",
   },
   taglineRow: {
-    height: 24,
+    height: SP.row,
     alignItems: "center",
     justifyContent: "center",
   },
-  taglineText: {
-    fontSize: S.body,
-    fontFamily: F.regular,
-    color: "#f5f5f7",
+  footer: {
+    paddingHorizontal: SP.screen,
+    paddingTop: SP.xxl,
   },
-  cursor: {
-    color: "#8b8b93",
-    fontWeight: "300",
+  link: {
+    marginTop: SP.xs,
   },
-
-  // Bottom sheet (landing)
-  bottomSheet: {
-    backgroundColor: "#000000",
-    borderTopLeftRadius: 28,
-    borderTopRightRadius: 28,
-    borderTopWidth: 1,
-    borderColor: "#1c1c1e",
-    paddingHorizontal: 20,
-    paddingTop: 28,
-    paddingBottom: 48,
-    gap: 12,
-  },
-  sheetButton: {
-    borderRadius: 16,
-    height: 58,
-    paddingVertical: 0,
-  },
-  primaryButtonText: {
-    fontSize: S.body,
-    fontFamily: F.semibold,
-    color: "#ffffff",
-  },
-  darkButtonText: {
-    fontSize: S.body,
-    fontFamily: F.semibold,
-    color: "#f5f5f7",
-  },
-  legalText: {
-    fontSize: S.micro,
-    fontFamily: F.regular,
-    color: "#3f3f46",
+  legal: {
     textAlign: "center",
-    marginTop: 4,
+    marginTop: SP.md,
   },
 
-  // Form screen
-  formCenter: {
-    flex: 1,
+  // Form
+  form: {
+    flexGrow: 1,
     justifyContent: "center",
-    paddingHorizontal: 24,
   },
   formTitle: {
-    fontSize: S.heading,
-    fontFamily: F.bold,
-    color: "#f5f5f7",
-    marginBottom: 28,
+    paddingHorizontal: SP.screen,
   },
-  nameRow: {
-    flexDirection: "row",
-    gap: 12,
-  },
-  input: {
-    backgroundColor: "#1c1c1e",
-    borderRadius: 12,
-    paddingHorizontal: 16,
-    paddingVertical: 16,
-    color: "#f5f5f7",
-    fontSize: S.body,
-    fontFamily: F.regular,
-    marginBottom: 14,
-    borderWidth: 1,
-    borderColor: "#2c2c2e",
-  },
-  submitWrap: {
-    marginTop: 8,
-  },
-  submitButton: {
-    borderRadius: 14,
-    height: 56,
-    paddingVertical: 0,
-  },
-  submitText: {
-    fontSize: S.body,
-    fontFamily: F.semibold,
-    color: "#ffffff",
-  },
-  switchText: {
-    color: "#8b8b93",
-    fontSize: S.secondary,
-    fontFamily: F.regular,
-    textAlign: "center",
-    marginTop: 20,
+  cell: {
+    backgroundColor: C.fill,
+    paddingHorizontal: SP.lg,
+    minHeight: SP.row,
+    justifyContent: "center",
   },
 });

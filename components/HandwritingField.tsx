@@ -23,7 +23,7 @@ import {
 } from "react-native";
 import { HandwritingText } from "@/components/HandwritingText";
 import { handwritingLineHeight } from "@/lib/hersheyFont";
-import { F, S } from "@/lib/fonts";
+import { C, TYPE } from "@/lib/tokens";
 
 export type HandwritingFieldProps = {
   value: string;
@@ -51,8 +51,8 @@ export function HandwritingField({
   onBlur,
   onSubmitEditing,
   placeholder,
-  placeholderColor = "#9a9aa2",
-  color = "#f5f5f7",
+  placeholderColor = C.labelTertiary,
+  color = C.label,
   fontSize = 18,
   strokeWidth = 1.8,
   animate = false,
@@ -95,6 +95,7 @@ export function HandwritingField({
       {value.length === 0 && placeholder ? (
         <Text
           style={[
+            TYPE.body,
             styles.placeholder,
             { color: placeholderColor, lineHeight: fontSize * 1.28 },
           ]}
@@ -108,11 +109,7 @@ export function HandwritingField({
       {/* The functional layer. Transparent, but in every other way the same
           input this screen has always used. */}
       <TextInput
-        style={[
-          StyleSheet.absoluteFill,
-          styles.input,
-          { lineHeight, fontSize: S.body },
-        ]}
+        style={[StyleSheet.absoluteFill, TYPE.body, styles.input, { lineHeight }]}
         value={value}
         onChangeText={onChangeText}
         onSelectionChange={onSelectionChange}
@@ -126,9 +123,9 @@ export function HandwritingField({
         // submitBehavior="submit" keeps return as SAVE rather than newline.
         multiline
         scrollEnabled={false}
-        // We draw our own, aligned to the letterforms rather than to Switzer.
+        // We draw our own, aligned to the letterforms rather than to the system font.
         caretHidden
-        selectionColor="rgba(245,245,247,0.28)"
+        selectionColor={C.accent}
         autoFocus={autoFocus}
         returnKeyType={returnKeyType}
         submitBehavior={submitBehavior}
@@ -143,7 +140,6 @@ const styles = StyleSheet.create({
   wrap: { flex: 1, justifyContent: "flex-start" },
   input: {
     color: "transparent",
-    fontFamily: F.regular,
     padding: 0,
     margin: 0,
     textAlignVertical: "top",
@@ -152,8 +148,6 @@ const styles = StyleSheet.create({
     position: "absolute",
     left: 0,
     top: 0,
-    fontSize: S.body,
-    fontFamily: F.regular,
   },
 });
 

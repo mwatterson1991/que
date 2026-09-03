@@ -1,6 +1,7 @@
 import type { ComponentProps } from "react";
 import { View, StyleSheet } from "react-native";
 import { Ionicons } from "@expo/vector-icons";
+import { C, R } from "@/lib/tokens";
 
 type IoniconName = ComponentProps<typeof Ionicons>["name"];
 
@@ -83,8 +84,10 @@ export function iconForHabit(title: string): IoniconName {
   return DEFAULT_HABIT_ICON;
 }
 
-// The tinted chip the icon lives in — shared by the tracker and the add screen
-// so a habit looks identical wherever it appears.
+// The chip the icon lives in — shared by the tracker and the add screen so a
+// habit looks identical wherever it appears. The chip is a raised system fill;
+// the habit's own colour is carried by the glyph alone, the way a tinted
+// SF Symbol sits in a Settings row.
 export function HabitIcon({
   title,
   color,
@@ -95,20 +98,7 @@ export function HabitIcon({
   size?: number;
 }) {
   return (
-    <View
-      style={[
-        styles.chip,
-        {
-          width: size,
-          height: size,
-          borderRadius: size / 2,
-          // 8-digit hex: the habit's own color at ~13% for the wash and ~40%
-          // for the ring, so every chip is legible without a second palette.
-          backgroundColor: `${color}22`,
-          borderColor: `${color}66`,
-        },
-      ]}
-    >
+    <View style={[styles.chip, { width: size, height: size }]}>
       <Ionicons name={iconForHabit(title)} size={size * 0.5} color={color} />
     </View>
   );
@@ -118,6 +108,7 @@ const styles = StyleSheet.create({
   chip: {
     alignItems: "center",
     justifyContent: "center",
-    borderWidth: StyleSheet.hairlineWidth,
+    borderRadius: R.pill,
+    backgroundColor: C.fillHigh,
   },
 });

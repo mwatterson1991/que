@@ -1,12 +1,31 @@
 import { useState, useEffect } from "react";
-import { View, Text, TextInput, Pressable, ScrollView, Alert, StyleSheet } from "react-native";
-import { useRouter, useNavigation } from "expo-router";
-import { F, S } from "@/lib/fonts";
+import { View, TextInput, ScrollView, Alert, StyleSheet, type TextInputProps } from "react-native";
+import { Stack, useRouter } from "expo-router";
 import { useProfile } from "@/lib/useSupabase";
+import { Screen, Section, Button, Txt } from "@/components/ui";
+import { C, SP, TYPE } from "@/lib/tokens";
+
+// A label + text field pair, the way Contacts lays out an editable card.
+function Field({ label, style, ...input }: TextInputProps & { label: string }) {
+  return (
+    <View style={styles.field}>
+      <Txt kind="body" tone="secondary" style={styles.fieldLabel}>
+        {label}
+      </Txt>
+      <TextInput
+        placeholderTextColor={C.labelTertiary}
+        selectionColor={C.accent}
+        accessibilityLabel={label}
+        maxFontSizeMultiplier={1.6}
+        style={[TYPE.body, styles.input, style]}
+        {...input}
+      />
+    </View>
+  );
+}
 
 export default function EditProfileScreen() {
   const router = useRouter();
-  const navigation = useNavigation();
   const { profile, update } = useProfile();
 
   const [firstName, setFirstName] = useState("");
@@ -24,6 +43,12 @@ export default function EditProfileScreen() {
     }
   }, [profile]);
 
+  const dirty =
+    firstName !== (profile?.first_name || "") ||
+    lastName !== (profile?.last_name || "") ||
+    username !== (profile?.username || "") ||
+    bio !== (profile?.bio || "");
+
   const save = async () => {
     const result = await update({
       first_name: firstName,
@@ -38,103 +63,65 @@ export default function EditProfileScreen() {
     }
   };
 
-  useEffect(() => {
-    navigation.setOptions({
-      headerRight: () => (
-        <Pressable onPress={save} accessibilityRole="button" accessibilityLabel="Save profile">
-          <Text style={{ color: "#f5f5f7", fontSize: S.body, fontFamily: F.medium }}>Save</Text>
-        </Pressable>
-      ),
-    });
-  }, [navigation, firstName, lastName, username, bio]);
-
   return (
-    <ScrollView style={styles.container} contentContainerStyle={styles.scroll}>
-      <View style={styles.field}>
-        <Text style={styles.label}>First Name</Text>
-        <TextInput
-          value={firstName}
-          onChangeText={setFirstName}
-          style={styles.input}
-          placeholderTextColor="#52525b"
-        />
-      </View>
-      <View style={styles.sep} />
+    <Screen>
+      <Stack.Screen
+        options={{
+          title: "Profile",
+          headerRight: () => (
+            <Button tone="plain" title="Save" haptic={false} disabled={!dirty} onPress={save} accessibilityLabel="Save profile" style={styles.save} />
+          ),
+        }}
+      />
+      <ScrollView contentInsetAdjustmentBehavior="automatic" contentContainerStyle={styles.scroll} keyboardShouldPersistTaps="handled">
+        <Section header="Name">
+          <Field label="First" value={firstName} onChangeText={setFirstName} placeholder="First name" />
+          <Field label="Last" value={lastName} onChangeText={setLastName} placeholder="Last name" />
+        </Section>
 
-      <View style={styles.field}>
-        <Text style={styles.label}>Last Name</Text>
-        <TextInput
-          value={lastName}
-          onChangeText={setLastName}
-          style={styles.input}
-          placeholderTextColor="#52525b"
-        />
-      </View>
-      <View style={styles.sep} />
-
-      <View style={styles.field}>
-        <Text style={styles.label}>Username</Text>
-        <TextInput
-          value={username}
-          onChangeText={setUsername}
-          style={styles.input}
-          placeholderTextColor="#52525b"
-          autoCapitalize="none"
-        />
-      </View>
-      <View style={styles.sep} />
-
-      <View style={styles.field}>
-        <Text style={styles.label}>Bio</Text>
-        <TextInput
-          value={bio}
-          onChangeText={setBio}
-          style={[styles.input, styles.bioInput]}
-          placeholderTextColor="#52525b"
-          placeholder="Tell us about yourself..."
-          multiline
-          numberOfLines={3}
-        />
-      </View>
-    </ScrollView>
+        <Section header="Profile">
+          <Field label="Username" value={username} onChangeText={setUsername} placeholder="Username" autoCapitalize="none" />
+          <Field
+            label="Bio"
+            value={bio}
+            onChangeText={setBio}
+            placeholder="Tell us about yourself..."
+            multiline
+            numberOfLines={3}
+            style={styles.bio}
+          />
+        </Section>
+      </ScrollView>
+    </Screen>
   );
 }
 
 const styles = StyleSheet.create({
-  container: {
-    flex: 1,
-    backgroundColor: "#000000",
-  },
   scroll: {
-    paddingHorizontal: 20,
-    paddingTop: 24,
-    paddingBottom: 48,
+    paddingBottom: SP.xxxl,
+  },
+  save: {
+    minHeight: 0,
+    paddingHorizontal: 0,
   },
   field: {
     flexDirection: "row",
     alignItems: "center",
-    paddingVertical: 14,
+    minHeight: SP.row,
+    paddingHorizontal: SP.lg,
+    paddingVertical: SP.sm,
+    backgroundColor: C.fill,
   },
-  label: {
-    color: "#8b8b93",
-    fontSize: S.secondary,
-    fontFamily: F.regular,
-    width: 110,
+  fieldLabel: {
+    width: 96,
   },
   input: {
     flex: 1,
-    color: "#f5f5f7",
-    fontSize: S.body,
-    fontFamily: F.regular,
-    textAlign: "right",
+    color: C.label,
+    paddingVertical: 0,
   },
-  bioInput: {
-    textAlign: "right",
+  bio: {
     minHeight: 60,
     textAlignVertical: "top",
-  },
-  sep: {
-    height: StyleSheet.hairlineWidth,
-    backgroundColor: "#2c2c2e",
   },
 });

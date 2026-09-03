@@ -1,12 +1,11 @@
 import { useState, useEffect, useRef } from "react";
-import { View, Text, Pressable, StyleSheet, ActivityIndicator } from "react-native";
+import { View, StyleSheet } from "react-native";
 import { useRouter } from "expo-router";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 import { VideoView, useVideoPlayer } from "expo-video";
 import AsyncStorage from "@react-native-async-storage/async-storage";
-import { Svg, Defs, LinearGradient, Stop, Rect } from "react-native-svg";
-import { GlassButton } from "@/components/Glass";
-import { F, S } from "@/lib/fonts";
+import { Screen, Txt, Button } from "@/components/ui";
+import { C, SP } from "@/lib/tokens";
 import { ensureGuestSession } from "@/lib/guestAuth";
 import { useAuth } from "@/lib/auth";
 
@@ -23,12 +22,12 @@ export const WELCOME_MAX_SHOWS = 3;
 export default function WelcomeScreen() {
   const router = useRouter();
   const { enterAsGuest } = useAuth();
-  const insets = useSafeAreaInsets();
+  const { top, bottom } = useSafeAreaInsets();
   const [entering, setEntering] = useState(false);
   const [videoIndex] = useState(() => Math.floor(Math.random() * HERO_VIDEOS.length));
   const countedRef = useRef(false);
 
-  // Autoplaying, looping, muted hero footage (was shouldPlay/isLooping/isMuted before expo-video)
+  // Autoplaying, looping, muted hero footage
   const heroPlayer = useVideoPlayer(HERO_VIDEOS[videoIndex], (player) => {
     player.loop = true;
     player.muted = true;
@@ -64,7 +63,8 @@ export default function WelcomeScreen() {
   };
 
   return (
-    <View style={styles.container}>
+    <Screen>
+      {/* Full-bleed hero footage */}
       <VideoView
         player={heroPlayer}
         style={StyleSheet.absoluteFill}
@@ -72,106 +72,50 @@ export default function WelcomeScreen() {
         nativeControls={false}
       />
 
-      {/* Scrim — darkens footage so the type reads, like the site's hero */}
-      <View style={StyleSheet.absoluteFill} pointerEvents="none">
-        <Svg width="100%" height="100%">
-          <Defs>
-            <LinearGradient id="scrim" x1="0" y1="0" x2="0" y2="1">
-              <Stop offset="0%" stopColor="#000000" stopOpacity="0.55" />
-              <Stop offset="45%" stopColor="#000000" stopOpacity="0.25" />
-              <Stop offset="100%" stopColor="#000000" stopOpacity="0.82" />
-            </LinearGradient>
-          </Defs>
-          <Rect x="0" y="0" width="100%" height="100%" fill="url(#scrim)" />
-        </Svg>
+      <View style={[styles.wordmark, { paddingTop: top + SP.lg }]} pointerEvents="none">
+        <Txt kind="footnote" tone="secondary" maxFontSizeMultiplier={1.2}>
+          MORNING QUE
+        </Txt>
       </View>
 
-      <View style={[styles.content, { paddingTop: insets.top + 18, paddingBottom: Math.max(insets.bottom, 16) + 20 }]}>
-        <Text style={styles.wordmark} maxFontSizeMultiplier={1.2}>
-          Morning Que
-        </Text>
+      {/* Copy and the one action sit on a flat scrim at the foot of the footage */}
+      <View style={[styles.foot, { paddingBottom: bottom + SP.xl }]}>
+        <Txt kind="editorial" maxFontSizeMultiplier={1.2} style={styles.headline}>
+          Fall in love with your mornings.
+        </Txt>
 
-        <View style={styles.heroBlock}>
-          <Text style={styles.headline} maxFontSizeMultiplier={1.2}>
-            Fall in love with your mornings.
-          </Text>
-        </View>
-
-        <View>
-          <Pressable
-            style={({ pressed }) => [pressed && { transform: [{ scale: 0.98 }] }]}
-            onPress={handleEnter}
-            disabled={entering}
-            accessibilityRole="button"
-            accessibilityLabel="Enter Morning Que"
-            accessibilityState={{ disabled: entering }}
-          >
-            <GlassButton tone="bright" style={styles.enterButton}>
-              {entering ? (
-                <ActivityIndicator color="#ffffff" />
-              ) : (
-                <Text style={styles.enterText} maxFontSizeMultiplier={1.2}>Enter</Text>
-              )}
-            </GlassButton>
-          </Pressable>
-          <Pressable
-            style={styles.loginLink}
-            onPress={() => router.push("/auth")}
-            hitSlop={10}
-            accessibilityRole="button"
-            accessibilityLabel="Log in to an existing account"
-          >
-            <Text style={styles.loginText}>Have an account? Log in</Text>
-          </Pressable>
-        </View>
+        <Button
+          title={entering ? "Entering…" : "Enter"}
+          onPress={handleEnter}
+          disabled={entering}
+          accessibilityLabel="Enter Morning Que"
+        />
+        <Button
+          title="Have an account? Log in"
+          tone="plain"
+          onPress={() => router.push("/auth")}
+          accessibilityLabel="Log in to an existing account"
+          style={styles.login}
+        />
       </View>
-    </View>
+    </Screen>
   );
 }
 
 const styles = StyleSheet.create({
-  container: {
-    flex: 1,
-    backgroundColor: "#000000",
-  },
-  content: {
-    flex: 1,
-    paddingHorizontal: 28,
-    justifyContent: "space-between",
-  },
   wordmark: {
-    fontFamily: "Lora",
-    fontSize: S.title,
-    color: "#f5f5f7",
-    textAlign: "center",
+    alignItems: "center",
   },
-  heroBlock: {
-    flex: 1,
-    justifyContent: "flex-end",
-    paddingBottom: 36,
+  foot: {
+    marginTop: "auto",
+    paddingHorizontal: SP.screen,
+    paddingTop: SP.xxl,
+    backgroundColor: C.scrim,
   },
   headline: {
-    fontFamily: "Lora",
-    fontSize: S.hero,
-    lineHeight: 52,
-    color: "#f5f5f7",
+    marginBottom: SP.xxl,
   },
-  enterButton: {
-    paddingVertical: 17,
-  },
-  enterText: {
-    color: "#ffffff",
-    fontSize: S.body,
-    fontFamily: F.semibold,
-    letterSpacing: 0.3,
-  },
-  loginLink: {
-    alignItems: "center",
-    paddingTop: 16,
-  },
-  loginText: {
-    color: "rgba(255,255,255,0.6)",
-    fontSize: S.caption,
-    fontFamily: F.regular,
+  login: {
+    marginTop: SP.xs,
   },
 });

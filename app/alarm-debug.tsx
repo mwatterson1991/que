@@ -3,17 +3,9 @@
  * Accessible from Settings → Debug Alarms
  * Use this to verify alarm firing on device tonight.
  */
-import { useState, useEffect, useCallback } from "react";
-import {
-  View,
-  Text,
-  Pressable,
-  ScrollView,
-  StyleSheet,
-  Alert,
-  ActivityIndicator,
-} from "react-native";
-import { useFocusEffect } from "expo-router";
+import { useState, useCallback } from "react";
+import { View, ScrollView, StyleSheet, Alert, ActivityIndicator } from "react-native";
+import { Stack, useFocusEffect } from "expo-router";
 import * as Notifications from "expo-notifications";
 import {
   requestAlarmPermissions,
@@ -22,7 +14,8 @@ import {
   getPendingAlarms,
   SchedulableAlarm,
 } from "@/lib/alarmScheduler";
-import { F, S } from "@/lib/fonts";
+import { Screen, Section, Row, Button } from "@/components/ui";
+import { C, SP } from "@/lib/tokens";
 
 // Dummy session ID — deep-sleep session from the seed data
 // Change to any valid session ID from your Supabase sessions table
@@ -48,6 +41,23 @@ const TEST_ALARMS = [
   { label: "+5 min",  ms: 5 * 60 * 1000 },
   { label: "+30 min", ms: 30 * 60 * 1000 },
   { label: "+2 hr",   ms: 2 * 60 * 60 * 1000 },
+];
+
+// What to verify tonight: expected (ok), unsure (maybe), known gap (no).
+const MARK = {
+  ok: { icon: "checkmark-circle", color: C.switchOn },
+  maybe: { icon: "help-circle", color: C.accent },
+  no: { icon: "close-circle", color: C.danger },
+} as const;
+
+const CHECKS: { mark: keyof typeof MARK; title: string; detail: string }[] = [
+  { mark: "ok", title: "App open", detail: "Notification banner appears + sound plays" },
+  { mark: "ok", title: "App backgrounded", detail: "Notification fires, tap → opens player" },
+  { mark: "ok", title: "App killed", detail: "Notification fires, tap → opens player" },
+  { mark: "ok", title: "Phone locked", detail: "Notification fires on lock screen" },
+  { mark: "maybe", title: "DND / Focus mode", detail: "Should break through (Time Sensitive)" },
+  { mark: "no", title: "Silent mode", detail: "Will NOT make sound (needs Critical Alerts)" },
+  { mark: "no", title: "Auto-play audio", detail: "Not yet implemented (tap required)" },
 ];
 
 export default function AlarmDebugScreen() {
@@ -91,189 +101,114 @@ export default function AlarmDebugScreen() {
     Alert.alert("Cleared", "All pending alarms cancelled.");
   };
 
+  const granted = permStatus === "granted";
+
   return (
-    <ScrollView style={styles.container} contentContainerStyle={styles.scroll}>
-
-      {/* Permission status */}
-      <View style={styles.section}>
-        <Text style={styles.sectionTitle}>NOTIFICATION PERMISSION</Text>
-        <View style={styles.statusRow}>
-          <View style={[
-            styles.statusDot,
-            { backgroundColor: permStatus === "granted" ? "#4cd964" : "#ff3b30" }
-          ]} />
-          <Text style={styles.statusText}>{permStatus}</Text>
-        </View>
-        {permStatus !== "granted" && (
-          <Pressable style={styles.button} onPress={async () => {
-            const ok = await requestAlarmPermissions();
-            setPermStatus(ok ? "granted" : "denied");
-          }}>
-            <Text style={styles.buttonText}>Request Permission</Text>
-          </Pressable>
+    <Screen>
+      <Stack.Screen options={{ title: "Alarm Debug" }} />
+      <ScrollView contentInsetAdjustmentBehavior="automatic" contentContainerStyle={styles.scroll}>
+        {/* Permission status */}
+        <Section header="Notification Permission">
+          <Row
+            icon={granted ? "checkmark-circle" : "close-circle"}
+            iconColor={granted ? C.switchOn : C.danger}
+            title="Status"
+            value={permStatus}
+          />
+        </Section>
+        {!granted && (
+          <View style={styles.buttons}>
+            <Button
+              tone="gray"
+              title="Request Permission"
+              onPress={async () => {
+                const ok = await requestAlarmPermissions();
+                setPermStatus(ok ? "granted" : "denied");
+              }}
+            />
+          </View>
         )}
-      </View>
 
-      {/* Schedule test alarms */}
-      <View style={styles.section}>
-        <Text style={styles.sectionTitle}>SCHEDULE TEST ALARM</Text>
-        <Text style={styles.hint}>
-          Lock your phone after tapping. The alarm fires even if the app is killed.{"\n"}
-          Silent mode will mute the sound (Critical Alerts not yet enabled).
-        </Text>
-        <View style={styles.buttonGrid}>
-          {TEST_ALARMS.map(({ label, ms }) => (
-            <Pressable
-              key={label}
-              style={styles.testButton}
-              onPress={() => schedule(ms, label)}
-              disabled={loading}
-            >
-              {loading ? (
-                <ActivityIndicator size="small" color="#f5f5f7" />
-              ) : (
-                <Text style={styles.testButtonText}>{label}</Text>
-              )}
-            </Pressable>
+        {/* Schedule test alarms */}
+        <Section
+          header="Schedule Test Alarm"
+          footer="Lock your phone after tapping. The alarm fires even if the app is killed. Silent mode will mute the sound (Critical Alerts not yet enabled)."
+        >
+          <View style={styles.grid}>
+            {TEST_ALARMS.map(({ label, ms }) => (
+              <Button
+                key={label}
+                tone="gray"
+                title={label}
+                disabled={loading}
+                onPress={() => schedule(ms, label)}
+                style={styles.gridButton}
+              />
+            ))}
+          </View>
+        </Section>
+        {loading && <ActivityIndicator color={C.labelSecondary} style={styles.spinner} />}
+
+        {/* Pending notifications */}
+        <Section header={`Pending Alarms (${pending.length})`}>
+          {pending.length === 0 ? (
+            <Row title="No alarms scheduled" accessory="none" disabled />
+          ) : (
+            pending.map((n) => {
+              const trigger = n.trigger as any;
+              const fireDate = trigger?.value ? new Date(trigger.value * 1000) : null;
+              return (
+                <Row
+                  key={n.identifier}
+                  title={n.content.title ?? n.identifier}
+                  value={fireDate ? formatDate(fireDate) : "date unknown"}
+                />
+              );
+            })
+          )}
+        </Section>
+        <View style={styles.buttons}>
+          <Button tone="gray" title="Refresh" onPress={refreshPending} />
+          {pending.length > 0 && <Button tone="destructive" title="Cancel All Alarms" onPress={clearAll} />}
+        </View>
+
+        {/* Test notes */}
+        <Section header="What to Verify Tonight">
+          {CHECKS.map((c) => (
+            <Row
+              key={c.title}
+              icon={MARK[c.mark].icon}
+              iconColor={MARK[c.mark].color}
+              title={c.title}
+              subtitle={c.detail}
+            />
           ))}
-        </View>
-      </View>
-
-      {/* Pending notifications */}
-      <View style={styles.section}>
-        <View style={styles.sectionHeader}>
-          <Text style={styles.sectionTitle}>PENDING ALARMS ({pending.length})</Text>
-          <Pressable onPress={refreshPending}>
-            <Text style={styles.refreshLink}>Refresh</Text>
-          </Pressable>
-        </View>
-
-        {pending.length === 0 ? (
-          <Text style={styles.emptyText}>No alarms scheduled.</Text>
-        ) : (
-          pending.map((n) => {
-            const trigger = n.trigger as any;
-            const fireDate = trigger?.value
-              ? new Date(trigger.value * 1000)
-              : trigger?.dateComponents
-              ? null
-              : null;
-            return (
-              <View key={n.identifier} style={styles.pendingRow}>
-                <Text style={styles.pendingTitle}>
-                  {n.content.title ?? n.identifier}
-                </Text>
-                <Text style={styles.pendingTime}>
-                  {fireDate ? formatDate(fireDate) : "date unknown"}
-                </Text>
-              </View>
-            );
-          })
-        )}
-
-        {pending.length > 0 && (
-          <Pressable style={styles.clearButton} onPress={clearAll}>
-            <Text style={styles.clearButtonText}>Cancel All Alarms</Text>
-          </Pressable>
-        )}
-      </View>
-
-      {/* Test notes */}
-      <View style={styles.section}>
-        <Text style={styles.sectionTitle}>WHAT TO VERIFY TONIGHT</Text>
-        {[
-          "✓ App open — notification banner appears + sound plays",
-          "✓ App backgrounded — notification fires, tap → opens player",
-          "✓ App killed — notification fires, tap → opens player",
-          "✓ Phone locked — notification fires on lock screen",
-          "? DND/Focus mode — should break through (Time Sensitive)",
-          "✗ Silent mode — will NOT make sound (needs Critical Alerts)",
-          "✗ Auto-play audio — not yet implemented (tap required)",
-        ].map((line, i) => (
-          <Text key={i} style={[
-            styles.checkLine,
-            line.startsWith("✗") && { color: "#ff3b30" },
-            line.startsWith("?") && { color: "#ff9f0a" },
-          ]}>
-            {line}
-          </Text>
-        ))}
-      </View>
-
-    </ScrollView>
+        </Section>
+      </ScrollView>
+    </Screen>
   );
 }
 
 const styles = StyleSheet.create({
-  container: { flex: 1, backgroundColor: "#000000" },
-  scroll: { padding: 20, paddingBottom: 60 },
-
-  section: { marginBottom: 32 },
-  sectionHeader: { flexDirection: "row", justifyContent: "space-between", alignItems: "center" },
-  sectionTitle: {
-    color: "#52525b",
-    fontSize: S.micro,
-    fontFamily: F.semibold,
-    letterSpacing: 1.2,
-    marginBottom: 12,
+  scroll: {
+    paddingBottom: SP.xxxl,
   },
-  hint: {
-    color: "#52525b",
-    fontSize: S.caption,
-    fontFamily: F.regular,
-    lineHeight: 19,
-    marginBottom: 16,
+  buttons: {
+    paddingHorizontal: SP.screen,
+    marginTop: SP.md,
+    gap: SP.sm,
   },
-
-  statusRow: { flexDirection: "row", alignItems: "center", gap: 10, marginBottom: 12 },
-  statusDot: { width: 10, height: 10, borderRadius: 5 },
-  statusText: { color: "#f5f5f7", fontSize: S.secondary, fontFamily: F.regular },
-
-  button: {
-    backgroundColor: "#1c1c1e",
-    borderRadius: 10,
-    paddingVertical: 12,
-    alignItems: "center",
-  },
-  buttonText: { color: "#f5f5f7", fontSize: S.secondary, fontFamily: F.medium },
-
-  buttonGrid: { flexDirection: "row", flexWrap: "wrap", gap: 10 },
-  testButton: {
-    flex: 1,
-    minWidth: "44%",
-    backgroundColor: "#1c1c1e",
-    borderRadius: 12,
-    paddingVertical: 18,
-    alignItems: "center",
-    justifyContent: "center",
-  },
-  testButtonText: { color: "#f5f5f7", fontSize: S.body, fontFamily: F.medium },
-
-  refreshLink: { color: "#3B82F6", fontSize: S.caption, fontFamily: F.regular },
-
-  pendingRow: {
+  grid: {
     flexDirection: "row",
-    justifyContent: "space-between",
-    paddingVertical: 12,
-    borderBottomWidth: StyleSheet.hairlineWidth,
-    borderBottomColor: "#1c1c1e",
+    flexWrap: "wrap",
+    gap: SP.sm,
+    padding: SP.md,
   },
-  pendingTitle: { color: "#f5f5f7", fontSize: S.caption, fontFamily: F.regular, flex: 1 },
-  pendingTime: { color: "#52525b", fontSize: S.caption, fontFamily: F.regular },
-
-  clearButton: {
-    marginTop: 16,
-    paddingVertical: 12,
-    alignItems: "center",
+  gridButton: {
+    flexGrow: 1,
+    flexBasis: "45%",
   },
-  clearButtonText: { color: "#ff3b30", fontSize: S.secondary, fontFamily: F.regular },
-
-  emptyText: { color: "#3f3f46", fontSize: S.caption, fontFamily: F.regular },
-
-  checkLine: {
-    color: "#4cd964",
-    fontSize: S.caption,
-    fontFamily: F.regular,
-    lineHeight: 22,
+  spinner: {
+    marginTop: SP.md,
   },
 });

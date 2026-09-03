@@ -1,8 +1,9 @@
 import { useRef, useCallback } from "react";
-import { View, Text, FlatList } from "react-native";
-import { F, S } from "@/lib/fonts";
+import { View, Text, FlatList, StyleSheet } from "react-native";
+import { C, R, TYPE } from "@/lib/tokens";
 
-// Scroll-wheel column shared by the alarm editor surfaces.
+// Scroll-wheel column for the alarm editor, drawn like a dark UIPickerView:
+// regular-weight digits, the selected row on a slightly lighter band.
 export const ITEM_H = 40;
 export const VISIBLE = 5;
 
@@ -18,16 +19,14 @@ export function WheelColumn({
   data,
   selected,
   onSelect,
-  width = 50,
+  width = 64,
   label = "Value",
-  light = false,
 }: {
   data: string[];
   selected: number;
   onSelect: (index: number) => void;
   width?: number;
   label?: string;
-  light?: boolean;
 }) {
   const listRef = useRef<FlatList<string>>(null);
 
@@ -71,28 +70,42 @@ export function WheelColumn({
           offset: ITEM_H * index,
           index,
         })}
-        renderItem={({ item, index }) => {
-          const isSelected = index === selected;
-          return (
-            <View style={{ height: ITEM_H, justifyContent: "center", alignItems: "center" }}>
-              <Text
-                style={{
-                  fontSize: S.title,
-                  fontFamily: F.regular,
-                  color: isSelected
-                    ? "#ffffff"
-                    : light
-                      ? "rgba(255,255,255,0.35)"
-                      : "#48484a",
-                }}
-                maxFontSizeMultiplier={1.4}
-              >
-                {item}
-              </Text>
-            </View>
-          );
-        }}
+        renderItem={({ item, index }) => (
+          <View style={styles.item}>
+            <Text
+              style={[TYPE.picker, { color: index === selected ? C.label : C.labelTertiary }]}
+              maxFontSizeMultiplier={1.3}
+            >
+              {item}
+            </Text>
+          </View>
+        )}
       />
     </View>
   );
 }
+
+/**
+ * The band behind the selected row. Rendered by the screen, absolutely
+ * positioned under the columns, with no offsets: Yoga centres an
+ * offset-less absolute child by the parent's alignment, which is also how
+ * the columns are centred, so the band lands on the middle row.
+ */
+export function WheelHighlight({ width }: { width: number }) {
+  return <View style={[styles.highlight, { width }]} pointerEvents="none" />;
+}
+
+const styles = StyleSheet.create({
+  item: {
+    height: ITEM_H,
+    justifyContent: "center",
+    alignItems: "center",
+  },
+  highlight: {
+    position: "absolute",
+    height: ITEM_H,
+    alignSelf: "center",
+    borderRadius: R.sm,
+    backgroundColor: C.fillHigh,
+  },
+});

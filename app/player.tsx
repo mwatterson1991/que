@@ -1,7 +1,6 @@
 import { useState, useEffect, useRef } from "react";
 import {
   View,
-  Text,
   Pressable,
   StyleSheet,
   Dimensions,
@@ -25,7 +24,7 @@ import Animated, {
   Easing,
   SharedValue,
 } from "react-native-reanimated";
-import { F, S } from "@/lib/fonts";
+import { C, R, SP, PRESS_OPACITY } from "@/lib/tokens";
 import { useSessions, useActivity, useProfile, useCategories, usePreferences } from "@/lib/useSupabase";
 import { setPickedSound } from "@/lib/soundPicker";
 import {
@@ -51,7 +50,7 @@ import {
 } from "@/lib/ambient";
 import { artworkFor, isHypnotherapy } from "@/lib/catalog";
 import { usePremium, isLocked } from "@/lib/premium";
-import { Glass, GlassButton } from "@/components/Glass";
+import { Button, IconButton, Txt } from "@/components/ui";
 
 let Haptics: any = null;
 try { Haptics = require("expo-haptics"); } catch {}
@@ -60,12 +59,9 @@ const { width: SCREEN_W } = Dimensions.get("window");
 const ORB_RADIUS = 38;
 const ORB_SIZE = ORB_RADIUS * 2 + 24;
 const SWING_RANGE = SCREEN_W / 2 - ORB_SIZE / 2 - 20;
-// The dock is a glass card inset from the screen edge, so the scrub math has
-// to use the card's real inner width or the thumbless bar lands off by 8pt.
-const DOCK_MARGIN = 12;
-const DOCK_PAD = 16;
-const TRACK_PAD = DOCK_MARGIN + DOCK_PAD;
-const TRACK_WIDTH = SCREEN_W - TRACK_PAD * 2;
+// The dock is a full-width sheet; the scrub track is inset by its padding.
+const DOCK_PAD = SP.xl;
+const TRACK_WIDTH = SCREEN_W - DOCK_PAD * 2;
 const PARTICLE_COUNT = 72;
 const MANTRA_GAP = 20;
 const TELEPROMPTER_PAD = 400; // static padding so item y positions never shift
@@ -92,6 +88,8 @@ const BASE_PARTICLES = (() => {
 })();
 
 // ─── Single particle ─────────────────────────────────────
+// Flat dots in the accent: the near face at full strength, the far side
+// fading out. Depth comes from size and opacity, never from a glow.
 function OrbParticle({
   bx, by, z, exp,
 }: {
@@ -99,8 +97,7 @@ function OrbParticle({
 }) {
   const depth = (z / ORB_RADIUS + 1) / 2;
   const size = 1 + depth * 1.5;
-  const opacity = 0.12 + depth * 0.88;
-  const color = depth > 0.55 ? "#FF7030" : depth > 0.25 ? "#DD3800" : "#882000";
+  const opacity = 0.1 + depth * 0.9;
 
   const aStyle = useAnimatedStyle(() => ({
     transform: [
@@ -117,7 +114,7 @@ function OrbParticle({
           width: size,
           height: size,
           borderRadius: size / 2,
-          backgroundColor: color,
+          backgroundColor: C.accent,
           opacity,
           left: ORB_SIZE / 2 - size / 2,
           top: ORB_SIZE / 2 - size / 2,
@@ -170,6 +167,25 @@ function HypnoticOrb({ playing }: { playing: boolean }) {
 }
 
 // ─── Teleprompter mantra display ─────────────────────────
+// The two edge fades are the one gradient on the screen: masks that let
+// the lines enter and leave softly. Ground colour fading to clear.
+function EdgeFade({ side }: { side: "top" | "bottom" }) {
+  const id = side === "top" ? "fadeTop" : "fadeBottom";
+  return (
+    <View style={side === "top" ? styles.fadeTop : styles.fadeBottom} pointerEvents="none">
+      <Svg width="100%" height="100%">
+        <Defs>
+          <LinearGradient id={id} x1="0" y1="0" x2="0" y2="1">
+            <Stop offset="0%" stopColor={C.bg} stopOpacity={side === "top" ? 1 : 0} />
+            <Stop offset="100%" stopColor={C.bg} stopOpacity={side === "top" ? 0 : 1} />
+          </LinearGradient>
+        </Defs>
+        <Rect x="0" y="0" width="100%" height="100%" fill={`url(#${id})`} />
+      </Svg>
+    </View>
+  );
+}
+
 function MantraTeleprompter({
   mantras,
   activeMantra,
@@ -223,86 +239,46 @@ function MantraTeleprompter({
             }}
             style={{ marginBottom: MANTRA_GAP }}
           >
-            <Text
-              style={[
-                styles.mantraText,
-                i === activeMantra ? styles.mantraActive : styles.mantraDim,
-              ]}
+            <Txt
+              kind="title2"
+              style={[styles.mantraText, { color: i === activeMantra ? C.label : C.labelQuaternary }]}
+              maxFontSizeMultiplier={1.3}
             >
               {m}
-            </Text>
+            </Txt>
           </View>
         ))}
       </ScrollView>
 
-      {/* Top fade */}
-      <View style={styles.fadeTop} pointerEvents="none">
-        <Svg width="100%" height="100%">
-          <Defs>
-            <LinearGradient id="gTop" x1="0" y1="0" x2="0" y2="1">
-              <Stop offset="0%" stopColor="#000000" stopOpacity="1" />
-              <Stop offset="100%" stopColor="#000000" stopOpacity="0" />
-            </LinearGradient>
-          </Defs>
-          <Rect x="0" y="0" width="100%" height="100%" fill="url(#gTop)" />
-        </Svg>
-      </View>
-
-      {/* Bottom fade */}
-      <View style={styles.fadeBottom} pointerEvents="none">
-        <Svg width="100%" height="100%">
-          <Defs>
-            <LinearGradient id="gBot" x1="0" y1="0" x2="0" y2="1">
-              <Stop offset="0%" stopColor="#000000" stopOpacity="0" />
-              <Stop offset="100%" stopColor="#000000" stopOpacity="1" />
-            </LinearGradient>
-          </Defs>
-          <Rect x="0" y="0" width="100%" height="100%" fill="url(#gBot)" />
-        </Svg>
-      </View>
+      <EdgeFade side="top" />
+      <EdgeFade side="bottom" />
     </View>
   );
 }
 
-// ─── Scrubber fill ───────────────────────────────────────
-// A flat orange bar is paint; liquid is LIT. The fill runs from deep ember
-// at its tail to near-white at its leading edge, and the parent view carries
-// a warm shadow so the light spills past the bar itself.
-function ScrubFill() {
+// ─── Transport glyphs ────────────────────────────────────
+// Apple Music's idiom: bare white glyphs, the play/pause one biggest.
+function Transport({
+  icon,
+  label,
+  size,
+  onPress,
+}: {
+  icon: keyof typeof Ionicons.glyphMap;
+  label: string;
+  size: number;
+  onPress: () => void;
+}) {
   return (
-    <Svg width="100%" height="100%">
-      <Defs>
-        <LinearGradient id="gScrub" x1="0" y1="0" x2="1" y2="0">
-          <Stop offset="0%" stopColor="#C22E00" stopOpacity="0.9" />
-          <Stop offset="55%" stopColor="#FF5500" stopOpacity="1" />
-          <Stop offset="92%" stopColor="#FF9A4D" stopOpacity="1" />
-          <Stop offset="100%" stopColor="#FFE2C2" stopOpacity="1" />
-        </LinearGradient>
-      </Defs>
-      {/* Rounded here rather than clipping the parent: a view that clips
-          can't cast the warm shadow that makes the fill look lit. */}
-      <Rect x="0" y="0" width="100%" height="100%" rx="3" ry="3" fill="url(#gScrub)" />
-    </Svg>
-  );
-}
-
-// The dock's own body: lit along the top face, weighted at the base, so the
-// panel has thickness instead of being a translucent rectangle.
-function DockSlab() {
-  return (
-    <View pointerEvents="none" style={styles.dockSlab}>
-      <Svg width="100%" height="100%">
-        <Defs>
-          <LinearGradient id="gDock" x1="0" y1="0" x2="0" y2="1">
-            <Stop offset="0%" stopColor="#ffffff" stopOpacity="0.16" />
-            <Stop offset="14%" stopColor="#ffffff" stopOpacity="0.04" />
-            <Stop offset="60%" stopColor="#000000" stopOpacity="0.05" />
-            <Stop offset="100%" stopColor="#000000" stopOpacity="0.24" />
-          </LinearGradient>
-        </Defs>
-        <Rect x="0" y="0" width="100%" height="100%" fill="url(#gDock)" />
-      </Svg>
-    </View>
+    <Pressable
+      style={({ pressed }) => [styles.transportBtn, pressed && { opacity: PRESS_OPACITY }]}
+      onPress={onPress}
+      hitSlop={10}
+      accessibilityRole="button"
+      accessibilityLabel={label}
+    >
+      <Ionicons name={icon} size={size} color={C.label} />
+    </Pressable>
   );
 }
 
@@ -458,7 +434,7 @@ export default function PlayerScreen() {
       router.back();
       router.back();
     } else {
-      router.push("/edit-alarm" as any);
+      router.push("/alarm-config" as any);
     }
   };
 
@@ -469,10 +445,20 @@ export default function PlayerScreen() {
   // (naturescapes, frequencies, …) shows its artwork instead.
   const showOrb = session ? isHypnotherapy(session) : true;
 
+  const setAsAlarm = !completed && (
+    <Button
+      title={isPickMode ? "Use" : "Set as Alarm"}
+      tone="gray"
+      icon="alarm"
+      style={styles.selectPill}
+      onPress={handleSetAsAlarm}
+    />
+  );
+
   return (
     <View style={styles.container}>
-      {/* Artwork is the hero: it fills the whole screen so the glass dock
-          floats ON the photo rather than sitting on a black shelf below it. */}
+      {/* Artwork fills the screen; the dock is an opaque sheet over its
+          lower edge, so the photo needs no scrim to keep the text legible. */}
       {!showOrb && session && (
         <Image
           source={{ uri: artworkFor(session) }}
@@ -481,215 +467,90 @@ export default function PlayerScreen() {
           accessibilityLabel={`${session.title} artwork`}
         />
       )}
-      {!showOrb && (
-        // Legibility scrim — glass is CLEAR, so anything over a photo needs a
-        // gradient underneath it, not just a heavier font.
-        <View style={styles.artScrim} pointerEvents="none">
-          <Svg width="100%" height="100%">
-            <Defs>
-              <LinearGradient id="gArt" x1="0" y1="0" x2="0" y2="1">
-                <Stop offset="0%" stopColor="#000000" stopOpacity="0" />
-                <Stop offset="45%" stopColor="#000000" stopOpacity="0.35" />
-                <Stop offset="100%" stopColor="#000000" stopOpacity="0.8" />
-              </LinearGradient>
-            </Defs>
-            <Rect x="0" y="0" width="100%" height="100%" fill="url(#gArt)" />
-          </Svg>
-        </View>
-      )}
+
+      {/* Top chrome: back on the left, Set as Alarm on the right */}
+      <View style={[styles.topBar, { paddingTop: insets.top + SP.xs }]}>
+        <IconButton
+          icon="chevron-down"
+          label="Close"
+          disc={!showOrb}
+          onPress={() => router.back()}
+        />
+        <View style={{ flex: 1 }} />
+        {setAsAlarm}
+      </View>
 
       {showOrb ? (
         <>
-          {/* Nav bar */}
-          <View style={[styles.navBar, { paddingTop: insets.top }]}>
-            <Pressable
-              style={styles.navIconBtn}
-              onPress={() => router.back()}
-              hitSlop={12}
-              accessibilityRole="button"
-              accessibilityLabel="Go back"
-            >
-              <Ionicons name="chevron-back" size={28} color="#f5f5f7" />
-            </Pressable>
-            {!completed && (
-              <Pressable
-                style={styles.selectPillHit}
-                onPress={handleSetAsAlarm}
-                hitSlop={8}
-                accessibilityRole="button"
-                accessibilityLabel={isPickMode ? "Use for this alarm" : "Set as alarm"}
-              >
-                <GlassButton tone="bright" phase={0.45} style={styles.selectPill}>
-                  <Ionicons name="checkmark" size={16} color="#ffffff" />
-                  <Text style={styles.selectPillText}>
-                    {isPickMode ? "Use" : "Set as alarm"}
-                  </Text>
-                </GlassButton>
-              </Pressable>
-            )}
-          </View>
-
-          {/* Particle orb */}
           <HypnoticOrb playing={playing} />
-
-          {/* Teleprompter mantras */}
           <MantraTeleprompter mantras={mantras} activeMantra={activeMantra} />
         </>
       ) : (
-        // Spacer that holds the floating chrome; the photo behind it is
-        // already full-bleed, so this View draws nothing itself.
-        <View style={styles.artworkArea}>
-          {/* Back button — glass over ARTWORK is fine; glass over glass is not */}
-          <Pressable
-            style={[styles.artworkBack, { top: insets.top + 6 }]}
-            onPress={() => router.back()}
-            hitSlop={12}
-            accessibilityRole="button"
-            accessibilityLabel="Go back"
-          >
-            <Glass interactive scrim="soft" style={styles.artworkBackGlass}>
-              <Ionicons name="chevron-back" size={26} color="#f5f5f7" />
-            </Glass>
-          </Pressable>
-          {!completed && (
-            <Pressable
-              style={[styles.selectPillHit, styles.selectPillOverArt, { top: insets.top + 8 }]}
-              onPress={handleSetAsAlarm}
-              hitSlop={8}
-              accessibilityRole="button"
-              accessibilityLabel={isPickMode ? "Use for this alarm" : "Set as alarm"}
-            >
-              <GlassButton tone="bright" phase={0.45} style={styles.selectPill}>
-                <Ionicons name="checkmark" size={16} color="#ffffff" />
-                <Text style={styles.selectPillText}>
-                  {isPickMode ? "Use" : "Set as alarm"}
-                </Text>
-              </GlassButton>
-            </Pressable>
-          )}
-        </View>
+        <View style={{ flex: 1 }} />
       )}
 
-      {/* Transport dock — ONE glass layer, holding metadata + scrubber + controls */}
-      <View style={[styles.dockWrap, { paddingBottom: Math.max(insets.bottom + 10, 22) }]}>
-        {/* "strong" — the dock carries small type (timestamps, skip labels)
-            and in artwork mode it sits directly on the photo.
-            The shadow host wraps it because the dock itself clips, and a
-            clipping layer cannot cast a shadow. */}
-        <View style={styles.dockShadow}>
-          <Glass liquid phase={0.12} intensity={1.1} scrim="strong" style={styles.dock}>
-            <DockSlab />
-            <View style={styles.dockTopEdge} pointerEvents="none" />
-            {/* Title row */}
-            <View style={styles.titleRow}>
-              <Text style={styles.sessionTitle} numberOfLines={1}>
-                {session?.title ?? "Loading..."}
-              </Text>
-              <Pressable
-                style={styles.menuButton}
-                hitSlop={12}
-                onPress={() => Alert.alert(session?.title ?? "", session?.description ?? "")}
-                accessibilityRole="button"
-                accessibilityLabel="Session details"
-              >
-                <Ionicons name="ellipsis-horizontal" size={22} color="rgba(255,255,255,0.7)" />
-              </Pressable>
-            </View>
-            <Text style={styles.narrator} numberOfLines={1}>{session?.narrator}</Text>
-
-            {/* Progress bar — glowing fill, luminous thumb */}
-            <View style={styles.progressContainer}>
-              <View
-                ref={trackRef}
-                onLayout={() => {
-                  trackRef.current?.measureInWindow((x) => { trackXRef.current = x; });
-                }}
-                style={styles.progressTrackOuter}
-                {...panResponder.panHandlers}
-                accessible={true}
-                accessibilityRole="adjustable"
-                accessibilityLabel="Playback position"
-                accessibilityValue={{ text: `${formatTime(displayElapsed)} of ${formatTime(duration)}` }}
-              >
-                <View style={styles.progressTrack}>
-                  <View style={[styles.progressFill, { width: `${progress * 100}%` }]}>
-                    <ScrubFill />
-                  </View>
-                </View>
-                {/* The thumb rides OUTSIDE the track so its halo isn't clipped;
-                    it swells while scrubbing so the finger has something that
-                    responds, not just a bar that changes length. */}
-                <View
-                  style={[
-                    styles.thumb,
-                    { left: `${progress * 100}%` },
-                    scrubbing && styles.thumbActive,
-                  ]}
-                  pointerEvents="none"
-                />
-              </View>
-              <View style={styles.timeRow}>
-                <Text style={styles.timeText} maxFontSizeMultiplier={1.4}>{formatTime(displayElapsed)}</Text>
-                <Text style={styles.timeText} maxFontSizeMultiplier={1.4}>{formatTime(duration)}</Text>
-              </View>
-            </View>
-
-            {/* Transport — all three controls are glass now. The play button
-                earns its primacy from a brighter tint, a stronger sheen and a
-                cool halo rather than from being a solid white disc. Phases are
-                staggered so the light crosses the row instead of flashing it. */}
-            <View style={styles.transport}>
-              <Pressable
-                style={styles.skipBtn}
-                onPress={() => skip(-15)}
-                hitSlop={10}
-                accessibilityRole="button"
-                accessibilityLabel="Back 15 seconds"
-              >
-                <Glass interactive liquid phase={0} intensity={0.85} scrim="soft" style={styles.skipGlass}>
-                  <Ionicons name="play-back" size={20} color="#f5f5f7" />
-                  <Text style={styles.skipLabel} maxFontSizeMultiplier={1.2}>15</Text>
-                </Glass>
-              </Pressable>
-
-              <Pressable
-                style={({ pressed }) => [styles.playBtnWrap, pressed && { transform: [{ scale: 0.94 }] }]}
-                onPress={togglePlay}
-                accessibilityRole="button"
-                accessibilityLabel={playing ? "Pause session" : "Play session"}
-              >
-                <Glass interactive liquid phase={0.3} intensity={1.4} scrim="none" style={styles.playBtn}>
-                  <Ionicons
-                    name={playing ? "pause" : "play"}
-                    size={30}
-                    color="#ffffff"
-                    style={[styles.playGlyph, !playing ? { marginLeft: 3 } : null]}
-                  />
-                </Glass>
-              </Pressable>
-
-              <Pressable
-                style={styles.skipBtn}
-                onPress={() => skip(15)}
-                hitSlop={10}
-                accessibilityRole="button"
-                accessibilityLabel="Forward 15 seconds"
-              >
-                <Glass interactive liquid phase={0.6} intensity={0.85} scrim="soft" style={styles.skipGlass}>
-                  <Ionicons name="play-forward" size={20} color="#f5f5f7" />
-                  <Text style={styles.skipLabel} maxFontSizeMultiplier={1.2}>15</Text>
-                </Glass>
-              </Pressable>
-            </View>
-
-            {completed && (
-              <Glass liquid phase={0.8} intensity={0.9} scrim="soft" style={styles.completedBanner}>
-                <Ionicons name="checkmark-circle" size={20} color="#34d399" style={{ marginRight: 8 }} />
-                <Text style={styles.completedText}>SESSION COMPLETE</Text>
-              </Glass>
-            )}
-          </Glass>
+      {/* Transport dock — one flat sheet holding metadata + scrubber + controls */}
+      <View style={[styles.dock, { paddingBottom: Math.max(insets.bottom, SP.lg) + SP.sm }]}>
+        <View style={styles.titleRow}>
+          <View style={{ flex: 1 }}>
+            <Txt kind="title3" numberOfLines={1}>{session?.title ?? "Loading…"}</Txt>
+            <Txt kind="subheadline" tone="secondary" numberOfLines={1}>{session?.narrator}</Txt>
+          </View>
+          <IconButton
+            icon="ellipsis-horizontal-circle"
+            label="Session details"
+            color={C.labelSecondary}
+            onPress={() => Alert.alert(session?.title ?? "", session?.description ?? "")}
+          />
         </View>
+
+        {/* Progress — a thin channel, accent fill, plain thumb */}
+        <View style={styles.progressContainer}>
+          <View
+            ref={trackRef}
+            onLayout={() => {
+              trackRef.current?.measureInWindow((x) => { trackXRef.current = x; });
+            }}
+            style={styles.progressTrackOuter}
+            {...panResponder.panHandlers}
+            accessible={true}
+            accessibilityRole="adjustable"
+            accessibilityLabel="Playback position"
+            accessibilityValue={{ text: `${formatTime(displayElapsed)} of ${formatTime(duration)}` }}
+          >
+            <View style={styles.progressTrack}>
+              <View style={[styles.progressFill, { width: `${progress * 100}%` }]} />
+            </View>
+            <View
+              style={[styles.thumb, { left: `${progress * 100}%` }, scrubbing && styles.thumbActive]}
+              pointerEvents="none"
+            />
+          </View>
+          <View style={styles.timeRow}>
+            <Txt kind="caption1" tone="secondary">{formatTime(displayElapsed)}</Txt>
+            <Txt kind="caption1" tone="secondary">{formatTime(duration)}</Txt>
+          </View>
+        </View>
+
+        {/* Transport. Play is the biggest glyph — the one thing you reach
+            for half-awake. */}
+        <View style={styles.transport}>
+          <Transport icon="play-back" label="Back 15 seconds" size={34} onPress={() => skip(-15)} />
+          <Transport
+            icon={playing ? "pause" : "play"}
+            label={playing ? "Pause session" : "Play session"}
+            size={56}
+            onPress={togglePlay}
+          />
+          <Transport icon="play-forward" label="Forward 15 seconds" size={34} onPress={() => skip(15)} />
+        </View>
+
+        {completed && (
+          <View style={styles.completedRow}>
+            <Ionicons name="checkmark-circle" size={20} color={C.accent} />
+            <Txt kind="subheadline" tone="secondary">Session complete</Txt>
+          </View>
+        )}
       </View>
     </View>
   );
@@ -698,81 +559,19 @@ export default function PlayerScreen() {
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    backgroundColor: "#000000",
+    backgroundColor: C.bg,
   },
 
-  // Nav
-  // Positioning lives on the Pressable, looks on the GlassButton inside it —
-  // otherwise the pill's own margins would fight the glass's clipping.
-  selectPillHit: {
-    marginLeft: "auto",
-    marginRight: 16,
+  topBar: {
+    flexDirection: "row",
+    alignItems: "center",
+    paddingHorizontal: SP.md,
+    paddingBottom: SP.sm,
   },
   selectPill: {
-    flexDirection: "row",
-    alignItems: "center",
-    gap: 5,
-    borderRadius: 999,
-    overflow: "hidden",
-    paddingHorizontal: 14,
-    paddingVertical: 8,
-  },
-  selectPillOverArt: {
-    position: "absolute",
-    right: 12,
-    marginLeft: 0,
-    marginRight: 0,
-  },
-  selectPillText: {
-    color: "#ffffff",
-    fontSize: S.caption,
-    fontFamily: F.semibold,
-    // The pill is transparent now, so the label carries its own scrim
-    textShadowColor: "rgba(0,0,0,0.55)",
-    textShadowOffset: { width: 0, height: 1 },
-    textShadowRadius: 5,
-  },
-  navBar: {
-    flexDirection: "row",
-    alignItems: "center",
-    paddingLeft: 8,
-    paddingBottom: 8,
-    gap: 4,
-  },
-  navIconBtn: {
-    width: 40,
-    height: 40,
-    alignItems: "center",
-    justifyContent: "center",
-  },
-
-  // Artwork mode (non-hypnotherapy sessions)
-  artworkArea: {
-    flex: 1,
-    position: "relative",
-  },
-  // Covers the lower two-thirds of the photo so the dock's text always
-  // lands on something dark, whatever the artwork is doing underneath.
-  artScrim: {
-    position: "absolute",
-    left: 0,
-    right: 0,
-    bottom: 0,
-    height: "66%",
-  },
-  artworkBack: {
-    position: "absolute",
-    left: 12,
-    width: 42,
-    height: 42,
-  },
-  artworkBackGlass: {
-    width: 42,
-    height: 42,
-    alignItems: "center",
-    justifyContent: "center",
-    borderRadius: 21,
-    overflow: "hidden",
+    alignSelf: "auto",
+    minHeight: 36,
+    paddingHorizontal: SP.lg,
   },
 
   // Orb
@@ -780,7 +579,7 @@ const styles = StyleSheet.create({
     height: 130,
     alignItems: "center",
     justifyContent: "center",
-    marginTop: 4,
+    marginTop: SP.xs,
   },
 
   // Mantras
@@ -789,16 +588,7 @@ const styles = StyleSheet.create({
     overflow: "hidden",
   },
   mantraText: {
-    fontSize: S.title,
-    lineHeight: 34,
-    fontFamily: F.regular,
-    paddingHorizontal: 24,
-  },
-  mantraActive: {
-    color: "#f5f5f7",
-  },
-  mantraDim: {
-    color: "#3a3a3d",
+    paddingHorizontal: SP.xl,
   },
   fadeTop: {
     position: "absolute",
@@ -817,133 +607,55 @@ const styles = StyleSheet.create({
     zIndex: 1,
   },
 
-  // Transport dock
-  dockWrap: {
-    paddingHorizontal: DOCK_MARGIN,
-  },
-  // Outside the clip so the shadow survives; the dark fill both gives iOS a
-  // clean shadow path and lands the dock's text on something deep when the
-  // artwork behind it is bright.
-  dockShadow: {
-    borderRadius: 28,
-    backgroundColor: "rgba(6,8,10,0.34)",
-    shadowColor: "#000000",
-    shadowOpacity: 0.5,
-    shadowRadius: 22,
-    shadowOffset: { width: 0, height: 12 },
-    elevation: 10,
-  },
+  // Transport dock: a raised sheet, no shadow.
   dock: {
-    borderRadius: 28,
-    overflow: "hidden",
-    padding: DOCK_PAD,
-    paddingTop: 14,
-    borderWidth: StyleSheet.hairlineWidth,
-    borderColor: "rgba(255,255,255,0.16)",
-  },
-  dockSlab: {
-    position: "absolute",
-    top: 0,
-    left: 0,
-    right: 0,
-    bottom: 0,
-    borderRadius: 28,
-    overflow: "hidden",
-  },
-  // Light catching the dock's top face
-  dockTopEdge: {
-    position: "absolute",
-    top: 1,
-    left: 30,
-    right: 30,
-    height: 1,
-    borderRadius: 1,
-    backgroundColor: "rgba(255,255,255,0.42)",
+    backgroundColor: C.fill,
+    borderTopLeftRadius: R.xl,
+    borderTopRightRadius: R.xl,
+    paddingHorizontal: DOCK_PAD,
+    paddingTop: SP.lg,
   },
   titleRow: {
     flexDirection: "row",
     alignItems: "center",
-    marginBottom: 2,
-  },
-  sessionTitle: {
-    flex: 1,
-    color: "#ffffff",
-    fontSize: S.title,
-    fontFamily: F.bold,
-    // Belt-and-braces over a bright photo — the scrim does most of the work
-    textShadowColor: "rgba(0,0,0,0.55)",
-    textShadowOffset: { width: 0, height: 1 },
-    textShadowRadius: 6,
-  },
-  menuButton: {
-    paddingLeft: 12,
-    paddingVertical: 4,
-  },
-  narrator: {
-    color: "rgba(255,255,255,0.72)",
-    fontSize: S.secondary,
-    fontFamily: F.medium,
-    marginBottom: 16,
-    textShadowColor: "rgba(0,0,0,0.5)",
-    textShadowOffset: { width: 0, height: 1 },
-    textShadowRadius: 5,
+    marginBottom: SP.md,
   },
 
-  // Progress — a lit channel with a luminous thumb
+  // Progress
   progressContainer: {
-    marginBottom: 14,
+    marginBottom: SP.sm,
   },
   progressTrackOuter: {
-    height: 22,
+    height: 24,
     justifyContent: "center",
   },
-  // No overflow clip: the fill's warm shadow has to spill past the channel,
-  // which is the whole point of it looking lit rather than painted.
   progressTrack: {
-    height: 6,
-    backgroundColor: "rgba(255,255,255,0.14)",
-    borderRadius: 3,
-    borderWidth: StyleSheet.hairlineWidth,
-    borderColor: "rgba(255,255,255,0.20)",
+    height: 4,
+    backgroundColor: C.fillHighest,
+    borderRadius: 2,
+    overflow: "hidden",
   },
   progressFill: {
-    height: 6,
-    // Base colour under the gradient so iOS has a shadow path to trace
-    backgroundColor: "#FF5500",
-    borderRadius: 3,
-    shadowColor: "#FF6A1F",
-    shadowOpacity: 0.65,
-    shadowRadius: 8,
-    shadowOffset: { width: 0, height: 0 },
+    height: 4,
+    backgroundColor: C.accent,
+    borderRadius: 2,
   },
   thumb: {
     position: "absolute",
-    top: 4,
+    top: 5,
     width: 14,
     height: 14,
     marginLeft: -7,
     borderRadius: 7,
-    backgroundColor: "#ffffff",
-    borderWidth: StyleSheet.hairlineWidth,
-    borderColor: "rgba(255,255,255,0.9)",
-    shadowColor: "#FF7A2F",
-    shadowOpacity: 0.9,
-    shadowRadius: 9,
-    shadowOffset: { width: 0, height: 0 },
+    backgroundColor: C.label,
   },
   thumbActive: {
-    transform: [{ scale: 1.35 }],
-    shadowRadius: 15,
+    transform: [{ scale: 1.3 }],
   },
   timeRow: {
     flexDirection: "row",
     justifyContent: "space-between",
-    marginTop: 4,
-  },
-  timeText: {
-    color: "rgba(255,255,255,0.7)",
-    fontSize: S.micro,
-    fontFamily: F.medium,
+    marginTop: 2,
   },
 
   // Controls
@@ -951,73 +663,22 @@ const styles = StyleSheet.create({
     flexDirection: "row",
     alignItems: "center",
     justifyContent: "center",
-    gap: 34,
-    marginTop: 4,
-    marginBottom: 4,
+    gap: SP.xxxl,
+    marginTop: SP.xs,
   },
-  skipBtn: {
-    width: 56,
-    height: 56,
-  },
-  skipGlass: {
-    width: 56,
-    height: 56,
-    borderRadius: 28,
-    overflow: "hidden",
+  transportBtn: {
+    minWidth: SP.hit,
+    minHeight: SP.hit,
     alignItems: "center",
     justifyContent: "center",
-  },
-  // The halo does the work the old white disc used to do: it marks the
-  // primary control without putting an opaque object on a glass dock.
-  playBtnWrap: {
-    width: 66,
-    height: 66,
-    borderRadius: 33,
-    backgroundColor: "rgba(255,255,255,0.08)",
-    shadowColor: "#cfe9ff",
-    shadowOpacity: 0.45,
-    shadowRadius: 16,
-    shadowOffset: { width: 0, height: 0 },
-    elevation: 6,
-  },
-  playBtn: {
-    width: 66,
-    height: 66,
-    borderRadius: 33,
-    overflow: "hidden",
-    // Brighter tint than the skips — still transparent, just more lit
-    backgroundColor: "rgba(255,255,255,0.18)",
-    alignItems: "center",
-    justifyContent: "center",
-  },
-  playGlyph: {
-    textShadowColor: "rgba(0,0,0,0.45)",
-    textShadowOffset: { width: 0, height: 1 },
-    textShadowRadius: 7,
-  },
-  skipLabel: {
-    color: "rgba(255,255,255,0.72)",
-    fontSize: S.micro,
-    fontFamily: F.semibold,
-    marginTop: 2,
   },
 
-  // Bottom actions
-  completedBanner: {
-    // Glass now, with just enough green in it to stay the "you did it" colour
-    backgroundColor: "rgba(12,44,30,0.42)",
-    borderRadius: 16,
-    overflow: "hidden",
-    paddingVertical: 14,
-    marginTop: 12,
+  // Completion
+  completedRow: {
+    flexDirection: "row",
     alignItems: "center",
     justifyContent: "center",
-    flexDirection: "row",
-  },
-  completedText: {
-    color: "#34d399",
-    fontSize: S.secondary,
-    fontFamily: F.bold,
-    letterSpacing: 1.5,
+    gap: SP.sm,
+    paddingTop: SP.lg,
   },
 });

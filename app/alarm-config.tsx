@@ -1,17 +1,14 @@
 import { useCallback, useEffect, useState } from "react";
-import { View, Text, Pressable, StyleSheet, Image, Alert } from "react-native";
-import { useRouter, useLocalSearchParams, useFocusEffect, useNavigation } from "expo-router";
-import { Ionicons } from "@expo/vector-icons";
-import { useSafeAreaInsets } from "react-native-safe-area-context";
+import { View, Pressable, ScrollView, StyleSheet, Image, Alert } from "react-native";
+import { Stack, useRouter, useLocalSearchParams, useFocusEffect } from "expo-router";
 import AsyncStorage from "@react-native-async-storage/async-storage";
 import { useAlarms, useSessions, useHabits } from "@/lib/useSupabase";
 import { rollForward, scheduleAlarm, cancelAlarm } from "@/lib/alarmScheduler";
 import { artworkFor } from "@/lib/catalog";
 import { consumePickedSound } from "@/lib/soundPicker";
-import { WheelColumn, HOURS, MINUTES, MERIDIEM } from "@/components/TimeWheel";
-import AuroraBackground from "@/components/AuroraBackground";
-import { GlassButton } from "@/components/Glass";
-import { F, S } from "@/lib/fonts";
+import { WheelColumn, WheelHighlight, HOURS, MINUTES, MERIDIEM } from "@/components/TimeWheel";
+import { Row, Screen, Section, Txt } from "@/components/ui";
+import { C, R, SP, PRESS_OPACITY } from "@/lib/tokens";
 
 let Haptics: any = null;
 try { Haptics = require("expo-haptics"); } catch {}
@@ -21,13 +18,30 @@ try { Haptics = require("expo-haptics"); } catch {}
 // someone with zero habits, and only ever once.
 const HABIT_PROMPT_KEY = "habit_prompt_shown_v1";
 
-// The alarm's own page — one glass layer never sits over another.
-// Cards on the list are glass; this page is a PLACE, its controls flat
-// on the aurora, so tapping an alarm travels rather than stacks.
+const COL_W = 64;
+const COLON_W = 16;
+// Three columns, the colon, and the gaps between them.
+const WHEEL_W = COL_W * 3 + COLON_W + SP.sm * 3;
+
+/** Cancel / Save in the bar, the way Clock's alarm sheet does it. */
+function BarText({ label, bold = false, onPress }: { label: string; bold?: boolean; onPress: () => void }) {
+  return (
+    <Pressable
+      onPress={onPress}
+      hitSlop={10}
+      accessibilityRole="button"
+      accessibilityLabel={label}
+      style={({ pressed }) => [styles.barText, pressed && { opacity: PRESS_OPACITY }]}
+    >
+      <Txt kind={bold ? "headline" : "body"} tone="accent">{label}</Txt>
+    </Pressable>
+  );
+}
+
+// The alarm sheet: the time wheel on top, then one grouped list — Sound,
+// and Delete when editing. Save lives in the bar.
 export default function AlarmConfigScreen() {
   const router = useRouter();
-  const navigation = useNavigation();
-  const insets = useSafeAreaInsets();
   const { id } = useLocalSearchParams<{ id?: string }>();
   const { alarms, add, update, remove } = useAlarms();
   const { sessions } = useSessions();
@@ -68,10 +82,6 @@ export default function AlarmConfigScreen() {
   );
 
   const session = sessions.find((s) => s.id === sessionId);
-
-  useEffect(() => {
-    navigation.setOptions({ title: isNew ? "New Alarm" : "Alarm" });
-  }, [navigation, isNew]);
 
   const save = async () => {
     let h = hourIdx + 1;
@@ -143,157 +153,103 @@ export default function AlarmConfigScreen() {
   };
 
   return (
-    <View style={styles.root}>
-      <AuroraBackground dim={0.8} />
-
-      {/* The nav is three floating pieces of glass now, so the page runs
-          under it and starts its own content below. */}
-      <View style={[styles.container, { paddingTop: insets.top + 60 }]}>
-        {/* Sound — tap to change */}
-        <Pressable
-          onPress={() => router.push(`/sounds?current=${sessionId}` as any)}
-          style={styles.soundRow}
-          accessibilityRole="button"
-          accessibilityLabel={session ? `Wake-up sound, ${session.title}. Change sound` : "Choose sound"}
-        >
-          {session ? (
-            <Image source={{ uri: artworkFor(session) }} style={styles.art} resizeMode="cover" />
-          ) : (
-            <View style={[styles.art, styles.artEmpty]}>
-              <Ionicons name="add" size={22} color="#ffffff" />
-            </View>
-          )}
-          <View style={{ flex: 1 }}>
-            <Text style={styles.soundTitle} numberOfLines={1}>
-              {session?.title ?? "Choose sound"}
-            </Text>
-            {session && (
-              <Text style={styles.soundMeta}>
-                {session.category} · {Math.round(session.duration_sec / 60)} min
-              </Text>
-            )}
-          </View>
-          <Ionicons name="chevron-forward" size={18} color="rgba(255,255,255,0.6)" />
-        </Pressable>
-
+    <Screen>
+      <Stack.Screen
+        options={{
+          title: isNew ? "Add Alarm" : "Edit Alarm",
+          headerLeft: () => <BarText label="Cancel" onPress={() => router.back()} />,
+          headerRight: () => <BarText label="Save" bold onPress={save} />,
+        }}
+      />
+      <ScrollView contentInsetAdjustmentBehavior="automatic" contentContainerStyle={styles.scroll}>
         {/* Time wheel */}
         <View style={styles.wheelWrap} accessible accessibilityLabel="Alarm time">
-          <View style={styles.wheelHighlight} />
+          <WheelHighlight width={WHEEL_W} />
           <View style={styles.wheelColumns}>
-            <WheelColumn data={HOURS} selected={hourIdx} onSelect={setHourIdx} width={52} label="Hour" light />
-            <Text style={styles.wheelColon}>:</Text>
-            <WheelColumn data={MINUTES} selected={minIdx} onSelect={setMinIdx} width={52} label="Minute" light />
-            <WheelColumn data={MERIDIEM} selected={merIdx} onSelect={setMerIdx} width={52} label="AM or PM" light />
+            <WheelColumn data={HOURS} selected={hourIdx} onSelect={setHourIdx} width={COL_W} label="Hour" />
+            <Txt kind="picker" style={styles.colon}>:</Txt>
+            <WheelColumn data={MINUTES} selected={minIdx} onSelect={setMinIdx} width={COL_W} label="Minute" />
+            <WheelColumn data={MERIDIEM} selected={merIdx} onSelect={setMerIdx} width={COL_W} label="AM or PM" />
           </View>
         </View>
 
-        {/* Save + delete */}
-        <View style={styles.footer}>
+        {/* Sound — the artwork is the value */}
+        <Section>
+          <Row
+            title="Sound"
+            value={session?.title ?? "Choose"}
+            onPress={() => router.push(`/sounds?current=${sessionId}` as any)}
+            accessibilityLabel={session ? `Sound, ${session.title}. Change sound` : "Choose sound"}
+          />
+        </Section>
+        {session && (
           <Pressable
-            onPress={save}
-            style={({ pressed }) => [pressed && { transform: [{ scale: 0.98 }] }]}
+            onPress={() => router.push(`/sounds?current=${sessionId}` as any)}
+            style={({ pressed }) => [styles.artWrap, pressed && { opacity: PRESS_OPACITY }]}
             accessibilityRole="button"
-            accessibilityLabel="Save alarm"
+            accessibilityLabel={`${session.title}, ${session.category}, ${Math.round(session.duration_sec / 60)} minutes. Change sound`}
           >
-            <GlassButton tone="bright" phase={0.1}>
-              <Text style={styles.saveText}>Save</Text>
-            </GlassButton>
+            <Image source={{ uri: artworkFor(session) }} style={StyleSheet.absoluteFill} resizeMode="cover" />
+            <View style={styles.artCaption}>
+              <Txt kind="headline" numberOfLines={1}>{session.title}</Txt>
+              <Txt kind="footnote" tone="secondary">
+                {session.category} · {Math.round(session.duration_sec / 60)} min
+              </Txt>
+            </View>
           </Pressable>
-          {!isNew && (
-            <Pressable
-              onPress={confirmDelete}
-              style={styles.deleteButton}
-              accessibilityRole="button"
-              accessibilityLabel="Delete alarm"
-            >
-              <Text style={styles.deleteText}>Delete alarm</Text>
-            </Pressable>
-          )}
-        </View>
-      </View>
-    </View>
+        )}
+
+        {!isNew && (
+          <Section>
+            <Row title="Delete Alarm" destructive accessory="none" onPress={confirmDelete} style={styles.centerRow} />
+          </Section>
+        )}
+      </ScrollView>
+    </Screen>
   );
 }
 
 const styles = StyleSheet.create({
-  root: {
-    flex: 1,
-    backgroundColor: "#020805",
+  scroll: {
+    paddingBottom: SP.xxxl,
   },
-  container: {
-    flex: 1,
-    padding: 20,
-  },
-  soundRow: {
-    flexDirection: "row",
-    alignItems: "center",
-    gap: 14,
-    paddingVertical: 8,
-    borderBottomWidth: StyleSheet.hairlineWidth,
-    borderBottomColor: "rgba(255,255,255,0.18)",
-    paddingBottom: 18,
-  },
-  art: {
-    width: 64,
-    height: 64,
-    borderRadius: 14,
-    backgroundColor: "rgba(255,255,255,0.10)",
-  },
-  artEmpty: {
-    alignItems: "center",
+  barText: {
+    paddingHorizontal: SP.xs,
+    minHeight: SP.hit,
     justifyContent: "center",
-  },
-  soundTitle: {
-    color: "#ffffff",
-    fontSize: S.body,
-    fontFamily: F.semibold,
-  },
-  soundMeta: {
-    color: "rgba(255,255,255,0.65)",
-    fontSize: S.caption,
-    fontFamily: F.regular,
-    marginTop: 2,
   },
   wheelWrap: {
-    flex: 1,
-    justifyContent: "center",
     alignItems: "center",
-  },
-  wheelHighlight: {
-    position: "absolute",
-    alignSelf: "center",
-    width: 210,
-    height: 44,
-    borderRadius: 14,
-    backgroundColor: "rgba(255,255,255,0.14)",
+    justifyContent: "center",
+    paddingVertical: SP.lg,
   },
   wheelColumns: {
     flexDirection: "row",
     alignItems: "center",
-    gap: 6,
+    gap: SP.sm,
   },
-  wheelColon: {
-    color: "#ffffff",
-    fontSize: S.title,
-    fontFamily: F.regular,
+  colon: {
+    width: COLON_W,
+    textAlign: "center",
+    marginBottom: 2,
   },
-  footer: {
-    paddingBottom: 12,
-    gap: 4,
+  artWrap: {
+    marginHorizontal: SP.screen,
+    marginTop: SP.md,
+    height: 200,
+    borderRadius: R.md,
+    overflow: "hidden",
+    backgroundColor: C.fill,
   },
-  saveText: {
-    color: "#ffffff",
-    fontSize: S.body,
-    fontFamily: F.semibold,
-    letterSpacing: 0.3,
+  artCaption: {
+    position: "absolute",
+    left: 0,
+    right: 0,
+    bottom: 0,
+    padding: SP.lg,
+    backgroundColor: C.scrim,
   },
-  deleteButton: {
-    alignItems: "center",
-    paddingVertical: 14,
-  },
-  deleteText: {
-    color: "#ff6b6b",
-    fontSize: S.secondary,
-    fontFamily: F.regular,
+  centerRow: {
+    justifyContent: "center",
   },
 });

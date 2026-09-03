@@ -7,8 +7,8 @@
  *
  * So: a big current value, a signed change with a colour and a
  * percentage, and a 1D/1W/1M/3M/1Y range row — the Stocks idiom, read
- * straight. Two things keep it from looking like a child's drawing of
- * four data points:
+ * straight, drawn on the black ground with the app's one accent. Two
+ * things keep it from looking like a child's drawing of four data points:
  *
  *   1. A curve algorithm. Catmull-Rom tangents converted to cubic
  *      Béziers, so the polyline becomes one flowing path. The control
@@ -23,7 +23,7 @@
  */
 
 import { useEffect, useMemo, useState } from "react";
-import { View, Text, Pressable, StyleSheet, useWindowDimensions } from "react-native";
+import { View, Pressable, StyleSheet, useWindowDimensions } from "react-native";
 import { Ionicons } from "@expo/vector-icons";
 import Svg, { Path, Defs, LinearGradient, Stop, Line, Circle } from "react-native-svg";
 import Animated, {
@@ -36,8 +36,8 @@ import Animated, {
   interpolate,
   Easing,
 } from "react-native-reanimated";
-import { F, S } from "@/lib/fonts";
-import { Glass } from "@/components/Glass";
+import { Txt } from "@/components/ui";
+import { C, R, SP, T, PRESS_OPACITY } from "@/lib/tokens";
 import {
   buildTickerSeries,
   TICKER_RANGES,
@@ -47,10 +47,6 @@ import type { GratitudeRowLike, HabitLogRowLike } from "@/lib/positivity";
 
 let Haptics: any = null;
 try { Haptics = require("expo-haptics"); } catch {}
-
-const UP = "#34C759";
-const DOWN = "#ff6b6b";
-const FLAT = "#a1a1aa";
 
 /**
  * How many points the data is resampled to before drawing. Sparse ranges
@@ -62,6 +58,8 @@ const MIN_SAMPLES = 120;
 const MAX_SAMPLES = 200;
 /** Peak breathing amplitude, in pixels. Deliberately sub-pixel-ish. */
 const DRIFT = 1.7;
+/** The endpoint halo's diameter, in pixels. */
+const HALO = 22;
 
 const AnimatedPath = Animated.createAnimatedComponent(Path);
 
@@ -159,7 +157,7 @@ function resample(xs: number[], ys: number[], count: number): { xs: number[]; ys
   return { xs: outX, ys: outY };
 }
 
-// ─── Card ────────────────────────────────────────────────
+// ─── The ticker ──────────────────────────────────────────
 
 export function Ticker({
   gratitude,
@@ -175,7 +173,8 @@ export function Ticker({
   const [range, setRange] = useState<TickerRange>("1D");
   const { width } = useWindowDimensions();
 
-  const W = Math.max(200, width - 40 - 32); // screen − card margins − card padding
+  // The ticker sits on the black ground, inset by the layout margin.
+  const W = Math.max(200, width - SP.screen * 2);
   const H = 172;
   const padX = 2;
   const padTop = 14;
@@ -188,7 +187,7 @@ export function Ticker({
 
   const up = series.change > 0;
   const down = series.change < 0;
-  const tint = up ? UP : down ? DOWN : FLAT;
+  const tint = up ? C.switchOn : down ? C.danger : C.labelSecondary;
 
   const geom = useMemo(() => {
     const vals = series.points.map((p) => p.v);
@@ -296,10 +295,10 @@ export function Ticker({
   };
 
   return (
-    <Glass
-      liquid
-      phase={0.15}
-      style={styles.card}
+    <View
+      ref={chartRef}
+      collapsable={false}
+      style={styles.ticker}
       accessible
       accessibilityLabel={
         `Your positivity, ${series.current} points. ` +
@@ -307,228 +306,181 @@ export function Ticker({
         `${pctText ? `, ${pctText}` : ""} ${series.periodLabel}.`
       }
     >
-      <View ref={chartRef} collapsable={false} style={styles.inner}>
-        {/* What this card is. The founder's complaint was that the number
-            had no name — so it gets one, above the number itself. */}
-        <Text style={styles.kicker} maxFontSizeMultiplier={1.3}>YOUR POSITIVITY</Text>
-        <Text style={styles.value} numberOfLines={1} maxFontSizeMultiplier={1.2}>
-          {series.current}
-        </Text>
+      {/* What this is. The founder's complaint was that the number had no
+          name — so it gets one, above the number itself. */}
+      <Txt kind="footnote" tone="secondary" maxFontSizeMultiplier={1.3}>
+        YOUR POSITIVITY
+      </Txt>
+      <Txt kind="stat" numberOfLines={1} maxFontSizeMultiplier={1.2}>
+        {series.current}
+      </Txt>
 
-        <View style={styles.changeRow}>
-          <Ionicons
-            name={up ? "caret-up" : down ? "caret-down" : "remove"}
-            size={13}
-            color={tint}
-          />
-          <Text style={[styles.change, { color: tint }]} maxFontSizeMultiplier={1.3}>
-            {changeText}{pctText ? ` (${pctText})` : ""}
-          </Text>
-          <Text style={styles.period} maxFontSizeMultiplier={1.3}>{series.periodLabel}</Text>
-        </View>
-
-        <Text style={styles.explain} maxFontSizeMultiplier={1.4}>
-          Your positivity, built from gratitude and habits.
-        </Text>
-
-        {/* ── The line ── */}
-        <View style={{ width: W, height: H, marginTop: 10 }}>
-          <Svg width={W} height={H} viewBox={`0 0 ${W} ${H}`}>
-            <Defs>
-              <LinearGradient id="tickStroke" x1="0" y1="0" x2="1" y2="0">
-                <Stop offset="0%" stopColor={tint} stopOpacity="0.35" />
-                <Stop offset="55%" stopColor={tint} stopOpacity="0.85" />
-                <Stop offset="100%" stopColor={tint} stopOpacity="1" />
-              </LinearGradient>
-              <LinearGradient id="tickFill" x1="0" y1="0" x2="0" y2="1">
-                <Stop offset="0%" stopColor={tint} stopOpacity="0.22" />
-                <Stop offset="100%" stopColor={tint} stopOpacity="0" />
-              </LinearGradient>
-            </Defs>
-
-            <AnimatedPath animatedProps={fillProps} fill="url(#tickFill)" stroke="none" />
-
-            {/* Baseline — zero when you're living near it, otherwise where
-                this window opened. Above it you're building, below it you're
-                drifting. */}
-            <Line
-              x1={padX}
-              y1={geom.baseY}
-              x2={W - padX}
-              y2={geom.baseY}
-              stroke="rgba(255,255,255,0.22)"
-              strokeWidth="1"
-              strokeDasharray="3 5"
-            />
-
-            <AnimatedPath
-              animatedProps={lineProps}
-              fill="none"
-              stroke="url(#tickStroke)"
-              strokeWidth="2.5"
-              strokeLinecap="round"
-              strokeLinejoin="round"
-            />
-
-            {/* The live endpoint */}
-            <Circle cx={geom.lastX} cy={geom.lastY} r="7" fill={tint} opacity={0.16} />
-            <Circle cx={geom.lastX} cy={geom.lastY} r="3.4" fill={tint} />
-          </Svg>
-
-          {/* Its halo, breathing outward on a 2.4s loop */}
-          <Animated.View
-            pointerEvents="none"
-            style={[
-              styles.halo,
-              { backgroundColor: tint, left: geom.lastX - 11, top: geom.lastY - 11 },
-              haloStyle,
-            ]}
-          />
-        </View>
-
-        {/* Axis */}
-        <View style={[styles.axis, { width: W }]}>
-          <Text style={styles.axisLabel}>{series.startLabel}</Text>
-          <Text style={styles.axisLabel}>{series.midLabel}</Text>
-          <Text style={styles.axisLabel}>{series.endLabel}</Text>
-        </View>
-
-        {/* Range selector — 1D first, and 1D is where it opens */}
-        <View style={styles.ranges}>
-          {TICKER_RANGES.map((r) => {
-            const on = r === range;
-            return (
-              <Pressable
-                key={r}
-                onPress={() => onPick(r)}
-                hitSlop={6}
-                style={[styles.rangePill, on && styles.rangePillOn]}
-                accessibilityRole="button"
-                accessibilityLabel={`Show ${r} range`}
-                accessibilityState={{ selected: on }}
-              >
-                <Text
-                  style={[styles.rangeText, on && { color: tint, fontFamily: F.bold }]}
-                  maxFontSizeMultiplier={1.3}
-                >
-                  {r}
-                </Text>
-              </Pressable>
-            );
-          })}
-        </View>
-
-        <Text style={styles.footer} maxFontSizeMultiplier={1.3}>
-          {geom.zeroInView
-            ? "Above the dotted line you're building, below it you're drifting."
-            : `Dotted line is where the ${series.periodLabel} opened.`}
-          {" "}{lifetimeScore} points all-time.
-        </Text>
-
-        {range === "1D" && series.todayPts === 0 && (
-          <Text style={styles.hint} maxFontSizeMultiplier={1.3}>
-            Nothing logged yet today — a day with nothing costs 3 points.
-          </Text>
-        )}
+      <View style={styles.changeRow}>
+        <Ionicons
+          name={up ? "caret-up" : down ? "caret-down" : "remove"}
+          size={T.footnote}
+          color={tint}
+        />
+        <Txt kind="subheadline" style={{ color: tint }} maxFontSizeMultiplier={1.3}>
+          {changeText}{pctText ? ` (${pctText})` : ""}
+        </Txt>
+        <Txt kind="footnote" tone="secondary" maxFontSizeMultiplier={1.3}>
+          {series.periodLabel}
+        </Txt>
       </View>
-    </Glass>
+
+      <Txt kind="footnote" tone="secondary" style={styles.explain} maxFontSizeMultiplier={1.4}>
+        Your positivity, built from gratitude and habits.
+      </Txt>
+
+      {/* ── The line ── */}
+      <View style={[styles.chart, { width: W, height: H }]}>
+        <Svg width={W} height={H} viewBox={`0 0 ${W} ${H}`}>
+          <Defs>
+            {/* The one gradient the app allows: Stocks' fade under the line. */}
+            <LinearGradient id="tickFill" x1="0" y1="0" x2="0" y2="1">
+              <Stop offset="0%" stopColor={C.accent} stopOpacity="0.2" />
+              <Stop offset="100%" stopColor={C.accent} stopOpacity="0" />
+            </LinearGradient>
+          </Defs>
+
+          <AnimatedPath animatedProps={fillProps} fill="url(#tickFill)" stroke="none" />
+
+          {/* Baseline — zero when you're living near it, otherwise where
+              this window opened. Above it you're building, below it you're
+              drifting. */}
+          <Line
+            x1={padX}
+            y1={geom.baseY}
+            x2={W - padX}
+            y2={geom.baseY}
+            stroke={C.separator}
+            strokeWidth="1"
+            strokeDasharray="3 5"
+          />
+
+          <AnimatedPath
+            animatedProps={lineProps}
+            fill="none"
+            stroke={C.accent}
+            strokeWidth="2.5"
+            strokeLinecap="round"
+            strokeLinejoin="round"
+          />
+
+          {/* The live endpoint */}
+          <Circle cx={geom.lastX} cy={geom.lastY} r="7" fill={C.accent} opacity={0.16} />
+          <Circle cx={geom.lastX} cy={geom.lastY} r="3.4" fill={C.accent} />
+        </Svg>
+
+        {/* Its halo, breathing outward on a 2.4s loop */}
+        <Animated.View
+          pointerEvents="none"
+          style={[
+            styles.halo,
+            { left: geom.lastX - HALO / 2, top: geom.lastY - HALO / 2 },
+            haloStyle,
+          ]}
+        />
+      </View>
+
+      {/* Axis */}
+      <View style={[styles.axis, { width: W }]}>
+        <Txt kind="caption1" tone="tertiary">{series.startLabel}</Txt>
+        <Txt kind="caption1" tone="tertiary">{series.midLabel}</Txt>
+        <Txt kind="caption1" tone="tertiary">{series.endLabel}</Txt>
+      </View>
+
+      {/* Range selector — 1D first, and 1D is where it opens */}
+      <View style={styles.ranges}>
+        {TICKER_RANGES.map((r) => {
+          const on = r === range;
+          return (
+            <Pressable
+              key={r}
+              onPress={() => onPick(r)}
+              hitSlop={6}
+              style={({ pressed }) => [
+                styles.segment,
+                on && styles.segmentOn,
+                pressed && { opacity: PRESS_OPACITY },
+              ]}
+              accessibilityRole="button"
+              accessibilityLabel={`Show ${r} range`}
+              accessibilityState={{ selected: on }}
+            >
+              <Txt kind="footnote" tone={on ? "primary" : "secondary"} maxFontSizeMultiplier={1.3}>
+                {r}
+              </Txt>
+            </Pressable>
+          );
+        })}
+      </View>
+
+      <Txt kind="caption1" tone="tertiary" maxFontSizeMultiplier={1.3}>
+        {geom.zeroInView
+          ? "Above the dotted line you're building, below it you're drifting."
+          : `Dotted line is where the ${series.periodLabel} opened.`}
+        {" "}{lifetimeScore} points all-time.
+      </Txt>
+
+      {range === "1D" && series.todayPts === 0 && (
+        <Txt kind="caption1" tone="secondary" style={styles.hint} maxFontSizeMultiplier={1.3}>
+          Nothing logged yet today — a day with nothing costs 3 points.
+        </Txt>
+      )}
+    </View>
   );
 }
 
 const styles = StyleSheet.create({
-  card: {
-    // The scroll view already insets 20 each side, same as the habit
-    // chart below — so the card's own width is exactly width − 40 and
-    // the SVG maths above lines up with it.
-    borderRadius: 22,
-    marginBottom: 18,
-    overflow: "hidden",
-  },
-  inner: {
-    paddingTop: 16,
-    paddingBottom: 14,
-    paddingHorizontal: 16,
-  },
-  kicker: {
-    color: "#8b8b93",
-    fontSize: S.micro,
-    fontFamily: F.semibold,
-    letterSpacing: 2,
-  },
-  value: {
-    color: "#f5f5f7",
-    fontSize: S.hero,
-    fontFamily: F.light,
-    marginTop: 2,
+  ticker: {
+    paddingHorizontal: SP.screen,
+    paddingTop: SP.lg,
+    paddingBottom: SP.md,
+    // Painted, not transparent, so a share capture has the black ground.
+    backgroundColor: C.bg,
   },
   changeRow: {
     flexDirection: "row",
     alignItems: "center",
-    gap: 5,
-    marginTop: -2,
-  },
-  change: {
-    fontSize: S.secondary,
-    fontFamily: F.semibold,
-  },
-  period: {
-    color: "#8b8b93",
-    fontSize: S.caption,
-    fontFamily: F.regular,
+    gap: SP.xs,
   },
   explain: {
-    color: "#a1a1aa",
-    fontSize: S.caption,
-    fontFamily: F.regular,
-    marginTop: 6,
+    marginTop: SP.sm,
+  },
+  chart: {
+    marginTop: SP.md,
   },
   halo: {
     position: "absolute",
-    width: 22,
-    height: 22,
-    borderRadius: 11,
+    width: HALO,
+    height: HALO,
+    borderRadius: R.pill,
+    backgroundColor: C.accent,
   },
   axis: {
     flexDirection: "row",
     justifyContent: "space-between",
-    marginTop: 2,
-  },
-  axisLabel: {
-    color: "#52525b",
-    fontSize: S.micro,
-    fontFamily: F.medium,
+    marginTop: SP.xs,
   },
   ranges: {
     flexDirection: "row",
-    justifyContent: "space-between",
-    marginTop: 12,
-    marginBottom: 10,
+    gap: SP.xs,
+    marginTop: SP.md,
+    marginBottom: SP.md,
   },
-  rangePill: {
+  segment: {
     flex: 1,
-    paddingVertical: 7,
-    borderRadius: 10,
+    paddingVertical: SP.sm,
+    borderRadius: R.pill,
     alignItems: "center",
   },
-  rangePillOn: {
-    backgroundColor: "rgba(255,255,255,0.13)",
-  },
-  rangeText: {
-    color: "#8b8b93",
-    fontSize: S.caption,
-    fontFamily: F.semibold,
-  },
-  footer: {
-    color: "#6b6b73",
-    fontSize: S.micro,
-    fontFamily: F.regular,
-    lineHeight: 16,
+  segmentOn: {
+    backgroundColor: C.fillHigh,
   },
   hint: {
-    color: "#8b8b93",
-    fontSize: S.micro,
-    fontFamily: F.regular,
-    marginTop: 4,
+    marginTop: SP.xs,
   },
 });
 

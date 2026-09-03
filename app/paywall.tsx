@@ -1,11 +1,10 @@
 import { useState } from "react";
-import { View, Text, Pressable, StyleSheet, Image, Alert } from "react-native";
+import { View, ScrollView, StyleSheet, Image, Alert } from "react-native";
 import { useRouter, useLocalSearchParams } from "expo-router";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 import { Ionicons } from "@expo/vector-icons";
-import { Svg, Defs, LinearGradient, Stop, Rect } from "react-native-svg";
-import { Glass, GlassButton } from "@/components/Glass";
-import { F, S } from "@/lib/fonts";
+import { Screen, Txt, Section, Row, Button, IconButton } from "@/components/ui";
+import { C, SP } from "@/lib/tokens";
 import { useSessions } from "@/lib/useSupabase";
 import { artworkFor } from "@/lib/catalog";
 import { usePremium, PRICE_MONTHLY, PRICE_YEARLY } from "@/lib/premium";
@@ -17,9 +16,11 @@ const BENEFITS = [
   "New sessions every month",
 ];
 
+const Check = <Ionicons name="checkmark" size={22} color={C.accent} />;
+
 export default function PaywallScreen() {
   const router = useRouter();
-  const insets = useSafeAreaInsets();
+  const { top, bottom } = useSafeAreaInsets();
   const { id } = useLocalSearchParams<{ id?: string }>();
   const { sessions } = useSessions();
   const { unlock } = usePremium();
@@ -47,217 +48,101 @@ export default function PaywallScreen() {
     );
   };
 
+  const restore = () => {
+    Alert.alert("Restore Purchases", "App Store billing is coming in the next build. Nothing to restore yet.");
+  };
+
   return (
-    <View style={styles.container}>
-      {/* Artwork backdrop from the session that brought them here */}
+    <Screen>
+      {/* Full-bleed artwork from the session that brought them here */}
       {session && (
-        <Image
-          source={{ uri: artworkFor(session) }}
-          style={styles.backdrop}
-          resizeMode="cover"
-          blurRadius={6}
-        />
+        <Image source={{ uri: artworkFor(session) }} style={StyleSheet.absoluteFill} resizeMode="cover" />
       )}
-      <View style={StyleSheet.absoluteFill} pointerEvents="none">
-        <Svg width="100%" height="100%">
-          <Defs>
-            <LinearGradient id="payScrim" x1="0" y1="0" x2="0" y2="1">
-              <Stop offset="0%" stopColor="#000000" stopOpacity="0.5" />
-              <Stop offset="45%" stopColor="#000000" stopOpacity="0.9" />
-              <Stop offset="100%" stopColor="#000000" stopOpacity="1" />
-            </LinearGradient>
-          </Defs>
-          <Rect x="0" y="0" width="100%" height="100%" fill="url(#payScrim)" />
-        </Svg>
-      </View>
 
-      {/* Same floating glass control the nav uses — the modal has no header
-          bar, so the one piece of chrome it needs is a single glass button. */}
-      <Pressable
-        style={[styles.close, { top: insets.top + 8 }]}
+      {/* The modal has no header bar; one disc button closes it. */}
+      <IconButton
+        icon="close"
+        label="Close"
+        disc
         onPress={() => router.back()}
-        hitSlop={12}
-        accessibilityRole="button"
-        accessibilityLabel="Close"
-      >
-        <Glass liquid phase={0.1} intensity={1.1} scrim="soft" style={styles.closeGlass}>
-          <Ionicons name="close" size={22} color="#ffffff" />
-        </Glass>
-      </Pressable>
+        style={[styles.close, { top: top + SP.sm }]}
+      />
 
-      <View style={[styles.content, { paddingBottom: Math.max(insets.bottom, 16) + 16 }]}>
-        <Text style={styles.wordmark} maxFontSizeMultiplier={1.2}>Morning Que</Text>
-        <Text style={styles.title} maxFontSizeMultiplier={1.2}>Premium</Text>
+      <ScrollView contentContainerStyle={styles.scroll} showsVerticalScrollIndicator={false}>
+        {/* Copy and choices sit on a flat scrim at the foot of the artwork */}
+        <View style={[styles.foot, { paddingBottom: bottom + SP.lg }]}>
+          <View style={styles.titles}>
+            <Txt kind="footnote" tone="secondary" maxFontSizeMultiplier={1.2}>
+              MORNING QUE
+            </Txt>
+            <Txt kind="editorial" maxFontSizeMultiplier={1.2}>
+              Premium
+            </Txt>
+          </View>
 
-        <View style={styles.benefits}>
-          {BENEFITS.map((b) => (
-            <View key={b} style={styles.benefitRow}>
-              <Ionicons name="checkmark-circle" size={18} color="#34C759" />
-              <Text style={styles.benefitText} maxFontSizeMultiplier={1.3}>{b}</Text>
-            </View>
-          ))}
+          <Section header="Included">
+            {BENEFITS.map((b) => (
+              <Row key={b} icon="checkmark-circle" title={b} accessory="none" />
+            ))}
+          </Section>
+
+          <Section header="Plan">
+            <Row
+              title="Yearly"
+              subtitle={`${PRICE_YEARLY} / year · 2 months free`}
+              value="Best value"
+              onPress={() => setPlan("yearly")}
+              accessory={plan === "yearly" ? Check : "none"}
+              accessibilityLabel={`Yearly plan, ${PRICE_YEARLY} per year${plan === "yearly" ? ", selected" : ""}`}
+            />
+            <Row
+              title="Monthly"
+              subtitle={`${PRICE_MONTHLY} / month`}
+              onPress={() => setPlan("monthly")}
+              accessory={plan === "monthly" ? Check : "none"}
+              accessibilityLabel={`Monthly plan, ${PRICE_MONTHLY} per month${plan === "monthly" ? ", selected" : ""}`}
+            />
+          </Section>
+
+          <View style={styles.actions}>
+            <Button title="Start Premium" onPress={startPremium} accessibilityLabel="Start premium" />
+            <Button title="Restore Purchases" tone="plain" onPress={restore} style={styles.restore} />
+            <Txt kind="footnote" tone="tertiary" maxFontSizeMultiplier={1.3} style={styles.finePrint}>
+              Cancel anytime. The free tier keeps working forever.
+            </Txt>
+          </View>
         </View>
-
-        {/* Plans */}
-        <Pressable
-          style={[styles.plan, plan === "yearly" && styles.planActive]}
-          onPress={() => setPlan("yearly")}
-          accessibilityRole="button"
-          accessibilityState={{ selected: plan === "yearly" }}
-          accessibilityLabel={`Yearly plan, ${PRICE_YEARLY} per year`}
-        >
-          <View style={styles.planLeft}>
-            <Text style={styles.planTitle}>Yearly</Text>
-            <Text style={styles.planSub}>{PRICE_YEARLY} / year · 2 months free</Text>
-          </View>
-          <Glass liquid phase={0.6} intensity={1.2} scrim="none" style={styles.bestBadge}>
-            <Text style={styles.bestBadgeText}>BEST VALUE</Text>
-          </Glass>
-        </Pressable>
-        <Pressable
-          style={[styles.plan, plan === "monthly" && styles.planActive]}
-          onPress={() => setPlan("monthly")}
-          accessibilityRole="button"
-          accessibilityState={{ selected: plan === "monthly" }}
-          accessibilityLabel={`Monthly plan, ${PRICE_MONTHLY} per month`}
-        >
-          <View style={styles.planLeft}>
-            <Text style={styles.planTitle}>Monthly</Text>
-            <Text style={styles.planSub}>{PRICE_MONTHLY} / month</Text>
-          </View>
-        </Pressable>
-
-        <Pressable
-          style={styles.ctaWrap}
-          onPress={startPremium}
-          accessibilityRole="button"
-          accessibilityLabel="Start premium"
-        >
-          <GlassButton tone="bright" phase={0.35} style={styles.cta}>
-            <Text style={styles.ctaText}>Start Premium</Text>
-          </GlassButton>
-        </Pressable>
-        <Text style={styles.finePrint} maxFontSizeMultiplier={1.3}>
-          Cancel anytime. The free tier keeps working forever.
-        </Text>
-      </View>
-    </View>
+      </ScrollView>
+    </Screen>
   );
 }
 
 const styles = StyleSheet.create({
-  container: {
-    flex: 1,
-    backgroundColor: "#000000",
-  },
-  backdrop: {
-    position: "absolute",
-    top: 0,
-    left: 0,
-    right: 0,
-    height: "55%",
-  },
   close: {
     position: "absolute",
-    left: 16,
+    left: SP.screen,
     zIndex: 2,
   },
-  closeGlass: {
-    width: 40,
-    height: 40,
-    borderRadius: 20,
-    overflow: "hidden",
-    alignItems: "center",
-    justifyContent: "center",
-  },
-  content: {
-    flex: 1,
+  scroll: {
+    flexGrow: 1,
     justifyContent: "flex-end",
-    paddingHorizontal: 24,
   },
-  wordmark: {
-    color: "rgba(255,255,255,0.6)",
-    fontSize: S.secondary,
-    fontFamily: "Lora",
-    marginBottom: 2,
+  foot: {
+    paddingTop: SP.xxl,
+    backgroundColor: C.scrim,
   },
-  title: {
-    color: "#f5f5f7",
-    fontSize: S.display,
-    fontFamily: "Lora",
-    marginBottom: 18,
+  titles: {
+    paddingHorizontal: SP.screen,
   },
-  benefits: {
-    gap: 10,
-    marginBottom: 24,
+  actions: {
+    paddingHorizontal: SP.screen,
+    paddingTop: SP.xxl,
   },
-  benefitRow: {
-    flexDirection: "row",
-    alignItems: "center",
-    gap: 10,
-  },
-  benefitText: {
-    color: "#d4d4d8",
-    fontSize: S.secondary,
-    fontFamily: F.regular,
-    flex: 1,
-  },
-  plan: {
-    flexDirection: "row",
-    alignItems: "center",
-    justifyContent: "space-between",
-    borderWidth: 1.5,
-    borderColor: "#2c2c2e",
-    borderRadius: 16,
-    paddingHorizontal: 16,
-    paddingVertical: 14,
-    marginBottom: 10,
-  },
-  planActive: {
-    borderColor: "#f5f5f7",
-  },
-  planLeft: {
-    flex: 1,
-  },
-  planTitle: {
-    color: "#f5f5f7",
-    fontSize: S.body,
-    fontFamily: F.semibold,
-  },
-  planSub: {
-    color: "#8b8b93",
-    fontSize: S.caption,
-    fontFamily: F.regular,
-    marginTop: 2,
-  },
-  bestBadge: {
-    borderRadius: 999,
-    overflow: "hidden",
-    paddingHorizontal: 10,
-    paddingVertical: 4,
-  },
-  bestBadgeText: {
-    color: "#ffffff",
-    fontSize: S.micro,
-    fontFamily: F.semibold,
-    letterSpacing: 1,
-  },
-  ctaWrap: {
-    marginTop: 8,
-  },
-  cta: {
-    paddingVertical: 17,
-  },
-  ctaText: {
-    color: "#ffffff",
-    fontSize: S.body,
-    fontFamily: F.semibold,
+  restore: {
+    marginTop: SP.xs,
   },
   finePrint: {
-    color: "#52525b",
-    fontSize: S.micro,
-    fontFamily: F.regular,
     textAlign: "center",
-    marginTop: 12,
+    marginTop: SP.sm,
   },
 });

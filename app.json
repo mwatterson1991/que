@@ -6,7 +6,7 @@
     "orientation": "portrait",
     "icon": "./assets/icon.png",
     "scheme": "mantraalarm",
-    "userInterfaceStyle": "automatic",
+    "userInterfaceStyle": "dark",
     "ios": {
       "supportsTablet": true,
       "bundleIdentifier": "com.michaelwatterson.que",
@@ -33,7 +33,7 @@
     "android": {
       "adaptiveIcon": {
         "foregroundImage": "./assets/adaptive-icon.png",
-        "backgroundColor": "#0b0b0f"
+        "backgroundColor": "#000000"
       },
       "package": "com.michaelwatterson.que",
       "permissions": [
@@ -55,14 +55,20 @@
       [
         "expo-notifications",
         {
-          "color": "#0b0b0f",
+          "color": "#FF9F0A",
           "defaultChannel": "alarms",
           "enableBackgroundRemoteNotifications": true
         }
       ],
-      "expo-font",
       "expo-asset",
-      "expo-splash-screen",
+      [
+        "expo-splash-screen",
+        {
+          "backgroundColor": "#000000",
+          "image": "./assets/splash-icon.png",
+          "imageWidth": 160
+        }
+      ],
       "expo-status-bar"
     ],
     "experiments": {

@@ -1,19 +1,13 @@
-import { View, Text, Pressable, ScrollView, StyleSheet } from "react-native";
-import { useRouter, useLocalSearchParams } from "expo-router";
-import { useSafeAreaInsets } from "react-native-safe-area-context";
+import { View, ScrollView, StyleSheet } from "react-native";
+import { Stack, useRouter, useLocalSearchParams } from "expo-router";
 import { Ionicons } from "@expo/vector-icons";
 import { useState, useEffect, useRef } from "react";
 import { createAudioPlayer, AudioPlayer } from "expo-audio";
-import { fadePlayerTo } from "@/lib/audio";
-import { F, S } from "@/lib/fonts";
+import { fadePlayerTo, releasePlayer } from "@/lib/audio";
 import { usePreferences } from "@/lib/useSupabase";
-import { releasePlayer } from "@/lib/audio";
-import {
-  AMBIENT_SOUNDS,
-  AMBIENT_ASSETS,
-  AmbientSoundId,
-  AmbientSoundEntry,
-} from "@/lib/ambient";
+import { AMBIENT_SOUNDS, AMBIENT_ASSETS, AmbientSoundId } from "@/lib/ambient";
+import { Screen, Section, Row, IconButton } from "@/components/ui";
+import { C, SP } from "@/lib/tokens";
 
 const PREVIEW_VOLUME = 0.4;
 
@@ -21,7 +15,6 @@ const PREVIEW_ASSETS: Record<string, any> = AMBIENT_ASSETS;
 
 export default function AmbientPickerScreen() {
   const router = useRouter();
-  const insets = useSafeAreaInsets();
   const { prefs, update: updatePrefs } = usePreferences();
   const { current } = useLocalSearchParams<{ current?: string }>();
 
@@ -38,7 +31,7 @@ export default function AmbientPickerScreen() {
     }
   }, [prefs?.ambient_sound]);
 
-  // Cleanup preview on unmount
+  // Cleanup preview on unmount (this also covers the native back button)
   useEffect(() => {
     return () => {
       if (previewRef.current) {
@@ -84,190 +77,57 @@ export default function AmbientPickerScreen() {
   };
 
   return (
-    <View style={[styles.container, { paddingTop: insets.top }]}>
-      {/* Header */}
-      <View style={styles.header}>
-        <Pressable
-          onPress={() => { stopPreview(); router.back(); }}
-          hitSlop={12}
-          accessibilityRole="button"
-          accessibilityLabel="Go back"
-        >
-          <Ionicons name="chevron-back" size={28} color="#f5f5f7" />
-        </Pressable>
-        <Text style={styles.headerTitle}>Ambient Sound</Text>
-        <View style={{ width: 28 }} />
-      </View>
-
-      <Text style={styles.subtitle}>
-        Plays underneath every session at 20% volume. Pick the atmosphere that helps you settle in.
-      </Text>
-
-      <ScrollView
-        style={styles.list}
-        contentContainerStyle={{ paddingBottom: insets.bottom + 24 }}
-      >
-        {AMBIENT_SOUNDS.map((entry) => (
-          <AmbientRow
-            key={entry.id}
-            entry={entry}
-            isSelected={selected === entry.id}
-            isPreviewing={previewing === entry.id}
-            onPreview={() => togglePreview(entry.id)}
-            onSelect={() => handleSelect(entry.id)}
-          />
-        ))}
+    <Screen>
+      <Stack.Screen options={{ title: "Ambient Sound" }} />
+      <ScrollView contentInsetAdjustmentBehavior="automatic" contentContainerStyle={styles.scroll}>
+        <Section footer="Plays underneath every session at 20% volume. Pick the atmosphere that helps you settle in.">
+          {AMBIENT_SOUNDS.map((entry) => {
+            const isSelected = selected === entry.id;
+            const isPreviewing = previewing === entry.id;
+            return (
+              <Row
+                key={entry.id}
+                icon={entry.icon as keyof typeof Ionicons.glyphMap}
+                iconColor={isSelected ? C.accent : C.labelSecondary}
+                title={entry.label}
+                subtitle={entry.description}
+                onPress={() => handleSelect(entry.id)}
+                accessibilityLabel={`${entry.label}, ${entry.description}${isSelected ? ", selected" : ""}`}
+                accessory={
+                  <View style={styles.accessory}>
+                    {entry.id !== "silence" && (
+                      <IconButton
+                        icon={isPreviewing ? "stop" : "play"}
+                        size={20}
+                        label={isPreviewing ? `Stop preview of ${entry.label}` : `Preview ${entry.label}`}
+                        onPress={() => togglePreview(entry.id)}
+                      />
+                    )}
+                    <View style={styles.check}>
+                      {isSelected && <Ionicons name="checkmark" size={22} color={C.accent} />}
+                    </View>
+                  </View>
+                }
+              />
+            );
+          })}
+        </Section>
       </ScrollView>
-    </View>
-  );
-}
-
-function AmbientRow({
-  entry,
-  isSelected,
-  isPreviewing,
-  onPreview,
-  onSelect,
-}: {
-  entry: AmbientSoundEntry;
-  isSelected: boolean;
-  isPreviewing: boolean;
-  onPreview: () => void;
-  onSelect: () => void;
-}) {
-  return (
-    <Pressable
-      style={styles.row}
-      onPress={onSelect}
-      accessibilityRole="button"
-      accessibilityLabel={`${entry.label}, ${entry.description}`}
-      accessibilityState={{ selected: isSelected }}
-    >
-      <View style={styles.rowLeft}>
-        <View style={[styles.iconCircle, isSelected && styles.iconCircleActive]}>
-          <Ionicons
-            name={entry.icon as any}
-            size={20}
-            color={isSelected ? "#f5f5f7" : "#8b8b93"}
-          />
-        </View>
-        <View style={styles.rowText}>
-          <Text style={[styles.rowLabel, isSelected && styles.rowLabelActive]}>
-            {entry.label}
-          </Text>
-          <Text style={styles.rowDesc}>{entry.description}</Text>
-        </View>
-      </View>
-
-      <View style={styles.rowRight}>
-        {entry.id !== "silence" && (
-          <Pressable
-            style={styles.previewBtn}
-            onPress={onPreview}
-            hitSlop={8}
-            accessibilityRole="button"
-            accessibilityLabel={isPreviewing ? `Stop preview of ${entry.label}` : `Preview ${entry.label}`}
-          >
-            <Ionicons
-              name={isPreviewing ? "stop" : "play"}
-              size={16}
-              color="#FF5500"
-            />
-          </Pressable>
-        )}
-        {isSelected && (
-          <Ionicons name="checkmark-circle" size={22} color="#FF5500" />
-        )}
-      </View>
-    </Pressable>
+    </Screen>
   );
 }
 
 const styles = StyleSheet.create({
-  container: {
-    flex: 1,
-    backgroundColor: "#000000",
+  scroll: {
+    paddingBottom: SP.xxxl,
   },
-  header: {
+  accessory: {
     flexDirection: "row",
     alignItems: "center",
-    justifyContent: "space-between",
-    paddingHorizontal: 16,
-    paddingVertical: 12,
+    marginLeft: SP.sm,
   },
-  headerTitle: {
-    color: "#f5f5f7",
-    fontSize: S.body,
-    fontFamily: F.bold,
-  },
-  subtitle: {
-    color: "#8b8b93",
-    fontSize: S.caption,
-    fontFamily: F.regular,
-    lineHeight: 20,
-    paddingHorizontal: 20,
-    marginBottom: 16,
-  },
-  list: {
-    flex: 1,
-    paddingHorizontal: 16,
-  },
-
-  // Row
-  row: {
-    flexDirection: "row",
-    alignItems: "center",
-    justifyContent: "space-between",
-    paddingVertical: 16,
-    paddingHorizontal: 4,
-    borderBottomWidth: StyleSheet.hairlineWidth,
-    borderBottomColor: "#2c2c2e",
-  },
-  rowLeft: {
-    flexDirection: "row",
-    alignItems: "center",
-    flex: 1,
-  },
-  iconCircle: {
-    width: 40,
-    height: 40,
-    borderRadius: 20,
-    backgroundColor: "#1c1c1e",
-    alignItems: "center",
-    justifyContent: "center",
-    marginRight: 12,
-  },
-  iconCircleActive: {
-    backgroundColor: "#3a1800",
-  },
-  rowText: {
-    flex: 1,
-  },
-  rowLabel: {
-    color: "#f5f5f7",
-    fontSize: S.body,
-    fontFamily: F.medium,
-  },
-  rowLabelActive: {
-    color: "#FF5500",
-  },
-  rowDesc: {
-    color: "#8b8b93",
-    fontSize: S.caption,
-    fontFamily: F.regular,
-    marginTop: 2,
-  },
-  rowRight: {
-    flexDirection: "row",
-    alignItems: "center",
-    gap: 12,
-  },
-  previewBtn: {
-    width: 32,
-    height: 32,
-    borderRadius: 16,
-    backgroundColor: "#1c1c1e",
-    alignItems: "center",
-    justifyContent: "center",
+  check: {
+    width: SP.xxl,
+    alignItems: "flex-end",
   },
 });

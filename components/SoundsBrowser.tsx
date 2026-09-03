@@ -2,52 +2,48 @@ import { useMemo, useState, useCallback, ReactNode } from "react";
 import { useRouter } from "expo-router";
 import {
   View,
-  Text,
   TextInput,
   FlatList,
   Pressable,
-  ScrollView,
   StyleSheet,
   ActivityIndicator,
 } from "react-native";
 import { Ionicons } from "@expo/vector-icons";
-import { F, S } from "@/lib/fonts";
+import { Txt, Empty } from "@/components/ui";
+import { C, R, SP, TYPE } from "@/lib/tokens";
 import { useSessions } from "@/lib/useSupabase";
 import { groupIntoRails } from "@/lib/catalog";
 import { usePremium, isLocked } from "@/lib/premium";
-import { Glass, TEXT_ON_IMAGE } from "@/components/Glass";
-import AuroraBackground from "@/components/AuroraBackground";
 import SessionCard from "@/components/SessionCard";
 import ChannelCard from "@/components/ChannelCard";
-import { useBackdrop } from "@/lib/backdrop";
 import {
   CARD_W,
   RAIL_EDGE,
   RAIL_GAP,
   RAIL_TAIL,
   SNAP_INTERVAL,
-  quantizeLight,
 } from "@/components/cardLayout";
 import type { Session } from "@/lib/types";
 
-// One browser, two jobs: the drawer's Sounds screen (tap → player) and
-// the alarm editor's picker (tap → select). Same rails, same cards.
+// One browser, two jobs: the Sounds tab (tap → player) and the alarm
+// editor's picker (tap → select). Same rails, same tiles.
 //
 // Every rail leads with its CHANNEL card and then lists the individual
 // SOUND cards, so the two card types always sit side by side and the
 // channel promise is the first thing you meet in each shelf.
 //
-// The background of this screen is the app's animated gradient and
-// nothing else. This screen used to blow the focused card's photograph
-// up behind everything and crossfade it as you swiped; Michael's call
-// is that an app backed by a photograph doesn't read as serious
-// software, so the photographs now live only ON the cards. The sense of
-// the mood moving as you scroll comes from the cards' own per-channel
-// tint instead — see toneFor in cardLayout.
+// One vertical FlatList carries both modes — shelves while browsing, a
+// column of wide tiles while searching — with the search field as its
+// header, so the field never remounts (and never drops the keyboard)
+// when the first character is typed.
 
 type RailItem =
   | { kind: "channel"; channel: string; sessions: Session[] }
   | { kind: "session"; session: Session };
+
+type ListItem =
+  | { kind: "rail"; channel: string; sessions: Session[] }
+  | { kind: "result"; session: Session };
 
 // A channel is a promise, not a track: tapping one starts today's
 // recording from it. Keyed to the calendar day so the pick is genuinely
@@ -66,13 +62,13 @@ function Rail({
 }: {
   channel: string;
   items: RailItem[];
-  renderItem: (item: RailItem, index: number) => ReactNode;
+  renderItem: (item: RailItem) => ReactNode;
 }) {
   return (
     <View style={styles.rail}>
-      <Text style={styles.railLabel} maxFontSizeMultiplier={1.4}>
+      <Txt kind="headline" style={styles.railLabel} maxFontSizeMultiplier={1.4}>
         {channel}
-      </Text>
+      </Txt>
       <FlatList
         data={items}
         horizontal
@@ -88,9 +84,8 @@ function Rail({
         snapToAlignment="start"
         decelerationRate="fast"
         disableIntervalMomentum
-        // Every card carries a live glass shimmer and a photograph, so
-        // keep the mounted window tight — about two cards either side of
-        // the one you're looking at.
+        // Every card carries a photograph, so keep the mounted window
+        // tight — about two cards either side of the one in view.
         initialNumToRender={3}
         maxToRenderPerBatch={3}
         windowSize={5}
@@ -101,7 +96,7 @@ function Rail({
           offset: RAIL_EDGE + SNAP_INTERVAL * index,
           index,
         })}
-        renderItem={({ item, index }) => <>{renderItem(item, index)}</>}
+        renderItem={({ item }) => <>{renderItem(item)}</>}
       />
     </View>
   );
@@ -113,26 +108,15 @@ export default function SoundsBrowser({
   onPressSession,
   selectedId,
   footer,
-  withAurora = true,
-  topPad = 0,
 }: {
   onPressSession: (session: Session) => void;
   selectedId?: string;
   footer?: ReactNode;
-  withAurora?: boolean;
-  topPad?: number;
 }) {
   const { sessions, loading } = useSessions();
   const { unlocked } = usePremium();
   const router = useRouter();
   const [query, setQuery] = useState("");
-
-  // The user's gradient is theirs — we read the house-lights level so
-  // the cards' tint dims with it, and touch nothing else. Quantised
-  // because wind-down steps the level every five seconds and the cards
-  // are memoised on this value.
-  const { level } = useBackdrop();
-  const light = quantizeLight(level);
 
   // Locked sessions route to the paywall instead of playing/selecting.
   // Stable identity so a card only re-renders when its own data moves.
@@ -160,13 +144,19 @@ export default function SoundsBrowser({
     );
   }, [sessions, query]);
 
-  const renderRailItem = (item: RailItem, index: number) =>
+  const items = useMemo<ListItem[]>(
+    () =>
+      query
+        ? searchResults.map((session) => ({ kind: "result" as const, session }))
+        : rails.map(([channel, list]) => ({ kind: "rail" as const, channel, sessions: list })),
+    [query, searchResults, rails],
+  );
+
+  const renderRailItem = (item: RailItem) =>
     item.kind === "channel" ? (
       <ChannelCard
         channel={item.channel}
         sessions={item.sessions}
-        index={index}
-        light={light}
         onPress={() => {
           const pick = recordingOfTheDay(item.sessions);
           if (pick) handlePress(pick);
@@ -175,28 +165,57 @@ export default function SoundsBrowser({
     ) : (
       <SessionCard
         session={item.session}
-        index={index}
-        light={light}
         selected={selectedId !== undefined ? item.session.id === selectedId : undefined}
         locked={isLocked(item.session, unlocked)}
         onPress={handlePress}
       />
     );
 
-  return (
-    <View style={styles.container}>
-      {withAurora && <AuroraBackground dim={0.8} />}
+  const renderItem = ({ item }: { item: ListItem }) =>
+    item.kind === "rail" ? (
+      <Rail
+        channel={item.channel}
+        items={[
+          { kind: "channel", channel: item.channel, sessions: item.sessions },
+          ...item.sessions.map((session) => ({ kind: "session" as const, session })),
+        ]}
+        renderItem={renderRailItem}
+      />
+    ) : (
+      <View style={styles.result}>
+        <SessionCard
+          session={item.session}
+          variant="wide"
+          selected={selectedId !== undefined ? item.session.id === selectedId : undefined}
+          locked={isLocked(item.session, unlocked)}
+          onPress={handlePress}
+        />
+      </View>
+    );
 
-      <View style={[styles.content, { paddingTop: topPad }]}>
-        {/* Search bar */}
-        <Glass style={styles.searchBar}>
-          <Ionicons name="search" size={18} color="#8b8b93" />
+  return (
+    <FlatList
+      data={items}
+      keyExtractor={(item) => (item.kind === "rail" ? `rail:${item.channel}` : item.session.id)}
+      renderItem={renderItem}
+      contentInsetAdjustmentBehavior="automatic"
+      contentContainerStyle={styles.list}
+      showsVerticalScrollIndicator={false}
+      keyboardDismissMode="on-drag"
+      keyboardShouldPersistTaps="handled"
+      ListHeaderComponent={
+        <View style={styles.searchBar}>
+          <Ionicons name="search" size={18} color={C.labelSecondary} />
           <TextInput
             value={query}
             onChangeText={setQuery}
-            placeholder="Search sounds, topics, goals..."
-            placeholderTextColor="#52525b"
+            placeholder="Search sounds, topics, goals"
+            placeholderTextColor={C.labelTertiary}
+            selectionColor={C.accent}
             style={styles.searchInput}
+            returnKeyType="search"
+            clearButtonMode="never"
+            accessibilityLabel="Search sounds"
           />
           {query.length > 0 && (
             <Pressable
@@ -205,111 +224,58 @@ export default function SoundsBrowser({
               accessibilityRole="button"
               accessibilityLabel="Clear search"
             >
-              <Ionicons name="close-circle" size={18} color="#52525b" />
+              <Ionicons name="close-circle" size={18} color={C.labelSecondary} />
             </Pressable>
           )}
-        </Glass>
-
-        {loading ? (
-          <ActivityIndicator color="#f5f5f7" style={{ marginTop: 40 }} />
+        </View>
+      }
+      ListEmptyComponent={
+        loading ? (
+          <ActivityIndicator color={C.labelSecondary} style={styles.loading} />
         ) : query ? (
-          // ── Search results: one full-width row per result ──
-          <FlatList
-            data={searchResults}
-            keyExtractor={(s) => s.id}
-            renderItem={({ item, index }) => (
-              <SessionCard
-                session={item}
-                variant="wide"
-                index={index}
-                light={light}
-                selected={selectedId !== undefined ? item.id === selectedId : undefined}
-                locked={isLocked(item, unlocked)}
-                onPress={handlePress}
-              />
-            )}
-            contentContainerStyle={styles.grid}
-            showsVerticalScrollIndicator={false}
-            ListEmptyComponent={
-              <Text style={styles.emptyText}>No sounds match your search.</Text>
-            }
-            ListFooterComponent={footer ? <>{footer}</> : null}
-          />
-        ) : (
-          // ── Browse: horizontal rails per channel ──
-          <ScrollView
-            showsVerticalScrollIndicator={false}
-            contentContainerStyle={styles.railsScroll}
-          >
-            {rails.map(([channel, list]) => (
-              <Rail
-                key={channel}
-                channel={channel}
-                items={[
-                  { kind: "channel", channel, sessions: list },
-                  ...list.map((session) => ({ kind: "session" as const, session })),
-                ]}
-                renderItem={renderRailItem}
-              />
-            ))}
-            {footer}
-          </ScrollView>
-        )}
-      </View>
-    </View>
+          <View style={styles.empty}>
+            <Empty title="No Results" body="No sounds match your search." />
+          </View>
+        ) : null
+      }
+      ListFooterComponent={footer ? <>{footer}</> : null}
+    />
   );
 }
 
 const styles = StyleSheet.create({
-  container: {
-    flex: 1,
-    backgroundColor: "transparent",
-  },
-  content: {
-    flex: 1,
+  list: {
+    paddingBottom: SP.xxxl,
   },
 
-  // Search bar
+  // Search field, drawn like UISearchBar's: a rounded fill with the
+  // glyph inside it.
   searchBar: {
     flexDirection: "row",
     alignItems: "center",
-    borderRadius: 14,
-    overflow: "hidden",
-    marginHorizontal: 16,
-    marginTop: 12,
-    marginBottom: 8,
-    paddingHorizontal: 14,
-    height: 44,
+    gap: SP.sm,
+    marginHorizontal: SP.screen,
+    marginTop: SP.sm,
+    marginBottom: SP.xl,
+    paddingHorizontal: SP.sm,
+    height: 36,
+    borderRadius: R.md,
+    backgroundColor: C.fill,
   },
   searchInput: {
+    ...TYPE.body,
     flex: 1,
-    color: "#f5f5f7",
-    fontSize: S.body,
-    marginLeft: 10,
-    fontFamily: F.regular,
+    color: C.label,
+    paddingVertical: 0,
   },
 
   // Rails
-  railsScroll: {
-    paddingTop: 8,
-    paddingBottom: 40,
-  },
   rail: {
-    marginBottom: 22,
+    marginBottom: SP.xxl,
   },
-  // A quiet marker for the shelf, not a headline. The big type on this
-  // screen belongs to the card — the reference players Michael keeps
-  // sending have one title, and it's on the panel. A second 28pt
-  // heading directly above every card was two titles for one thing.
   railLabel: {
-    color: "rgba(245,245,247,0.66)",
-    fontSize: S.secondary,
-    fontFamily: F.semibold,
-    letterSpacing: 1.2,
-    textTransform: "uppercase",
-    paddingHorizontal: RAIL_EDGE,
-    marginBottom: 10,
-    ...TEXT_ON_IMAGE,
+    paddingHorizontal: SP.screen,
+    marginBottom: SP.sm,
   },
   railContent: {
     paddingLeft: RAIL_EDGE,
@@ -318,17 +284,14 @@ const styles = StyleSheet.create({
   },
 
   // Search results
-  grid: {
+  result: {
     paddingHorizontal: RAIL_EDGE,
-    paddingTop: 8,
-    paddingBottom: 32,
   },
 
-  emptyText: {
-    color: "#a1a1aa",
-    fontSize: S.secondary,
-    textAlign: "center",
-    marginTop: 40,
-    fontFamily: F.regular,
+  loading: {
+    marginTop: SP.xxxl,
+  },
+  empty: {
+    paddingTop: SP.xxxl,
   },
 });

@@ -1,108 +1,147 @@
-/**
- * Design tokens for the Que app.
- *
- * These are the authoritative values for typography, spacing, and color.
- * Use these constants in StyleSheet.create() calls rather than raw numbers.
- *
- * Font families live in lib/fonts.ts (the F object).
- */
-
-// ─── Typography ──────────────────────────────────────────────────────────────
+import type { TextStyle } from "react-native";
 
 /**
- * Font size scale.
+ * Design tokens for Morning Que.
  *
- *  xs    11  stat labels, skip counter, chart axis labels
- *  sm    13  section titles (uppercase), version text, category meta
- *  base  15  subtitles, secondary labels, empty-state copy, settings values
- *  md    16  body text, form inputs, list row labels, chat bubbles
- *  lg    17  nav header title, Save/action buttons in header
- *  xl    18  card titles (Create screen), mantra caption text
- *  2xl   20  session titles (Search/Sounds), time-picker digits
- *  3xl   24  drawer nav items, alarm AM/PM indicator
- *  4xl   28  stats (streak, sessions, hours)
- *  5xl   32  Auth screen logo (Lora serif)
- *  ---   50  Profile-page score display (editorial/light)
- *  ---   56  Alarm list time digits (display number)
- *  ---   72  Profile drawer score (bold hero number)
+ * The app follows Apple's Human Interface Guidelines for a dark-only
+ * app, and borrows the Clock app's structure. Every value below is
+ * either Apple's own dark-mode system value or derived from one, so the
+ * app sits beside Apple's apps without a seam.
+ *
+ * Rules:
+ *   - No screen file contains a hex code, a font size or a font family.
+ *     Colour comes from `C`, type from `TYPE` (or the <Txt> primitive),
+ *     spacing from `SP`, radii from `R`.
+ *   - One accent (systemOrange, the Clock colour) for actions and tint.
+ *     The native Switch keeps Apple's green, because that is what a
+ *     switch looks like on iOS.
+ *   - No shadows, no gradients, no blur. Depth is a lighter fill.
  */
-export const FS = {
-  xs: 11,
-  sm: 13,
-  base: 15,
-  md: 16,
-  lg: 17,
-  xl: 18,
-  "2xl": 20,
-  "3xl": 24,
-  "4xl": 28,
-  "5xl": 32,
+
+// ─── Colour (Apple dark-mode system palette) ─────────────────────────────────
+
+export const C = {
+  /** systemBackground */
+  bg: "#000000",
+  /** secondarySystemGroupedBackground — grouped list cells, sheets, the dock */
+  fill: "#1C1C1E",
+  /** tertiarySystemBackground — pressed cell, gray button, wheel band */
+  fillHigh: "#2C2C2E",
+  /** systemFill-ish — switch-off track, scrub track, disabled fills */
+  fillHighest: "#3A3A3C",
+
+  /** separator (dark) */
+  separator: "rgba(84,84,88,0.6)",
+
+  /** label */
+  label: "#FFFFFF",
+  /** secondaryLabel */
+  labelSecondary: "rgba(235,235,245,0.6)",
+  /** tertiaryLabel */
+  labelTertiary: "rgba(235,235,245,0.3)",
+  /** quaternaryLabel */
+  labelQuaternary: "rgba(235,235,245,0.18)",
+
+  /** systemOrange (dark). Tint colour: nav glyphs, prominent buttons, links, progress. */
+  accent: "#FF9F0A",
+  /** Label on an accent fill. */
+  onAccent: "#000000",
+  /** systemRed (dark). Destructive only. */
+  danger: "#FF453A",
+  /** systemGreen (dark). The native Switch's on-state only. */
+  switchOn: "#30D158",
+
+  /** A flat veil over full-bleed artwork so text on it stays legible. */
+  scrim: "rgba(0,0,0,0.45)",
+  /** Chrome (back button disc, pill) placed over artwork. */
+  overlayFill: "rgba(28,28,30,0.72)",
 } as const;
 
-// ─── Line heights ────────────────────────────────────────────────────────────
+// ─── Type (iOS text styles, system font) ─────────────────────────────────────
 
-export const LH = {
-  tight: 18,   // xs/sm labels
-  snug: 20,    // base secondary text
-  normal: 22,  // md body text, chat bubbles
-  relaxed: 26, // xl mantra / session descriptions
-} as const;
+const tabular: TextStyle = { fontVariant: ["tabular-nums"] };
 
-// ─── Letter spacing ──────────────────────────────────────────────────────────
+/**
+ * Apple's Dynamic Type "Large" (default) sizes. The system font is used
+ * so the app renders in San Francisco on iOS and Roboto on Android, with
+ * no font files to load.
+ */
+export const TYPE = {
+  largeTitle: { fontSize: 34, lineHeight: 41, fontWeight: "700", letterSpacing: 0.4 },
+  title1: { fontSize: 28, lineHeight: 34, fontWeight: "700", letterSpacing: 0.36 },
+  title2: { fontSize: 22, lineHeight: 28, fontWeight: "700", letterSpacing: 0.35 },
+  title3: { fontSize: 20, lineHeight: 25, fontWeight: "600", letterSpacing: 0.38 },
+  headline: { fontSize: 17, lineHeight: 22, fontWeight: "600", letterSpacing: -0.4 },
+  body: { fontSize: 17, lineHeight: 22, fontWeight: "400", letterSpacing: -0.4 },
+  callout: { fontSize: 16, lineHeight: 21, fontWeight: "400", letterSpacing: -0.3 },
+  subheadline: { fontSize: 15, lineHeight: 20, fontWeight: "400", letterSpacing: -0.2 },
+  footnote: { fontSize: 13, lineHeight: 18, fontWeight: "400", letterSpacing: -0.1 },
+  caption1: { fontSize: 12, lineHeight: 16, fontWeight: "400", letterSpacing: 0 },
+  caption2: { fontSize: 11, lineHeight: 13, fontWeight: "400", letterSpacing: 0.06 },
 
-export const LS = {
-  tight: -3,    // hero score numbers
-  snug: -2,     // large display numbers (alarm time)
-  normal: 0,
-  wide: 1,      // stat labels
-  wider: 1.5,   // section titles (UPPERCASE)
-  widest: 2,    // player "NOW PLAYING" label, button labels
+  /** Wheel-picker digits (UIPickerView is 23pt regular). */
+  picker: { fontSize: 23, lineHeight: 28, fontWeight: "400", letterSpacing: 0, ...tabular },
+  /** Alarm-list time. Clock app: light weight, tight, tabular. */
+  clock: { fontSize: 64, lineHeight: 72, fontWeight: "300", letterSpacing: -1.5, ...tabular },
+  /** The time on a ringing / wake screen. */
+  clockHero: { fontSize: 96, lineHeight: 104, fontWeight: "200", letterSpacing: -3, ...tabular },
+  /** Editorial statement text (welcome, wind-down lines). */
+  editorial: { fontSize: 34, lineHeight: 40, fontWeight: "600", letterSpacing: -0.6 },
+  /** Big stat numbers. */
+  stat: { fontSize: 44, lineHeight: 50, fontWeight: "300", letterSpacing: -1, ...tabular },
+} as const satisfies Record<string, TextStyle>;
+
+export type TypeKind = keyof typeof TYPE;
+
+/** Numeric sizes, for the few places that need a number (icon sizing next to text). */
+export const T = {
+  caption: 12,
+  footnote: 13,
+  subheadline: 15,
+  body: 17,
+  title3: 20,
+  title2: 22,
+  title1: 28,
+  largeTitle: 34,
+  stat: 44,
+  clock: 64,
+  clockHero: 96,
 } as const;
 
 // ─── Spacing ─────────────────────────────────────────────────────────────────
 
-/**
- * Screen-level horizontal padding used consistently across all screens.
- *
- *  screenPad   20  content scrollviews, card layouts
- *  listPad     16  flat-list containers that need tighter gutters
- *  inputPad    24  form/auth screens with more breathing room
- */
-export const SPACE = {
-  screenPad: 20,
-  listPad: 16,
-  inputPad: 24,
-  screenPadTop: 16,    // content top gap below native header
-  formPadTop: 24,      // form screens (edit-profile, edit-email)
-  sectionGap: 20,      // vertical gap between major page sections
+export const SP = {
+  xs: 4,
+  sm: 8,
+  md: 12,
+  /** Apple's standard layout margin and cell inset. */
+  lg: 16,
+  xl: 20,
+  xxl: 28,
+  xxxl: 40,
+  /** Screen-level horizontal padding = layout margin. */
+  screen: 16,
+  /** Minimum row height (iOS list cell). */
+  row: 44,
+  /** Minimum tappable control. */
+  hit: 44,
 } as const;
 
-// ─── Colors ──────────────────────────────────────────────────────────────────
+// ─── Radii ───────────────────────────────────────────────────────────────────
 
-/**
- * Semantic color aliases.
- * Raw hex values also live in tailwind.config.js for NativeWind classes.
- */
-export const C = {
-  bg: "#0b0b0f",          // main app background (chat, forms, headers)
-  bgDeep: "#000000",      // content screens (alarms, search, player, auth)
-  panel: "#15151c",       // cards, raised surfaces
-  panelMid: "#1c1c1e",   // input backgrounds, search bars, chart cards
-  panelHigh: "#2c2c2e",  // active bubbles, dark buttons
-
-  border: "#27272a",      // card borders, separators
-  borderFaint: "#1c1c1e", // hairline separators between list rows
-  borderMid: "#3f3f46",   // pill borders, inactive states
-
-  fg: "#f5f5f7",          // primary text, icons
-  fgMid: "#a1a1aa",       // secondary icons
-  fgDim: "#71717a",       // secondary text, labels, timestamps
-  fgFaint: "#52525b",     // placeholder, disabled text
-
-  accent: "#a78bfa",      // brand accent (purple)
-  success: "#22c55e",     // score delta, chart line, completion
-  alarm: "#ff9f0a",       // alarm/mic button
-  danger: "#ff3b30",      // destructive actions
-
-  switchOn: "#4cd964",
+export const R = {
+  /** Small controls, thumbnails. */
+  sm: 8,
+  /** Grouped list cards (iOS inset grouped = 10). */
+  md: 10,
+  /** Buttons, sheets. */
+  lg: 14,
+  /** Large artwork tiles. */
+  xl: 20,
+  pill: 999,
 } as const;
+
+// ─── Motion ──────────────────────────────────────────────────────────────────
+
+/** Press feedback for custom pressables: opacity dip, like UIKit's highlighted state. */
+export const PRESS_OPACITY = 0.55;

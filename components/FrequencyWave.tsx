@@ -8,6 +8,7 @@ import Animated, {
   withTiming,
   Easing,
 } from "react-native-reanimated";
+import { C } from "@/lib/tokens";
 
 /**
  * FrequencyWave — artwork for the Frequencies channel.
@@ -16,20 +17,21 @@ import Animated, {
  * frequency is its own waveform, so each card draws the actual shape:
  * delta long and slow, theta in the middle, alpha tight and quick. Put
  * the three side by side and the difference is visible before you read
- * a word, which is the education the founder asked for.
+ * a word.
  *
- * The wave drifts sideways on a long loop so the card reads as a live
- * signal rather than a diagram.
+ * The trace is the accent colour over a quiet baseline, with a single
+ * vertical fill under the line — the way Stocks draws a chart. The wave
+ * drifts sideways on a long loop so the card reads as a live signal
+ * rather than a diagram.
  */
 
-export const WAVE_TINTS: Record<string, [string, string]> = {
-  delta: ["#3d6bd8", "#7aa8ff"],
-  theta: ["#7b4fd8", "#c08bff"],
-  alpha: ["#1f9e8f", "#6de6cf"],
-};
+// Cycles across the visible width — the whole point is that these differ.
+const CYCLES = { delta: 1.6, theta: 3.4, alpha: 6.2 } as const;
+
+export type WaveKind = keyof typeof CYCLES;
 
 /** Which wave a session is, or null when it isn't a frequency at all. */
-export function waveKindFor(title: string): keyof typeof WAVE_TINTS | null {
+export function waveKindFor(title: string): WaveKind | null {
   const t = title.toLowerCase();
   if (t.includes("delta")) return "delta";
   if (t.includes("theta")) return "theta";
@@ -37,10 +39,7 @@ export function waveKindFor(title: string): keyof typeof WAVE_TINTS | null {
   return null;
 }
 
-// Cycles across the visible width — the whole point is that these differ.
-const CYCLES: Record<string, number> = { delta: 1.6, theta: 3.4, alpha: 6.2 };
-
-function wavePath(w: number, h: number, cycles: number, envelope: boolean): string {
+function wavePath(w: number, h: number, cycles: number): string {
   const mid = h / 2;
   const amp = h * 0.34;
   const steps = 160;
@@ -50,7 +49,7 @@ function wavePath(w: number, h: number, cycles: number, envelope: boolean): stri
     const phase = (i / steps) * cycles * Math.PI * 2;
     // A slow envelope gives the trace peaks and valleys instead of a
     // mechanical ribbon of identical humps.
-    const env = envelope ? 0.62 + 0.38 * Math.sin((i / steps) * Math.PI * 1.6) : 1;
+    const env = 0.62 + 0.38 * Math.sin((i / steps) * Math.PI * 1.6);
     const y = mid - Math.sin(phase) * amp * env;
     d += `${i === 0 ? "M" : "L"}${x.toFixed(2)},${y.toFixed(2)}`;
   }
@@ -62,12 +61,11 @@ export default function FrequencyWave({
   width,
   height,
 }: {
-  kind: keyof typeof WAVE_TINTS;
+  kind: WaveKind;
   width: number;
   height: number;
 }) {
   const drift = useSharedValue(0);
-  const [from, to] = WAVE_TINTS[kind];
   const cycles = CYCLES[kind];
 
   useEffect(() => {
@@ -83,7 +81,9 @@ export default function FrequencyWave({
     transform: [{ translateX: -drift.value * (width / cycles) }],
   }));
 
-  const id = `wave-${kind}`;
+  const id = `wave-fill-${kind}`;
+  const w2 = width * 2;
+  const line = wavePath(w2, height, cycles * 2);
 
   return (
     <View style={{ width, height, overflow: "hidden", justifyContent: "center" }}>
@@ -94,25 +94,24 @@ export default function FrequencyWave({
           y1={height / 2}
           x2={width}
           y2={height / 2}
-          stroke="#ffffff"
-          strokeOpacity="0.12"
+          stroke={C.fillHighest}
           strokeWidth="1"
         />
       </Svg>
       <Animated.View style={style}>
         {/* Drawn double-width so the drift never exposes an edge */}
-        <Svg width={width * 2} height={height}>
+        <Svg width={w2} height={height}>
           <Defs>
-            <LinearGradient id={id} x1="0" y1="0" x2="1" y2="0">
-              <Stop offset="0%" stopColor={from} stopOpacity="0.85" />
-              <Stop offset="50%" stopColor={to} stopOpacity="1" />
-              <Stop offset="100%" stopColor={from} stopOpacity="0.85" />
+            <LinearGradient id={id} x1="0" y1="0" x2="0" y2="1">
+              <Stop offset="0%" stopColor={C.accent} stopOpacity="0.28" />
+              <Stop offset="100%" stopColor={C.accent} stopOpacity="0" />
             </LinearGradient>
           </Defs>
+          <Path d={`${line}L${w2},${height}L0,${height}Z`} fill={`url(#${id})`} />
           <Path
-            d={wavePath(width * 2, height, cycles * 2, true)}
+            d={line}
             fill="none"
-            stroke={`url(#${id})`}
+            stroke={C.accent}
             strokeWidth="2.5"
             strokeLinecap="round"
           />
