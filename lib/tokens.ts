@@ -12,10 +12,12 @@ import type { TextStyle } from "react-native";
  *   - No screen file contains a hex code, a font size or a font family.
  *     Colour comes from `C`, type from `TYPE` (or the <Txt> primitive),
  *     spacing from `SP`, radii from `R`.
- *   - One accent (systemOrange, the Clock colour) for actions and tint.
- *     The native Switch keeps Apple's green, because that is what a
- *     switch looks like on iOS.
- *   - No shadows, no gradients, no blur. Depth is a lighter fill.
+ *   - One accent: white. Actions, tint, selection ticks, the active tab
+ *     and nav glyphs are all white on black. The native Switch keeps
+ *     Apple's green, because that is what a switch looks like on iOS.
+ *   - No shadows, no gradients. Depth is a lighter fill. Liquid glass is
+ *     allowed in exactly three places: the floating tab bar, the sound
+ *     cards and the player.
  */
 
 // ─── Colour (Apple dark-mode system palette) ─────────────────────────────────
@@ -42,9 +44,9 @@ export const C = {
   /** quaternaryLabel */
   labelQuaternary: "rgba(235,235,245,0.18)",
 
-  /** systemOrange (dark). Tint colour: nav glyphs, prominent buttons, links, progress. */
-  accent: "#FF9F0A",
-  /** Label on an accent fill. */
+  /** White. Tint colour: nav glyphs, prominent buttons, links, progress, selection ticks, the active tab. */
+  accent: "#FFFFFF",
+  /** Label on an accent (white) fill. */
   onAccent: "#000000",
   /** systemRed (dark). Destructive only. */
   danger: "#FF453A",
@@ -55,6 +57,11 @@ export const C = {
   scrim: "rgba(0,0,0,0.45)",
   /** Chrome (back button disc, pill) placed over artwork. */
   overlayFill: "rgba(28,28,30,0.72)",
+
+  /** Tint for a `regular` glass bubble (the active-tab highlight). */
+  glassTint: "rgba(255,255,255,0.22)",
+  /** Fallback ground for a `clear` glass surface where liquid glass is unavailable (Android, iOS < 26). */
+  glassFallback: "rgba(28,28,30,0.82)",
 } as const;
 
 // ─── Type (iOS text styles, system font) ─────────────────────────────────────
@@ -82,7 +89,7 @@ export const TYPE = {
   /** Wheel-picker digits (UIPickerView is 23pt regular). */
   picker: { fontSize: 23, lineHeight: 28, fontWeight: "400", letterSpacing: 0, ...tabular },
   /** Alarm-list time. Clock app: light weight, tight, tabular. */
-  clock: { fontSize: 64, lineHeight: 72, fontWeight: "300", letterSpacing: -1.5, ...tabular },
+  clock: { fontSize: 52, lineHeight: 60, fontWeight: "300", letterSpacing: -1, ...tabular },
   /** The time on a ringing / wake screen. */
   clockHero: { fontSize: 96, lineHeight: 104, fontWeight: "200", letterSpacing: -3, ...tabular },
   /** Editorial statement text (welcome, wind-down lines). */
@@ -104,7 +111,7 @@ export const T = {
   title1: 28,
   largeTitle: 34,
   stat: 44,
-  clock: 64,
+  clock: 52,
   clockHero: 96,
 } as const;
 
@@ -121,10 +128,16 @@ export const SP = {
   xxxl: 40,
   /** Screen-level horizontal padding = layout margin. */
   screen: 16,
-  /** Minimum row height (iOS list cell). */
-  row: 44,
+  /** Minimum row height. Meatier than UIKit's 44: the cells are the app's main surface. */
+  row: 56,
+  /** Vertical padding inside a row. */
+  rowY: 14,
   /** Minimum tappable control. */
   hit: 44,
+  /** Height of a text field / search field. */
+  field: 52,
+  /** Height of a Button. */
+  button: 54,
 } as const;
 
 // ─── Radii ───────────────────────────────────────────────────────────────────
@@ -132,10 +145,12 @@ export const SP = {
 export const R = {
   /** Small controls, thumbnails. */
   sm: 8,
-  /** Grouped list cards (iOS inset grouped = 10). */
-  md: 10,
+  /** Grouped list cards. */
+  md: 14,
+  /** Text fields, search fields. */
+  field: 16,
   /** Buttons, sheets. */
-  lg: 14,
+  lg: 18,
   /** Large artwork tiles. */
   xl: 20,
   pill: 999,

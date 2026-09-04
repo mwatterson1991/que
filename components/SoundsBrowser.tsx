@@ -1,18 +1,10 @@
 import { useMemo, useState, useCallback, ReactNode } from "react";
 import { useRouter } from "expo-router";
-import {
-  View,
-  TextInput,
-  FlatList,
-  Pressable,
-  StyleSheet,
-  ActivityIndicator,
-} from "react-native";
-import { Ionicons } from "@expo/vector-icons";
-import { Txt, Empty } from "@/components/ui";
-import { C, R, SP, TYPE } from "@/lib/tokens";
+import { View, FlatList, StyleSheet, ActivityIndicator } from "react-native";
+import { Txt, Empty, SearchField } from "@/components/ui";
+import { C, SP } from "@/lib/tokens";
 import { useSessions } from "@/lib/useSupabase";
-import { groupIntoRails } from "@/lib/catalog";
+import { groupIntoRails, displayTitle, displayDescription, hasAudio, type Rail as RailData } from "@/lib/catalog";
 import { usePremium, isLocked } from "@/lib/premium";
 import SessionCard from "@/components/SessionCard";
 import ChannelCard from "@/components/ChannelCard";
@@ -26,11 +18,12 @@ import {
 import type { Session } from "@/lib/types";
 
 // One browser, two jobs: the Sounds tab (tap → player) and the alarm
-// editor's picker (tap → select). Same rails, same tiles.
+// editor's picker (tap → select, nothing plays). Same rails, same tiles.
 //
-// Every rail leads with its CHANNEL card and then lists the individual
-// SOUND cards, so the two card types always sit side by side and the
-// channel promise is the first thing you meet in each shelf.
+// Every rail lists its featured SOUND cards first and ends with the
+// CHANNEL card — the upsell sits at the end of the shelf, after you
+// have heard what is free. A channel card never plays anything; it
+// opens the paywall for that channel.
 //
 // One vertical FlatList carries both modes — shelves while browsing, a
 // column of wide tiles while searching — with the search field as its
@@ -38,20 +31,12 @@ import type { Session } from "@/lib/types";
 // when the first character is typed.
 
 type RailItem =
-  | { kind: "channel"; channel: string; sessions: Session[] }
+  | { kind: "channel"; channel: string; count: number }
   | { kind: "session"; session: Session };
 
 type ListItem =
-  | { kind: "rail"; channel: string; sessions: Session[] }
+  | { kind: "rail"; rail: RailData }
   | { kind: "result"; session: Session };
-
-// A channel is a promise, not a track: tapping one starts today's
-// recording from it. Keyed to the calendar day so the pick is genuinely
-// fresh each morning but never reshuffles under you mid-session.
-function recordingOfTheDay(list: Session[]): Session | undefined {
-  if (list.length === 0) return undefined;
-  return list[Math.floor(Date.now() / 86_400_000) % list.length];
-}
 
 // ─── One channel shelf ─────────────────────────────────────
 
@@ -66,7 +51,7 @@ function Rail({
 }) {
   return (
     <View style={styles.rail}>
-      <Txt kind="headline" style={styles.railLabel} maxFontSizeMultiplier={1.4}>
+      <Txt kind="title2" style={styles.railLabel} maxFontSizeMultiplier={1.3}>
         {channel}
       </Txt>
       <FlatList
@@ -108,10 +93,14 @@ export default function SoundsBrowser({
   onPressSession,
   selectedId,
   footer,
+  bottomInset = SP.xxxl,
 }: {
   onPressSession: (session: Session) => void;
+  /** When given, the browser is a picker: the matching card wears a tick. */
   selectedId?: string;
   footer?: ReactNode;
+  /** Room to leave under the list (the floating tab bar, or a picker's action bar). */
+  bottomInset?: number;
 }) {
   const { sessions, loading } = useSessions();
   const { unlocked } = usePremium();
@@ -119,9 +108,11 @@ export default function SoundsBrowser({
   const [query, setQuery] = useState("");
 
   // Locked sessions route to the paywall instead of playing/selecting.
-  // Stable identity so a card only re-renders when its own data moves.
+  // A session with no audio yet is shown but never opened. Stable
+  // identity so a card only re-renders when its own data moves.
   const handlePress = useCallback(
     (session: Session) => {
+      if (!hasAudio(session)) return;
       if (isLocked(session, unlocked)) {
         router.push(`/paywall?id=${session.id}` as any);
       } else {
@@ -131,6 +122,15 @@ export default function SoundsBrowser({
     [unlocked, router, onPressSession],
   );
 
+  // The channel card is the upsell: it opens the paywall for that
+  // channel and never picks a session on your behalf.
+  const openChannel = useCallback(
+    (channel: string) => {
+      router.push(`/paywall?channel=${encodeURIComponent(channel)}` as any);
+    },
+    [router],
+  );
+
   const rails = useMemo(() => groupIntoRails(sessions), [sessions]);
 
   const searchResults = useMemo(() => {
@@ -138,8 +138,8 @@ export default function SoundsBrowser({
     const q = query.toLowerCase();
     return sessions.filter(
       (s) =>
-        s.title.toLowerCase().includes(q) ||
-        s.description.toLowerCase().includes(q) ||
+        displayTitle(s).toLowerCase().includes(q) ||
+        displayDescription(s).toLowerCase().includes(q) ||
         s.category.toLowerCase().includes(q),
     );
   }, [sessions, query]);
@@ -148,20 +148,13 @@ export default function SoundsBrowser({
     () =>
       query
         ? searchResults.map((session) => ({ kind: "result" as const, session }))
-        : rails.map(([channel, list]) => ({ kind: "rail" as const, channel, sessions: list })),
+        : rails.map((rail) => ({ kind: "rail" as const, rail })),
     [query, searchResults, rails],
   );
 
   const renderRailItem = (item: RailItem) =>
     item.kind === "channel" ? (
-      <ChannelCard
-        channel={item.channel}
-        sessions={item.sessions}
-        onPress={() => {
-          const pick = recordingOfTheDay(item.sessions);
-          if (pick) handlePress(pick);
-        }}
-      />
+      <ChannelCard channel={item.channel} count={item.count} onPress={openChannel} />
     ) : (
       <SessionCard
         session={item.session}
@@ -174,10 +167,10 @@ export default function SoundsBrowser({
   const renderItem = ({ item }: { item: ListItem }) =>
     item.kind === "rail" ? (
       <Rail
-        channel={item.channel}
+        channel={item.rail.channel}
         items={[
-          { kind: "channel", channel: item.channel, sessions: item.sessions },
-          ...item.sessions.map((session) => ({ kind: "session" as const, session })),
+          ...item.rail.featured.map((session) => ({ kind: "session" as const, session })),
+          { kind: "channel", channel: item.rail.channel, count: item.rail.all.length },
         ]}
         renderItem={renderRailItem}
       />
@@ -196,38 +189,22 @@ export default function SoundsBrowser({
   return (
     <FlatList
       data={items}
-      keyExtractor={(item) => (item.kind === "rail" ? `rail:${item.channel}` : item.session.id)}
+      keyExtractor={(item) => (item.kind === "rail" ? `rail:${item.rail.channel}` : item.session.id)}
       renderItem={renderItem}
       contentInsetAdjustmentBehavior="automatic"
-      contentContainerStyle={styles.list}
+      contentContainerStyle={{ paddingBottom: bottomInset }}
       showsVerticalScrollIndicator={false}
       keyboardDismissMode="on-drag"
       keyboardShouldPersistTaps="handled"
       ListHeaderComponent={
-        <View style={styles.searchBar}>
-          <Ionicons name="search" size={18} color={C.labelSecondary} />
-          <TextInput
-            value={query}
-            onChangeText={setQuery}
-            placeholder="Search sounds, topics, goals"
-            placeholderTextColor={C.labelTertiary}
-            selectionColor={C.accent}
-            style={styles.searchInput}
-            returnKeyType="search"
-            clearButtonMode="never"
-            accessibilityLabel="Search sounds"
-          />
-          {query.length > 0 && (
-            <Pressable
-              onPress={() => setQuery("")}
-              hitSlop={10}
-              accessibilityRole="button"
-              accessibilityLabel="Clear search"
-            >
-              <Ionicons name="close-circle" size={18} color={C.labelSecondary} />
-            </Pressable>
-          )}
-        </View>
+        <SearchField
+          value={query}
+          onChangeText={setQuery}
+          onClear={() => setQuery("")}
+          placeholder="Search sounds, topics, goals"
+          accessibilityLabel="Search sounds"
+          style={styles.search}
+        />
       }
       ListEmptyComponent={
         loading ? (
@@ -244,38 +221,19 @@ export default function SoundsBrowser({
 }
 
 const styles = StyleSheet.create({
-  list: {
-    paddingBottom: SP.xxxl,
-  },
-
-  // Search field, drawn like UISearchBar's: a rounded fill with the
-  // glyph inside it.
-  searchBar: {
-    flexDirection: "row",
-    alignItems: "center",
-    gap: SP.sm,
+  search: {
     marginHorizontal: SP.screen,
     marginTop: SP.sm,
     marginBottom: SP.xl,
-    paddingHorizontal: SP.sm,
-    height: 36,
-    borderRadius: R.md,
-    backgroundColor: C.fill,
-  },
-  searchInput: {
-    ...TYPE.body,
-    flex: 1,
-    color: C.label,
-    paddingVertical: 0,
   },
 
   // Rails
   rail: {
-    marginBottom: SP.xxl,
+    marginBottom: SP.xl,
   },
   railLabel: {
     paddingHorizontal: SP.screen,
-    marginBottom: SP.sm,
+    marginBottom: SP.md,
   },
   railContent: {
     paddingLeft: RAIL_EDGE,

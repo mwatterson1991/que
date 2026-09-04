@@ -7,8 +7,10 @@
  *
  * So: a big current value, a signed change with a colour and a
  * percentage, and a 1D/1W/1M/3M/1Y range row — the Stocks idiom, read
- * straight, drawn on the black ground with the app's one accent. Two
- * things keep it from looking like a child's drawing of four data points:
+ * straight. Drawn the way Stocks draws it: a thin white line, a faint
+ * fill fading out beneath it, a dotted previous-close baseline, axis
+ * captions in tertiary text. Two things keep it from looking like a
+ * child's drawing of four data points:
  *
  *   1. A curve algorithm. Catmull-Rom tangents converted to cubic
  *      Béziers, so the polyline becomes one flowing path. The control
@@ -24,7 +26,6 @@
 
 import { useEffect, useMemo, useState } from "react";
 import { View, Pressable, StyleSheet, useWindowDimensions } from "react-native";
-import { Ionicons } from "@expo/vector-icons";
 import Svg, { Path, Defs, LinearGradient, Stop, Line, Circle } from "react-native-svg";
 import Animated, {
   useSharedValue,
@@ -36,14 +37,15 @@ import Animated, {
   interpolate,
   Easing,
 } from "react-native-reanimated";
-import { Txt } from "@/components/ui";
+import { Txt, Icon } from "@/components/ui";
 import { C, R, SP, T, PRESS_OPACITY } from "@/lib/tokens";
 import {
   buildTickerSeries,
+  MISS_PENALTY,
   TICKER_RANGES,
   type TickerRange,
 } from "@/lib/positivity";
-import type { GratitudeRowLike, HabitLogRowLike } from "@/lib/positivity";
+import type { GratitudeRowLike, HabitLogRowLike, SessionRowLike } from "@/lib/positivity";
 
 let Haptics: any = null;
 try { Haptics = require("expo-haptics"); } catch {}
@@ -60,6 +62,8 @@ const MAX_SAMPLES = 200;
 const DRIFT = 1.7;
 /** The endpoint halo's diameter, in pixels. */
 const HALO = 22;
+/** Stocks draws its line thin. */
+const LINE_WIDTH = 1.5;
 
 const AnimatedPath = Animated.createAnimatedComponent(Path);
 
@@ -162,13 +166,19 @@ function resample(xs: number[], ys: number[], count: number): { xs: number[]; ys
 export function Ticker({
   gratitude,
   habitLogs,
+  sessions = [],
   lifetimeScore,
   chartRef,
+  onInfo,
 }: {
   gratitude: GratitudeRowLike[];
   habitLogs: HabitLogRowLike[];
+  /** Finished sessions from the activity log; empty for guests. */
+  sessions?: SessionRowLike[];
   lifetimeScore: number;
   chartRef?: any;
+  /** The (i) beside the label — opens the "how points work" sheet. */
+  onInfo?: () => void;
 }) {
   const [range, setRange] = useState<TickerRange>("1D");
   const { width } = useWindowDimensions();
@@ -181,8 +191,8 @@ export function Ticker({
   const padBottom = 14;
 
   const series = useMemo(
-    () => buildTickerSeries(gratitude, habitLogs, range),
-    [gratitude, habitLogs, range],
+    () => buildTickerSeries(gratitude, habitLogs, range, sessions),
+    [gratitude, habitLogs, sessions, range],
   );
 
   const up = series.change > 0;
@@ -301,26 +311,34 @@ export function Ticker({
       style={styles.ticker}
       accessible
       accessibilityLabel={
-        `Your positivity, ${series.current} points. ` +
+        `Your score, ${series.current} points. ` +
         `${up ? "Up" : down ? "Down" : "Unchanged"} ${Math.abs(series.change)}` +
         `${pctText ? `, ${pctText}` : ""} ${series.periodLabel}.`
       }
     >
-      {/* What this is. The founder's complaint was that the number had no
-          name — so it gets one, above the number itself. */}
-      <Txt kind="footnote" tone="secondary" maxFontSizeMultiplier={1.3}>
-        YOUR POSITIVITY
-      </Txt>
+      {/* The label, and the (i) that explains where the points come from. */}
+      <View style={styles.labelRow}>
+        <Txt kind="footnote" tone="secondary" maxFontSizeMultiplier={1.3}>
+          YOUR SCORE
+        </Txt>
+        {onInfo ? (
+          <Pressable
+            onPress={onInfo}
+            hitSlop={10}
+            style={({ pressed }) => [styles.info, pressed && { opacity: PRESS_OPACITY }]}
+            accessibilityRole="button"
+            accessibilityLabel="How your score works"
+          >
+            <Icon name="info" size={T.subheadline} color={C.labelSecondary} />
+          </Pressable>
+        ) : null}
+      </View>
       <Txt kind="stat" numberOfLines={1} maxFontSizeMultiplier={1.2}>
         {series.current}
       </Txt>
 
       <View style={styles.changeRow}>
-        <Ionicons
-          name={up ? "caret-up" : down ? "caret-down" : "remove"}
-          size={T.footnote}
-          color={tint}
-        />
+        <Icon name={up ? "trending-up" : down ? "trending-down" : "minus"} size={T.footnote} color={tint} />
         <Txt kind="subheadline" style={{ color: tint }} maxFontSizeMultiplier={1.3}>
           {changeText}{pctText ? ` (${pctText})` : ""}
         </Txt>
@@ -329,48 +347,45 @@ export function Ticker({
         </Txt>
       </View>
 
-      <Txt kind="footnote" tone="secondary" style={styles.explain} maxFontSizeMultiplier={1.4}>
-        Your positivity, built from gratitude and habits.
-      </Txt>
-
       {/* ── The line ── */}
       <View style={[styles.chart, { width: W, height: H }]}>
         <Svg width={W} height={H} viewBox={`0 0 ${W} ${H}`}>
           <Defs>
             {/* The one gradient the app allows: Stocks' fade under the line. */}
             <LinearGradient id="tickFill" x1="0" y1="0" x2="0" y2="1">
-              <Stop offset="0%" stopColor={C.accent} stopOpacity="0.2" />
-              <Stop offset="100%" stopColor={C.accent} stopOpacity="0" />
+              <Stop offset="0%" stopColor={C.label} stopOpacity="0.14" />
+              <Stop offset="100%" stopColor={C.label} stopOpacity="0" />
             </LinearGradient>
           </Defs>
 
           <AnimatedPath animatedProps={fillProps} fill="url(#tickFill)" stroke="none" />
 
-          {/* Baseline — zero when you're living near it, otherwise where
-              this window opened. Above it you're building, below it you're
-              drifting. */}
+          {/* Previous close — zero when you're living near it, otherwise
+              where this window opened. Above it you're building, below
+              it you're drifting. Dotted, the way Stocks draws it. */}
           <Line
             x1={padX}
             y1={geom.baseY}
             x2={W - padX}
             y2={geom.baseY}
-            stroke={C.separator}
+            stroke={C.labelTertiary}
             strokeWidth="1"
-            strokeDasharray="3 5"
+            strokeLinecap="round"
+            strokeDasharray="1 4"
           />
 
           <AnimatedPath
             animatedProps={lineProps}
             fill="none"
-            stroke={C.accent}
-            strokeWidth="2.5"
+            stroke={C.label}
+            strokeWidth={LINE_WIDTH}
             strokeLinecap="round"
             strokeLinejoin="round"
           />
 
           {/* The live endpoint */}
-          <Circle cx={geom.lastX} cy={geom.lastY} r="7" fill={C.accent} opacity={0.16} />
-          <Circle cx={geom.lastX} cy={geom.lastY} r="3.4" fill={C.accent} />
+          <Circle cx={geom.lastX} cy={geom.lastY} r="6" fill={C.label} opacity={0.14} />
+          <Circle cx={geom.lastX} cy={geom.lastY} r="3" fill={C.label} />
         </Svg>
 
         {/* Its halo, breathing outward on a 2.4s loop */}
@@ -384,15 +399,16 @@ export function Ticker({
         />
       </View>
 
-      {/* Axis */}
+      {/* Axis captions */}
       <View style={[styles.axis, { width: W }]}>
         <Txt kind="caption1" tone="tertiary">{series.startLabel}</Txt>
         <Txt kind="caption1" tone="tertiary">{series.midLabel}</Txt>
         <Txt kind="caption1" tone="tertiary">{series.endLabel}</Txt>
       </View>
 
-      {/* Range selector — 1D first, and 1D is where it opens */}
-      <View style={styles.ranges}>
+      {/* Range selector — one segmented row, 1D first, and 1D is where it
+          opens. The selected segment wears the only fill on the page. */}
+      <View style={styles.ranges} accessibilityRole="tablist">
         {TICKER_RANGES.map((r) => {
           const on = r === range;
           return (
@@ -405,7 +421,7 @@ export function Ticker({
                 on && styles.segmentOn,
                 pressed && { opacity: PRESS_OPACITY },
               ]}
-              accessibilityRole="button"
+              accessibilityRole="tab"
               accessibilityLabel={`Show ${r} range`}
               accessibilityState={{ selected: on }}
             >
@@ -426,7 +442,7 @@ export function Ticker({
 
       {range === "1D" && series.todayPts === 0 && (
         <Txt kind="caption1" tone="secondary" style={styles.hint} maxFontSizeMultiplier={1.3}>
-          Nothing logged yet today — a day with nothing costs 3 points.
+          Nothing logged yet today — a day with nothing costs {Math.abs(MISS_PENALTY)} points.
         </Txt>
       )}
     </View>
@@ -441,13 +457,19 @@ const styles = StyleSheet.create({
     // Painted, not transparent, so a share capture has the black ground.
     backgroundColor: C.bg,
   },
+  labelRow: {
+    flexDirection: "row",
+    alignItems: "center",
+    gap: SP.sm,
+  },
+  info: {
+    alignItems: "center",
+    justifyContent: "center",
+  },
   changeRow: {
     flexDirection: "row",
     alignItems: "center",
     gap: SP.xs,
-  },
-  explain: {
-    marginTop: SP.sm,
   },
   chart: {
     marginTop: SP.md,
@@ -457,7 +479,7 @@ const styles = StyleSheet.create({
     width: HALO,
     height: HALO,
     borderRadius: R.pill,
-    backgroundColor: C.accent,
+    backgroundColor: C.label,
   },
   axis: {
     flexDirection: "row",
@@ -466,14 +488,13 @@ const styles = StyleSheet.create({
   },
   ranges: {
     flexDirection: "row",
-    gap: SP.xs,
     marginTop: SP.md,
     marginBottom: SP.md,
   },
   segment: {
     flex: 1,
     paddingVertical: SP.sm,
-    borderRadius: R.pill,
+    borderRadius: R.sm,
     alignItems: "center",
   },
   segmentOn: {

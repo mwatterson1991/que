@@ -191,6 +191,7 @@ export default function RootLayout() {
           <Stack.Screen name="player" options={{ ...BARE, animation: "fade" }} />
           <Stack.Screen name="goodnight" options={{ ...BARE, animation: "fade" }} />
           <Stack.Screen name="paywall" options={{ ...BARE, presentation: "modal", animation: "slide_from_bottom" }} />
+          <Stack.Screen name="score-info" options={{ ...BARE, presentation: "modal", animation: "slide_from_bottom" }} />
 
           {/* Editors present as sheets */}
           <Stack.Screen name="alarm-config" options={SHEET} />

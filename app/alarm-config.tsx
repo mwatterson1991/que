@@ -1,6 +1,7 @@
 import { useCallback, useEffect, useState } from "react";
 import { View, Pressable, ScrollView, StyleSheet, Image, Alert } from "react-native";
 import { Stack, useRouter, useLocalSearchParams, useFocusEffect } from "expo-router";
+import { Feather } from "@expo/vector-icons";
 import AsyncStorage from "@react-native-async-storage/async-storage";
 import { useAlarms, useSessions, useHabits } from "@/lib/useSupabase";
 import { rollForward, scheduleAlarm, cancelAlarm } from "@/lib/alarmScheduler";
@@ -23,17 +24,31 @@ const COLON_W = 16;
 // Three columns, the colon, and the gaps between them.
 const WHEEL_W = COL_W * 3 + COLON_W + SP.sm * 3;
 
-/** Cancel / Save in the bar, the way Clock's alarm sheet does it. */
-function BarText({ label, bold = false, onPress }: { label: string; bold?: boolean; onPress: () => void }) {
+const BAR_ICON = 24;
+const TICK = 28;
+
+/**
+ * X / check in the bar instead of Cancel / Save: two glyphs weigh the same
+ * as the title, and each sits in a plain 44pt square at the bar's own
+ * 16pt margin with no padding of its own.
+ */
+function BarIcon({
+  icon,
+  label,
+  onPress,
+}: {
+  icon: "x" | "check";
+  label: string;
+  onPress: () => void;
+}) {
   return (
     <Pressable
       onPress={onPress}
-      hitSlop={10}
       accessibilityRole="button"
       accessibilityLabel={label}
-      style={({ pressed }) => [styles.barText, pressed && { opacity: PRESS_OPACITY }]}
+      style={({ pressed }) => [styles.barIcon, pressed && { opacity: PRESS_OPACITY }]}
     >
-      <Txt kind={bold ? "headline" : "body"} tone="accent">{label}</Txt>
+      <Feather name={icon} size={BAR_ICON} color={C.accent} />
     </Pressable>
   );
 }
@@ -49,6 +64,7 @@ export default function AlarmConfigScreen() {
 
   const existing = alarms.find((a) => a.id === id);
   const isNew = !existing;
+  const title = isNew ? "New Alarm" : "Alarm";
 
   const [hourIdx, setHourIdx] = useState(5); // 6 o'clock
   const [minIdx, setMinIdx] = useState(30);
@@ -156,9 +172,12 @@ export default function AlarmConfigScreen() {
     <Screen>
       <Stack.Screen
         options={{
-          title: isNew ? "Add Alarm" : "Edit Alarm",
-          headerLeft: () => <BarText label="Cancel" onPress={() => router.back()} />,
-          headerRight: () => <BarText label="Save" bold onPress={save} />,
+          title,
+          // Drawn with Txt so the title takes a real text style (title3,
+          // semibold) rather than the bar's inline default.
+          headerTitle: () => <Txt kind="title3" numberOfLines={1}>{title}</Txt>,
+          headerLeft: () => <BarIcon icon="x" label="Cancel" onPress={() => router.back()} />,
+          headerRight: () => <BarIcon icon="check" label="Save" onPress={save} />,
         }}
       />
       <ScrollView contentInsetAdjustmentBehavior="automatic" contentContainerStyle={styles.scroll}>
@@ -173,7 +192,7 @@ export default function AlarmConfigScreen() {
           </View>
         </View>
 
-        {/* Sound — the artwork is the value */}
+        {/* Sound — the row names it, the poster below wears the tick */}
         <Section>
           <Row
             title="Sound"
@@ -187,14 +206,21 @@ export default function AlarmConfigScreen() {
             onPress={() => router.push(`/sounds?current=${sessionId}` as any)}
             style={({ pressed }) => [styles.artWrap, pressed && { opacity: PRESS_OPACITY }]}
             accessibilityRole="button"
-            accessibilityLabel={`${session.title}, ${session.category}, ${Math.round(session.duration_sec / 60)} minutes. Change sound`}
+            accessibilityState={{ selected: true }}
+            accessibilityLabel={`Selected sound: ${session.title}, ${session.category}, ${Math.round(session.duration_sec / 60)} minutes. Change sound`}
           >
             <Image source={{ uri: artworkFor(session) }} style={StyleSheet.absoluteFill} resizeMode="cover" />
             <View style={styles.artCaption}>
-              <Txt kind="headline" numberOfLines={1}>{session.title}</Txt>
-              <Txt kind="footnote" tone="secondary">
-                {session.category} · {Math.round(session.duration_sec / 60)} min
-              </Txt>
+              <View style={styles.artCaptionText}>
+                <Txt kind="headline" numberOfLines={1}>{session.title}</Txt>
+                <Txt kind="footnote" tone="secondary" numberOfLines={1}>
+                  {session.category} · {Math.round(session.duration_sec / 60)} min
+                </Txt>
+              </View>
+              {/* The selection tick: a filled accent disc, the one the Sounds browser uses. */}
+              <View style={styles.tick}>
+                <Feather name="check" size={TICK - SP.sm} color={C.onAccent} />
+              </View>
             </View>
           </Pressable>
         )}
@@ -213,9 +239,10 @@ const styles = StyleSheet.create({
   scroll: {
     paddingBottom: SP.xxxl,
   },
-  barText: {
-    paddingHorizontal: SP.xs,
-    minHeight: SP.hit,
+  barIcon: {
+    width: SP.hit,
+    height: SP.hit,
+    alignItems: "center",
     justifyContent: "center",
   },
   wheelWrap: {
@@ -237,7 +264,7 @@ const styles = StyleSheet.create({
     marginHorizontal: SP.screen,
     marginTop: SP.md,
     height: 200,
-    borderRadius: R.md,
+    borderRadius: R.xl,
     overflow: "hidden",
     backgroundColor: C.fill,
   },
@@ -246,8 +273,22 @@ const styles = StyleSheet.create({
     left: 0,
     right: 0,
     bottom: 0,
+    flexDirection: "row",
+    alignItems: "center",
+    gap: SP.md,
     padding: SP.lg,
     backgroundColor: C.scrim,
+  },
+  artCaptionText: {
+    flex: 1,
+  },
+  tick: {
+    width: TICK,
+    height: TICK,
+    borderRadius: R.pill,
+    backgroundColor: C.accent,
+    alignItems: "center",
+    justifyContent: "center",
   },
   centerRow: {
     justifyContent: "center",

@@ -1,87 +1,53 @@
 import { memo } from "react";
-import { View, Image, Pressable, StyleSheet } from "react-native";
-import { Ionicons } from "@expo/vector-icons";
+import { View, Pressable, StyleSheet } from "react-native";
+import { Feather } from "@expo/vector-icons";
 import { Txt } from "@/components/ui";
 import { C, R, SP, PRESS_OPACITY } from "@/lib/tokens";
 import { channelArtwork } from "@/lib/catalog";
-import { CARD_W, CARD_H, tapFeedback } from "@/components/cardLayout";
-import type { Session } from "@/lib/types";
+import { Artwork } from "@/components/SessionCard";
+import {
+  CARD_W,
+  CARD_H,
+  GLASS_PAD,
+  Glass,
+  GLASS_AVAILABLE,
+  GLASS_FALLBACK,
+  tapFeedback,
+} from "@/components/cardLayout";
 
-// The CHANNEL card: not a track, a subscription. Picking a channel means
-// we wake you with a DIFFERENT recording from it every morning, so the
-// card has to sell that promise in words — which is also why it must
-// never be mistaken for a SessionCard at a glance.
+// The CHANNEL card: the upsell at the END of every shelf. Not a track —
+// a subscription to the whole channel. It never plays anything; tapping
+// it opens the paywall for that channel.
 //
-// Same full-bleed artwork tile as a sound card, but the scrim carries a
-// kicker, a bigger name, a line of copy and the promise, so it reads as
-// a shelf's cover rather than one of its tracks.
+// Same glass frame and artwork treatment as a sound card, but the
+// caption is a kicker, the channel's name and one plain promise, so it
+// reads as the shelf's cover rather than one of its tracks.
 
-const CHANNEL_COPY: Record<string, string> = {
-  Naturescapes: "Real field recordings — dawn birds, rain, rivers, tide.",
-  Hypnotherapy: "Guided sessions that reset how your day starts.",
-  Frequencies: "Binaural tones tuned to a brain state.",
-  Horoscope: "A short read on the day the sky is offering you.",
-  "Positive Words": "Affirmations, scripture and stoics, read aloud.",
+const PROMISE: Record<string, string> = {
+  Naturescapes: "The full channel — a different real recording every morning.",
+  "Positive Words": "The full channel — a different reading every morning.",
+  Frequencies: "The full channel — every tone, tuned to how you want to wake.",
+  Hypnotherapy: "The full channel — every guided session, narrated by Brian.",
+  Horoscope: "The full channel — a fresh reading for your sign every morning.",
 };
 
-const FALLBACK_COPY = "A hand-picked collection, growing every week.";
+const FALLBACK_PROMISE = "The full channel — new recordings every month.";
 
 function ChannelCard({
   channel,
-  sessions,
+  count,
   onPress,
 }: {
   channel: string;
-  sessions: Session[];
-  onPress?: (channel: string) => void;
+  /** How many recordings the channel holds today (0 = still recording). */
+  count: number;
+  onPress: (channel: string) => void;
 }) {
-  const count = sessions.length;
-  const empty = count === 0;
-  const copy = CHANNEL_COPY[channel] ?? FALLBACK_COPY;
-  const countLabel = count === 1 ? "1 recording" : `${count} recordings`;
-
-  const body = (
-    <>
-      <Image
-        source={{ uri: channelArtwork(channel) }}
-        style={StyleSheet.absoluteFill}
-        resizeMode="cover"
-      />
-      <View style={styles.caption}>
-        <Txt kind="caption1" tone="secondary" maxFontSizeMultiplier={1.2}>
-          {empty ? "CHANNEL" : `CHANNEL · ${countLabel.toUpperCase()}`}
-        </Txt>
-        <Txt kind="title2" numberOfLines={2} maxFontSizeMultiplier={1.25}>
-          {channel}
-        </Txt>
-        <Txt kind="footnote" tone="secondary" numberOfLines={2} maxFontSizeMultiplier={1.25}>
-          {copy}
-        </Txt>
-
-        {/* The promise. The one line on this card that has to survive
-            every edit — it is the entire difference between a channel
-            and a track. */}
-        <View style={styles.promiseRow}>
-          <Ionicons name={empty ? "time-outline" : "sunny-outline"} size={15} color={C.accent} />
-          <Txt kind="footnote" tone="accent" numberOfLines={2} maxFontSizeMultiplier={1.2} style={styles.promise}>
-            {empty ? "Coming soon — we're still recording." : "Wake to a fresh one every morning."}
-          </Txt>
-        </View>
-      </View>
-    </>
-  );
-
-  if (empty || !onPress) {
-    return (
-      <View
-        style={styles.tile}
-        accessible
-        accessibilityLabel={`${channel} channel. ${copy} Coming soon.`}
-      >
-        {body}
-      </View>
-    );
-  }
+  const promise = PROMISE[channel] ?? FALLBACK_PROMISE;
+  // No recording count next to the promise: "every morning · 5
+  // recordings" read as a contradiction. The count is for VoiceOver.
+  const kicker = count === 0 ? "CHANNEL · COMING SOON" : "CHANNEL";
+  const meta = count === 0 ? "Coming soon" : count === 1 ? "1 recording" : `${count} recordings`;
 
   return (
     <Pressable
@@ -89,11 +55,33 @@ function ChannelCard({
         tapFeedback();
         onPress(channel);
       }}
-      style={({ pressed }) => [styles.tile, pressed && styles.pressed]}
+      style={({ pressed }) => [styles.frameWrap, pressed && styles.pressed]}
       accessibilityRole="button"
-      accessibilityLabel={`${channel} channel. ${copy} ${countLabel}. Wakes you with a fresh recording every morning.`}
+      accessibilityLabel={`${channel} channel. ${promise} ${meta}. Opens premium.`}
     >
-      {body}
+      <Glass glassEffectStyle="clear" style={[styles.frame, !GLASS_AVAILABLE && GLASS_FALLBACK]}>
+        <View style={styles.tile}>
+          <Artwork uri={channelArtwork(channel)} />
+
+          <View style={styles.caption}>
+            <Txt kind="caption1" tone="secondary" maxFontSizeMultiplier={1.2}>
+              {kicker}
+            </Txt>
+            <Txt kind="title2" numberOfLines={2} maxFontSizeMultiplier={1.25}>
+              {channel}
+            </Txt>
+            <Txt kind="footnote" tone="secondary" numberOfLines={3} maxFontSizeMultiplier={1.2}>
+              {promise}
+            </Txt>
+            <View style={styles.unlockRow}>
+              <Txt kind="footnote" maxFontSizeMultiplier={1.2}>
+                Unlock
+              </Txt>
+              <Feather name="arrow-right" size={14} color={C.label} />
+            </View>
+          </View>
+        </View>
+      </Glass>
     </Pressable>
   );
 }
@@ -101,15 +89,24 @@ function ChannelCard({
 export default memo(ChannelCard);
 
 const styles = StyleSheet.create({
-  tile: {
+  frameWrap: {
     width: CARD_W,
     height: CARD_H,
-    borderRadius: R.xl,
-    overflow: "hidden",
-    backgroundColor: C.fill,
   },
   pressed: {
     opacity: PRESS_OPACITY,
+  },
+  frame: {
+    flex: 1,
+    borderRadius: R.xl,
+    padding: GLASS_PAD,
+    overflow: "hidden",
+  },
+  tile: {
+    flex: 1,
+    borderRadius: R.xl - GLASS_PAD,
+    overflow: "hidden",
+    backgroundColor: C.fill,
   },
   caption: {
     position: "absolute",
@@ -118,15 +115,11 @@ const styles = StyleSheet.create({
     bottom: 0,
     padding: SP.lg,
     gap: SP.xs,
-    backgroundColor: C.scrim,
   },
-  promiseRow: {
+  unlockRow: {
     flexDirection: "row",
     alignItems: "center",
-    gap: SP.sm,
+    gap: SP.xs,
     marginTop: SP.xs,
-  },
-  promise: {
-    flex: 1,
   },
 });

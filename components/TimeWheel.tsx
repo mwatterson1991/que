@@ -1,10 +1,25 @@
-import { useRef, useCallback } from "react";
-import { View, Text, FlatList, StyleSheet } from "react-native";
+import { useRef, useCallback, useState, useEffect } from "react";
+import {
+  View,
+  Text,
+  FlatList,
+  StyleSheet,
+  type NativeSyntheticEvent,
+  type NativeScrollEvent,
+} from "react-native";
 import { C, R, TYPE } from "@/lib/tokens";
+
+let Haptics: any = null;
+try { Haptics = require("expo-haptics"); } catch {}
 
 // Scroll-wheel column for the alarm editor, drawn like a dark UIPickerView:
 // regular-weight digits, the selected row on a slightly lighter band.
-export const ITEM_H = 40;
+//
+// Feel: the highlight and a selection tick follow the wheel on every scroll
+// frame — the white digit and the click land the moment a row crosses the
+// band, not when the momentum settles. The value is committed to the parent
+// only when the wheel stops, so the form never sees the in-between rows.
+export const ITEM_H = 36;
 export const VISIBLE = 5;
 
 export const HOURS = Array.from({ length: 12 }, (_, i) =>
@@ -29,14 +44,54 @@ export function WheelColumn({
   label?: string;
 }) {
   const listRef = useRef<FlatList<string>>(null);
+  const clamp = useCallback(
+    (idx: number) => Math.max(0, Math.min(idx, data.length - 1)),
+    [data.length]
+  );
 
-  const handleScrollEnd = useCallback(
-    (e: any) => {
-      const y = e.nativeEvent.contentOffset.y;
-      const idx = Math.round(y / ITEM_H);
-      onSelect(Math.max(0, Math.min(idx, data.length - 1)));
+  // The row under the band right now. Local so it can move at scroll speed
+  // without a round trip through the parent's state.
+  const [live, setLive] = useState(selected);
+  const liveRef = useRef(selected);
+
+  // A change of `selected` that did not come from this wheel (hydrating an
+  // existing alarm, VoiceOver increment) moves the wheel to match.
+  useEffect(() => {
+    if (selected === liveRef.current) return;
+    liveRef.current = selected;
+    setLive(selected);
+    listRef.current?.scrollToOffset({ offset: selected * ITEM_H, animated: false });
+  }, [selected]);
+
+  const handleScroll = useCallback(
+    (e: NativeSyntheticEvent<NativeScrollEvent>) => {
+      const idx = clamp(Math.round(e.nativeEvent.contentOffset.y / ITEM_H));
+      if (idx === liveRef.current) return;
+      liveRef.current = idx;
+      setLive(idx);
+      Haptics?.selectionAsync?.();
     },
-    [data.length, onSelect]
+    [clamp]
+  );
+
+  const commit = useCallback(
+    (e: NativeSyntheticEvent<NativeScrollEvent>) => {
+      const idx = clamp(Math.round(e.nativeEvent.contentOffset.y / ITEM_H));
+      liveRef.current = idx;
+      setLive(idx);
+      onSelect(idx);
+    },
+    [clamp, onSelect]
+  );
+
+  // A drag that ends dead on a row never starts momentum, so there is no
+  // momentum end to commit on; catch that case here.
+  const handleDragEnd = useCallback(
+    (e: NativeSyntheticEvent<NativeScrollEvent>) => {
+      const vy = e.nativeEvent.velocity?.y ?? 0;
+      if (Math.abs(vy) < 0.01) commit(e);
+    },
+    [commit]
   );
 
   return (
@@ -58,11 +113,16 @@ export function WheelColumn({
       <FlatList
         ref={listRef}
         data={data}
+        extraData={live}
         keyExtractor={(_, i) => String(i)}
         showsVerticalScrollIndicator={false}
         snapToInterval={ITEM_H}
+        snapToAlignment="start"
         decelerationRate="fast"
-        onMomentumScrollEnd={handleScrollEnd}
+        scrollEventThrottle={16}
+        onScroll={handleScroll}
+        onScrollEndDrag={handleDragEnd}
+        onMomentumScrollEnd={commit}
         contentContainerStyle={{ paddingVertical: ITEM_H * 2 }}
         initialScrollIndex={selected}
         getItemLayout={(_, index) => ({
@@ -73,7 +133,7 @@ export function WheelColumn({
         renderItem={({ item, index }) => (
           <View style={styles.item}>
             <Text
-              style={[TYPE.picker, { color: index === selected ? C.label : C.labelTertiary }]}
+              style={[TYPE.picker, { color: index === live ? C.label : C.labelTertiary }]}
               maxFontSizeMultiplier={1.3}
             >
               {item}

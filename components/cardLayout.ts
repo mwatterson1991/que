@@ -1,4 +1,6 @@
-import { Dimensions } from "react-native";
+import type { ComponentProps, ComponentType } from "react";
+import { Dimensions, View } from "react-native";
+import { C } from "@/lib/tokens";
 
 // Card geometry lives here so the cards and the rails that snap them
 // agree on a single set of numbers. Portrait-only app, so the window is
@@ -18,16 +20,19 @@ const PEEK = 0.14;
 
 export const CARD_W = Math.round((SCREEN_W - RAIL_EDGE - RAIL_GAP) / (1 + PEEK));
 
-/** Portrait, properly tall — a poster, not a tile. */
-const CARD_ASPECT = 1.58;
+/** Portrait, but short enough that the NEXT rail's title shows under
+ * it — the peek is the affordance that there is another category. */
+const CARD_ASPECT = 1.18;
 
-// Capped against screen height so the NEXT rail still peeks in from the
-// bottom: a rail costs its label plus the card, and the browser spends
-// roughly 210 on the header + search bar before the first one.
+// Capped against screen height: header + search spend roughly 220pt,
+// and the rail below needs its title and the top of its card visible.
 export const CARD_H = Math.min(
   Math.round(CARD_W * CARD_ASPECT),
-  Math.round(SCREEN_H * 0.62),
+  Math.round(SCREEN_H * 0.44),
 );
+
+/** The glass frame's inset around the artwork. */
+export const GLASS_PAD = 5;
 
 /** One swipe = one card. FlatList snaps on multiples of this. */
 export const SNAP_INTERVAL = CARD_W + RAIL_GAP;
@@ -53,3 +58,33 @@ try {
 export function tapFeedback() {
   Haptics?.impactAsync?.(Haptics.ImpactFeedbackStyle?.Light);
 }
+
+// ─── Liquid glass ──────────────────────────────────────────
+// expo-glass-effect is resolved once. On iOS 26 `GlassView` is the real
+// Liquid Glass; elsewhere (Android, older iOS, a dev client built
+// before the module was added) it is a plain View and the card frame
+// falls back to a flat fill so the layout is identical.
+
+type GlassProps = {
+  glassEffectStyle?: "clear" | "regular" | "none";
+  tintColor?: string;
+  isInteractive?: boolean;
+  colorScheme?: "auto" | "light" | "dark";
+} & ComponentProps<typeof View>;
+
+let glassView: ComponentType<GlassProps> = View as any;
+let glassAvailable = false;
+try {
+  const mod = require("expo-glass-effect");
+  glassView = mod.GlassView ?? View;
+  glassAvailable = !!mod.isLiquidGlassAvailable?.();
+} catch {}
+
+/** `GlassView` where Liquid Glass exists, a `View` where it does not. */
+export const Glass = glassView;
+
+/** True when `Glass` really renders glass. */
+export const GLASS_AVAILABLE = glassAvailable;
+
+/** The frame's fallback fill when there is no glass to show. */
+export const GLASS_FALLBACK = { backgroundColor: C.glassFallback } as const;

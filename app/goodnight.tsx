@@ -8,7 +8,6 @@ import {
   AccessibilityInfo,
 } from "react-native";
 import { useRouter } from "expo-router";
-import { Ionicons } from "@expo/vector-icons";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 import Animated, {
   useSharedValue,
@@ -22,7 +21,7 @@ import Animated, {
 import { createAudioPlayer, type AudioPlayer } from "expo-audio";
 import { fadePlayerTo, releasePlayer, configureAudio } from "@/lib/audio";
 import { useAlarms } from "@/lib/useSupabase";
-import { Button, Txt } from "@/components/ui";
+import { Button, Txt, Icon } from "@/components/ui";
 import { C, R, SP } from "@/lib/tokens";
 
 let Haptics: any = null;
@@ -31,9 +30,11 @@ try { Haptics = require("expo-haptics"); } catch {}
 /**
  * goodnight.tsx — the wind-down.
  *
- * Thirty seconds that walk the light down: sunset, dusk, moon, stars,
- * animals asleep. The images darken as they go and the sound thins out,
- * so the screen you're holding is dimmer at the end than the room.
+ * Opens on a short card that says what this is, because "a screen that
+ * suddenly plays a video" is not self-explanatory. Begin starts thirty
+ * seconds that walk the light down: sunset, dusk, moon, stars, animals
+ * asleep. The images darken as they go and the sound thins out, so the
+ * screen you're holding is dimmer at the end than the room.
  *
  * Deliberately built from modules the app already ships — no screen-
  * brightness API — so it travels over the air instead of waiting on a
@@ -63,10 +64,13 @@ const FRAMES: { uri: string; line?: string }[] = [
 
 const PER_FRAME_MS = 2500;
 const TOTAL_MS = FRAMES.length * PER_FRAME_MS;
+const TOTAL_SEC = Math.round(TOTAL_MS / 1000);
 
 // Which slots actually carry words — the panel below has to know when to be
 // there, and it can't ask the FRAMES array from inside a worklet.
 const LINE_INDICES = FRAMES.map((f, i) => (f.line ? i : -1)).filter((i) => i >= 0);
+
+type Phase = "intro" | "playing" | "done";
 
 function formatTime(iso: string) {
   const d = new Date(iso);
@@ -75,6 +79,27 @@ function formatTime(iso: string) {
   const ampm = h >= 12 ? "PM" : "AM";
   h = h % 12 || 12;
   return `${h}:${m.toString().padStart(2, "0")} ${ampm}`;
+}
+
+// ─── Audio bed ───────────────────────────────────────────
+//
+// Everything the crickets need lives here, in one place, on purpose.
+// The founder wants a mini-player later — the bed keeps playing after
+// you leave this screen, with a small control elsewhere — and that is
+// to be built "in a very calculated way", not now. When it is, this
+// function moves to a lib module and hands its player to a shared
+// controller instead of the screen's ref; the screen itself only has to
+// stop calling `releasePlayer` in its unmount. Nothing here changes
+// behaviour today: the bed starts on Begin and is released on leave.
+
+async function startAudioBed(): Promise<AudioPlayer> {
+  await configureAudio();
+  const p = createAudioPlayer(require("../assets/audio/ambient-crickets.m4a"));
+  p.loop = true;
+  p.volume = 0;
+  p.play();
+  fadePlayerTo(p, 0.28, 4000);
+  return p;
 }
 
 function Frame({
@@ -156,16 +181,47 @@ function LinePanel({ t, children }: { t: SharedValue<number>; children: React.Re
   );
 }
 
+// ─── The intro card ──────────────────────────────────────
+// What you are about to see, and one button. The sequence does not start
+// until Begin, so nobody is surprised by a slideshow.
+function Intro({ onBegin, onLeave }: { onBegin: () => void; onLeave: () => void }) {
+  const insets = useSafeAreaInsets();
+  return (
+    <View
+      style={[
+        styles.intro,
+        { paddingTop: insets.top + SP.xxxl, paddingBottom: Math.max(insets.bottom, SP.lg) + SP.xl },
+      ]}
+    >
+      <View style={styles.introBody}>
+        <Icon name="moon" size={28} color={C.labelSecondary} />
+        <Txt kind="largeTitle" style={styles.introTitle}>Wind down</Txt>
+        <Txt kind="body" tone="secondary" style={styles.introText}>
+          A {TOTAL_SEC}-second wind-down — curated imagery, sound and light, designed to settle your
+          body for sleep. Use it while you set tomorrow's alarm and pick your habits.
+        </Txt>
+      </View>
+      <View style={styles.introActions}>
+        <Button title="Begin" tone="prominent" onPress={onBegin} />
+        <Button title="Not tonight" tone="plain" onPress={onLeave} haptic={false} />
+      </View>
+    </View>
+  );
+}
+
 export default function GoodnightScreen() {
   const router = useRouter();
   const insets = useSafeAreaInsets();
   const { height } = useWindowDimensions();
   const { alarms } = useAlarms();
-  const [done, setDone] = useState(false);
+  const [phase, setPhase] = useState<Phase>("intro");
   const [reduceMotion, setReduceMotion] = useState(false);
   const playerRef = useRef<AudioPlayer | null>(null);
   const t = useSharedValue(0);
   const veil = useSharedValue(0);
+
+  const playing = phase === "playing";
+  const done = phase === "done";
 
   const nextAlarm = alarms
     .filter((a) => a.enabled)
@@ -173,9 +229,14 @@ export default function GoodnightScreen() {
 
   useEffect(() => {
     AccessibilityInfo.isReduceMotionEnabled().then(setReduceMotion).catch(() => {});
+    // Warm the first frames while the card is up so Begin lands on a
+    // picture, not a black wait.
+    FRAMES.slice(0, 3).forEach((f) => { Image.prefetch(f.uri).catch(() => {}); });
   }, []);
 
   useEffect(() => {
+    if (!playing) return;
+
     // Linear, because any easing here reads as the sequence "hurrying"
     t.value = withTiming(FRAMES.length - 1, {
       duration: TOTAL_MS,
@@ -185,42 +246,51 @@ export default function GoodnightScreen() {
     veil.value = withTiming(0.72, { duration: TOTAL_MS, easing: Easing.in(Easing.quad) });
 
     const finish = setTimeout(() => {
-      setDone(true);
+      setPhase("done");
       Haptics?.impactAsync?.(Haptics.ImpactFeedbackStyle?.Soft);
     }, TOTAL_MS);
 
-    (async () => {
-      try {
-        await configureAudio();
-        const p = createAudioPlayer(require("../assets/audio/ambient-crickets.m4a"));
-        p.loop = true;
-        p.volume = 0;
-        p.play();
-        playerRef.current = p;
-        fadePlayerTo(p, 0.28, 4000);
-        // Thin the sound out over the last stretch so silence arrives first
-        setTimeout(() => { if (playerRef.current) fadePlayerTo(playerRef.current, 0.06, 8000); }, TOTAL_MS - 9000);
-      } catch {}
-    })();
+    // Thin the sound out over the last stretch so silence arrives first
+    const thin = setTimeout(() => {
+      if (playerRef.current) fadePlayerTo(playerRef.current, 0.06, 8000);
+    }, TOTAL_MS - 9000);
+
+    let cancelled = false;
+    startAudioBed()
+      .then((p) => {
+        if (cancelled) releasePlayer(p);
+        else playerRef.current = p;
+      })
+      .catch(() => {});
 
     return () => {
+      cancelled = true;
       clearTimeout(finish);
+      clearTimeout(thin);
       if (playerRef.current) {
         releasePlayer(playerRef.current);
         playerRef.current = null;
       }
     };
-  }, [t, veil]);
+  }, [playing, t, veil]);
 
   const veilStyle = useAnimatedStyle(() => ({ opacity: veil.value }));
   const endStyle = useAnimatedStyle(() => ({
     opacity: withTiming(done ? 1 : 0, { duration: 900 }),
   }));
 
+  if (phase === "intro") {
+    return (
+      <View style={styles.container}>
+        <Intro onBegin={() => setPhase("playing")} onLeave={() => router.back()} />
+      </View>
+    );
+  }
+
   return (
     <Pressable
       style={styles.container}
-      onPress={() => !done && setDone(true)}
+      onPress={() => playing && setPhase("done")}
       accessibilityRole="button"
       accessibilityLabel={done ? "Wind-down finished" : "Skip to the end of the wind-down"}
     >
@@ -231,9 +301,9 @@ export default function GoodnightScreen() {
       {/* The light going down */}
       <Animated.View style={[StyleSheet.absoluteFill, styles.veil, veilStyle]} pointerEvents="none" />
 
-      {/* The words. Gated on !done so a tap-to-skip doesn't leave an orphan
-          panel sitting under the end card. */}
-      {!done && (
+      {/* The words. Gated on playing so a tap-to-skip doesn't leave an
+          orphan panel sitting under the end card. */}
+      {playing && (
         <LinePanel t={t}>
           {FRAMES.map((f, i) =>
             f.line ? <Line key={`l-${i}`} text={f.line} index={i} t={t} /> : null,
@@ -246,18 +316,21 @@ export default function GoodnightScreen() {
         <Animated.View
           style={[styles.endWrap, { paddingBottom: Math.max(insets.bottom, SP.lg) + SP.xl }, endStyle]}
         >
-          <Ionicons name="moon" size={28} color={C.labelSecondary} />
+          <Icon name="moon" size={28} color={C.labelSecondary} />
           <Txt kind="largeTitle" style={styles.goodnight}>Goodnight</Txt>
           <Txt kind="subheadline" tone="secondary" style={styles.endMeta}>
             {nextAlarm
               ? `${formatTime(nextAlarm.next_fire_at)} · ${nextAlarm.label}`
               : "No alarm set for the morning"}
           </Txt>
-          <Button title="Lights out" tone="prominent" onPress={() => router.back()} style={styles.primary} />
+          <Button title="Dim the app" tone="prominent" onPress={() => router.back()} style={styles.primary} />
+          <Txt kind="footnote" tone="tertiary" style={styles.endCaption}>
+            Takes you back with the whole app on its black background, ready to set down.
+          </Txt>
         </Animated.View>
       )}
 
-      {!done && (
+      {playing && (
         <View style={[styles.skipHint, { top: insets.top + height * 0.02 }]} pointerEvents="none">
           <Txt kind="footnote" tone="tertiary">Tap anywhere to finish</Txt>
         </View>
@@ -269,6 +342,27 @@ export default function GoodnightScreen() {
 const styles = StyleSheet.create({
   container: { flex: 1, backgroundColor: C.bg },
   veil: { backgroundColor: C.bg },
+
+  intro: {
+    flex: 1,
+    paddingHorizontal: SP.xl,
+    justifyContent: "space-between",
+  },
+  introBody: {
+    alignItems: "center",
+  },
+  introTitle: {
+    marginTop: SP.md,
+    textAlign: "center",
+  },
+  introText: {
+    marginTop: SP.md,
+    textAlign: "center",
+  },
+  introActions: {
+    gap: SP.sm,
+  },
+
   panelWrap: {
     position: "absolute",
     left: SP.xl,
@@ -315,6 +409,10 @@ const styles = StyleSheet.create({
   },
   primary: {
     alignSelf: "stretch",
+  },
+  endCaption: {
+    marginTop: SP.sm,
+    textAlign: "center",
   },
   skipHint: {
     position: "absolute",

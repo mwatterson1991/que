@@ -1,32 +1,47 @@
 import { useState } from "react";
-import { View, ScrollView, StyleSheet, Image, Alert } from "react-native";
+import { View, ScrollView, StyleSheet, Alert } from "react-native";
 import { useRouter, useLocalSearchParams } from "expo-router";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
-import { Ionicons } from "@expo/vector-icons";
-import { Screen, Txt, Section, Row, Button, IconButton } from "@/components/ui";
+import { Screen, Txt, Section, Row, Button, IconButton, Icon } from "@/components/ui";
 import { C, SP } from "@/lib/tokens";
 import { useSessions } from "@/lib/useSupabase";
-import { artworkFor } from "@/lib/catalog";
+import { artworkFor, channelArtwork } from "@/lib/catalog";
+import { Artwork } from "@/components/SessionCard";
 import { usePremium, PRICE_MONTHLY, PRICE_YEARLY } from "@/lib/premium";
 
+// Reached two ways: from a locked session (`id`) or from a channel card
+// (`channel`). A channel card is the upsell at the end of every shelf,
+// so the paywall wears that channel's cover and says what the channel is.
+
 const BENEFITS = [
+  "Naturescapes — a different real recording every morning",
+  "Positive Words — prayers, scripture and the Stoics, read aloud",
   "Every hypnotherapy session, narrated by Brian",
-  "Daily horoscope readings",
-  "The full frequencies + positive words library",
-  "New sessions every month",
+  "The full frequencies library and daily horoscope readings",
+  "New recordings every month",
 ];
 
-const Check = <Ionicons name="checkmark" size={22} color={C.accent} />;
+const CHANNEL_LINE: Record<string, string> = {
+  Naturescapes: "The full Naturescapes channel: a different real recording every morning.",
+  "Positive Words": "The full Positive Words channel: a different reading every morning.",
+  Frequencies: "The full Frequencies channel: every tone, tuned to how you want to wake.",
+  Hypnotherapy: "Every guided hypnotherapy session, narrated by Brian.",
+  Horoscope: "A fresh horoscope reading for your sign every morning.",
+};
+
+const Check = <Icon name="check" size={22} />;
 
 export default function PaywallScreen() {
   const router = useRouter();
   const { top, bottom } = useSafeAreaInsets();
-  const { id } = useLocalSearchParams<{ id?: string }>();
+  const { id, channel } = useLocalSearchParams<{ id?: string; channel?: string }>();
   const { sessions } = useSessions();
   const { unlock } = usePremium();
   const [plan, setPlan] = useState<"yearly" | "monthly">("yearly");
 
   const session = sessions.find((s) => s.id === id);
+  const hero = session ? artworkFor(session) : channel ? channelArtwork(channel) : null;
+  const channelLine = channel ? CHANNEL_LINE[channel] : undefined;
 
   const startPremium = () => {
     // Placeholder purchase: App Store billing lands with the production
@@ -54,14 +69,12 @@ export default function PaywallScreen() {
 
   return (
     <Screen>
-      {/* Full-bleed artwork from the session that brought them here */}
-      {session && (
-        <Image source={{ uri: artworkFor(session) }} style={StyleSheet.absoluteFill} resizeMode="cover" />
-      )}
+      {/* Full-bleed artwork: the session or the channel that brought them here */}
+      {hero && <Artwork uri={hero} />}
 
       {/* The modal has no header bar; one disc button closes it. */}
       <IconButton
-        icon="close"
+        icon="x"
         label="Close"
         disc
         onPress={() => router.back()}
@@ -76,13 +89,18 @@ export default function PaywallScreen() {
               MORNING QUE
             </Txt>
             <Txt kind="editorial" maxFontSizeMultiplier={1.2}>
-              Premium
+              {channel ? `${channel} channel` : "Premium"}
             </Txt>
+            {channelLine ? (
+              <Txt kind="subheadline" tone="secondary" maxFontSizeMultiplier={1.3} style={styles.channelLine}>
+                {channelLine}
+              </Txt>
+            ) : null}
           </View>
 
           <Section header="Included">
             {BENEFITS.map((b) => (
-              <Row key={b} icon="checkmark-circle" title={b} accessory="none" />
+              <Row key={b} icon="check-circle" title={b} accessory="none" />
             ))}
           </Section>
 
@@ -133,6 +151,9 @@ const styles = StyleSheet.create({
   },
   titles: {
     paddingHorizontal: SP.screen,
+  },
+  channelLine: {
+    marginTop: SP.sm,
   },
   actions: {
     paddingHorizontal: SP.screen,

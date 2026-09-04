@@ -11,12 +11,12 @@ import {
 } from "react-native";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 import { Stack, useFocusEffect, useRouter } from "expo-router";
-import { Ionicons } from "@expo/vector-icons";
 import { useGratitudeEntries } from "@/lib/useSupabase";
 import { useAuth } from "@/lib/auth";
 import { HandwritingField } from "@/components/HandwritingField";
-import { Screen, Txt, Button, Divider } from "@/components/ui";
+import { Screen, Txt, Button, Divider, Icon } from "@/components/ui";
 import { C, SP, T, PRESS_OPACITY } from "@/lib/tokens";
+import { TAB_BAR_INSET } from "@/lib/nav";
 
 const TOTAL = 7;
 
@@ -67,9 +67,13 @@ export default function GratitudeScreen() {
   // Keyboard appearing shrinks the ScrollView without changing its content
   // size, so onContentSizeChange never fires — re-pin explicitly or autoFocus
   // leaves the newest entries hidden behind the keyboard on first paint.
+  // With the keyboard down the composer would sit under the floating tab
+  // bar, so it pads itself by the bar's inset until the keyboard returns.
+  const [keyboardUp, setKeyboardUp] = useState(false);
   useEffect(() => {
-    const sub = Keyboard.addListener("keyboardDidShow", () => pinToBottom(true));
-    return () => sub.remove();
+    const show = Keyboard.addListener("keyboardDidShow", () => { setKeyboardUp(true); pinToBottom(true); });
+    const hide = Keyboard.addListener("keyboardDidHide", () => setKeyboardUp(false));
+    return () => { show.remove(); hide.remove(); };
   }, [pinToBottom]);
 
   // Today's saved entries
@@ -97,6 +101,28 @@ export default function GratitudeScreen() {
     return dates.sort((a, b) => a.localeCompare(b));
   }, [entries, today]);
 
+  // The numbers compound. Storage still keeps entry_number 1–7 per day; what
+  // is SHOWN is that number plus everything written on every earlier day, so
+  // day one runs 1–7, day two 8–14, and the count only ever climbs. This map
+  // holds each day's starting offset: the number of entries dated before it.
+  const offsetByDate = useMemo(() => {
+    const perDay = new Map<string, number>();
+    for (const e of entries) perDay.set(e.entry_date, (perDay.get(e.entry_date) ?? 0) + 1);
+    const offsets = new Map<string, number>();
+    let running = 0;
+    for (const date of [...perDay.keys()].sort((a, b) => a.localeCompare(b))) {
+      offsets.set(date, running);
+      running += perDay.get(date) ?? 0;
+    }
+    // Today may have nothing saved yet and so no key: it still starts after
+    // everything before it.
+    if (!offsets.has(today)) offsets.set(today, running);
+    return offsets;
+  }, [entries, today]);
+
+  const shownNumber = (date: string, entryNumber: number) =>
+    (offsetByDate.get(date) ?? 0) + entryNumber;
+
   // A live draft always wins over the persisted text — otherwise keystrokes in
   // an already-saved row are swallowed by the server value.
   const getValue = (n: number): string => {
@@ -115,8 +141,8 @@ export default function GratitudeScreen() {
   const savedText = (n: number) =>
     todayEntries.find((e) => e.entry_number === n)?.entry_text ?? "";
 
-  // Commit one entry. Used by the composer (return key / Save button) and by
-  // every saved row's blur — both paths existed before and both still upsert.
+  // Commit one entry. Used by the composer's return key and by every saved
+  // row's blur — both paths upsert.
   const commit = async (n: number) => {
     const text = getValue(n).trim();
     if (!text || text === savedText(n)) {
@@ -128,7 +154,9 @@ export default function GratitudeScreen() {
     requestAnimationFrame(() => pinToBottom(true));
   };
 
-  const header = <Stack.Screen options={{ title: "Journal" }} />;
+  const seeGraph = () => router.push("/profile-page?from=gratitude" as any);
+
+  const header = <Stack.Screen options={{ title: "Gratitude" }} />;
 
   if (loading) {
     return (
@@ -158,7 +186,6 @@ export default function GratitudeScreen() {
   }
 
   const composerText = drafts[activeNumber] ?? "";
-  const canSend = composerText.trim().length > 0;
 
   return (
     <Screen>
@@ -200,7 +227,7 @@ export default function GratitudeScreen() {
                     {i > 0 && <Divider />}
                     <View style={styles.entry}>
                       <Txt kind="body" tone="tertiary" style={styles.index}>
-                        {e.entry_number}
+                        {shownNumber(date, e.entry_number)}
                       </Txt>
                       <Txt kind="body" style={styles.flex}>
                         {e.entry_text}
@@ -226,7 +253,7 @@ export default function GratitudeScreen() {
                 {i > 0 && <Divider />}
                 <View style={styles.entry}>
                   <Txt kind="body" tone="tertiary" style={styles.index}>
-                    {e.entry_number}
+                    {shownNumber(today, e.entry_number)}
                   </Txt>
                   {/* Already written, so it renders fully drawn — no animation,
                       one merged <Path> per entry. Today's page stays in your
@@ -242,36 +269,35 @@ export default function GratitudeScreen() {
                     returnKeyType="done"
                     submitBehavior="blurAndSubmit"
                     maxFontSizeMultiplier={1.6}
-                    accessibilityLabel={`Gratitude ${e.entry_number}`}
+                    accessibilityLabel={`Gratitude ${shownNumber(today, e.entry_number)}`}
                   />
                 </View>
               </Fragment>
             ))}
 
-          {/* ── Reward loop ── */}
-          {isComplete ? (
-            <View style={styles.complete}>
-              <Ionicons name="checkmark-circle" size={T.title1} color={C.switchOn} />
-              <Txt kind="footnote" style={styles.completeText}>
-                Day complete — +{TOTAL} positivity today.
-              </Txt>
+          {/* ── Reward loop: the score is a quiet line, the graph is a button ── */}
+          {savedCount > 0 && (
+            <View style={styles.reward}>
+              {isComplete ? (
+                <View style={styles.complete}>
+                  <Icon name="check-circle" size={T.title2} />
+                  <Txt kind="subheadline" tone="secondary">
+                    Day complete — +{TOTAL} points today
+                  </Txt>
+                </View>
+              ) : (
+                <Txt kind="subheadline" tone="secondary" style={styles.points}>
+                  +{savedCount} points today
+                </Txt>
+              )}
               <Button
-                tone="plain"
+                tone="gray"
                 title="See your graph"
-                icon="trending-up"
-                onPress={() => router.push("/profile-page" as any)}
-                accessibilityLabel="See your positivity graph"
+                onPress={seeGraph}
+                accessibilityLabel="See your graph"
               />
             </View>
-          ) : savedCount > 0 ? (
-            <Button
-              tone="plain"
-              title={`+${savedCount} today · see your graph`}
-              icon="trending-up"
-              onPress={() => router.push("/profile-page" as any)}
-              accessibilityLabel={`${savedCount} points earned today. See your graph`}
-            />
-          ) : null}
+          )}
 
           {/* ── Soft account nudge for guests ── */}
           {isGuest && savedCount > 0 && (
@@ -283,7 +309,7 @@ export default function GratitudeScreen() {
             >
               <Txt kind="footnote" tone="secondary">
                 Your entries live on this phone.{" "}
-                <Txt kind="footnote" tone="accent">Create a free account</Txt> to keep
+                <Txt kind="footnote">Create a free account</Txt> to keep
                 them safe.
               </Txt>
             </Pressable>
@@ -291,20 +317,22 @@ export default function GratitudeScreen() {
         </ScrollView>
 
         {/* ── Composer: pinned to the bottom, a sibling of the ScrollView so
-            the KeyboardAvoidingView lifts it and the transcript shrinks. ── */}
+            the KeyboardAvoidingView lifts it and the transcript shrinks.
+            There is no Save button: the keyboard's Done key is the save,
+            so nothing can hide behind the keyboard. ── */}
         {!isComplete && (
-          <View style={styles.composer}>
+          <View style={[styles.composer, { paddingBottom: keyboardUp ? SP.md : TAB_BAR_INSET }]}>
             <View style={styles.promptRow}>
               <Txt kind="title3" style={styles.flex} maxFontSizeMultiplier={1.2}>
                 Today I'm grateful for…
               </Txt>
               <Txt kind="subheadline" tone="secondary" maxFontSizeMultiplier={1.2}>
-                {savedCount}/{TOTAL}
+                {savedCount} of {TOTAL} today
               </Txt>
             </View>
             <View style={styles.entry}>
               <Txt kind="body" tone="tertiary" style={styles.index}>
-                {activeNumber}
+                {shownNumber(today, activeNumber)}
               </Txt>
               {/* The live line. Each letter you type is drawn stroke by stroke on
                   a single-stroke script face, so the entry appears to be written
@@ -322,20 +350,15 @@ export default function GratitudeScreen() {
                 // The cursor is already blinking when you land — nothing to tap
                 // before you can write.
                 autoFocus
-                returnKeyType={activeNumber < TOTAL ? "next" : "done"}
-                // "submit" fires onSubmitEditing WITHOUT blurring, so hitting
-                // return saves and the caret is instantly ready for the next one.
-                submitBehavior={activeNumber < TOTAL ? "submit" : "blurAndSubmit"}
+                returnKeyType="done"
+                // "submit" fires onSubmitEditing WITHOUT blurring, so Done saves
+                // and the caret is instantly ready for the next one. On the
+                // seventh the composer unmounts anyway.
+                submitBehavior="submit"
                 maxFontSizeMultiplier={1.6}
-                accessibilityLabel={`Gratitude ${activeNumber} of ${TOTAL}`}
+                accessibilityLabel={`Gratitude ${shownNumber(today, activeNumber)}, ${activeNumber} of ${TOTAL} today`}
               />
             </View>
-            <Button
-              title="Save"
-              onPress={() => commit(activeNumber)}
-              disabled={!canSend}
-              accessibilityLabel="Save this entry"
-            />
           </View>
         )}
       </KeyboardAvoidingView>
@@ -373,9 +396,10 @@ const styles = StyleSheet.create({
     paddingVertical: SP.md,
   },
   // Body text's line box lands the numeral's baseline on the handwriting's
-  // first baseline, which sits one ascender below the top of the row.
+  // first baseline, which sits one ascender below the top of the row. Wide
+  // enough for three digits once the count has compounded for a while.
   index: {
-    width: 26,
+    width: 36,
   },
 
   // Composer
@@ -394,14 +418,17 @@ const styles = StyleSheet.create({
   },
 
   // Reward loop
-  complete: {
-    alignItems: "center",
-    gap: SP.sm,
+  reward: {
+    gap: SP.md,
     marginTop: SP.xl,
     marginBottom: SP.md,
   },
-  completeText: {
-    color: C.switchOn,
+  complete: {
+    alignItems: "center",
+    gap: SP.sm,
+  },
+  points: {
+    textAlign: "center",
   },
   nudge: {
     paddingVertical: SP.sm,

@@ -8,11 +8,9 @@ import {
   GestureResponderEvent,
   Alert,
   ScrollView,
-  Image,
 } from "react-native";
 import { useLocalSearchParams, useRouter } from "expo-router";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
-import { Ionicons } from "@expo/vector-icons";
 import { Svg, Defs, LinearGradient, Stop, Rect } from "react-native-svg";
 import Animated, {
   useSharedValue,
@@ -48,9 +46,11 @@ import {
   stopAmbient,
   AmbientSoundId,
 } from "@/lib/ambient";
-import { artworkFor, isHypnotherapy } from "@/lib/catalog";
+import { artworkFor, displayTitle, displayDescription, isHypnotherapy } from "@/lib/catalog";
 import { usePremium, isLocked } from "@/lib/premium";
-import { Button, IconButton, Txt } from "@/components/ui";
+import { Button, IconButton, Icon, Txt, type IconName } from "@/components/ui";
+import { Artwork } from "@/components/SessionCard";
+import { Glass, GLASS_AVAILABLE, GLASS_FALLBACK } from "@/components/cardLayout";
 
 let Haptics: any = null;
 try { Haptics = require("expo-haptics"); } catch {}
@@ -59,9 +59,11 @@ const { width: SCREEN_W } = Dimensions.get("window");
 const ORB_RADIUS = 38;
 const ORB_SIZE = ORB_RADIUS * 2 + 24;
 const SWING_RANGE = SCREEN_W / 2 - ORB_SIZE / 2 - 20;
-// The dock is a full-width sheet; the scrub track is inset by its padding.
+// The dock is a glass sheet inset from the screen edges; the scrub
+// track is inset again by the dock's own padding.
+const DOCK_MARGIN = SP.md;
 const DOCK_PAD = SP.xl;
-const TRACK_WIDTH = SCREEN_W - DOCK_PAD * 2;
+const TRACK_WIDTH = SCREEN_W - DOCK_MARGIN * 2 - DOCK_PAD * 2;
 const PARTICLE_COUNT = 72;
 const MANTRA_GAP = 20;
 const TELEPROMPTER_PAD = 400; // static padding so item y positions never shift
@@ -167,8 +169,8 @@ function HypnoticOrb({ playing }: { playing: boolean }) {
 }
 
 // ─── Teleprompter mantra display ─────────────────────────
-// The two edge fades are the one gradient on the screen: masks that let
-// the lines enter and leave softly. Ground colour fading to clear.
+// The two edge fades let the lines enter and leave softly: ground
+// colour fading to clear, over the artwork.
 function EdgeFade({ side }: { side: "top" | "bottom" }) {
   const id = side === "top" ? "fadeTop" : "fadeBottom";
   return (
@@ -176,8 +178,8 @@ function EdgeFade({ side }: { side: "top" | "bottom" }) {
       <Svg width="100%" height="100%">
         <Defs>
           <LinearGradient id={id} x1="0" y1="0" x2="0" y2="1">
-            <Stop offset="0%" stopColor={C.bg} stopOpacity={side === "top" ? 1 : 0} />
-            <Stop offset="100%" stopColor={C.bg} stopOpacity={side === "top" ? 0 : 1} />
+            <Stop offset="0%" stopColor={C.bg} stopOpacity={side === "top" ? 0.7 : 0} />
+            <Stop offset="100%" stopColor={C.bg} stopOpacity={side === "top" ? 0 : 0.7} />
           </LinearGradient>
         </Defs>
         <Rect x="0" y="0" width="100%" height="100%" fill={`url(#${id})`} />
@@ -264,7 +266,7 @@ function Transport({
   size,
   onPress,
 }: {
-  icon: keyof typeof Ionicons.glyphMap;
+  icon: IconName;
   label: string;
   size: number;
   onPress: () => void;
@@ -277,7 +279,7 @@ function Transport({
       accessibilityRole="button"
       accessibilityLabel={label}
     >
-      <Ionicons name={icon} size={size} color={C.label} />
+      <Icon name={icon} size={size} color={C.label} />
     </Pressable>
   );
 }
@@ -441,15 +443,16 @@ export default function PlayerScreen() {
   const displayElapsed = scrubbing ? Math.floor(scrubPos * duration) : elapsed;
   const progress = duration > 0 ? displayElapsed / duration : 0;
   const mantras = session?.mantras ?? [];
-  // Hypnotherapy keeps the orb + mantra teleprompter; everything else
-  // (naturescapes, frequencies, …) shows its artwork instead.
+  // Hypnotherapy adds the orb + mantra teleprompter over the artwork;
+  // everything else is the picture alone.
   const showOrb = session ? isHypnotherapy(session) : true;
+  const title = session ? displayTitle(session) : "Loading…";
 
   const setAsAlarm = !completed && (
     <Button
       title={isPickMode ? "Use" : "Set as Alarm"}
       tone="gray"
-      icon="alarm"
+      icon="bell"
       style={styles.selectPill}
       onPress={handleSetAsAlarm}
     />
@@ -457,25 +460,13 @@ export default function PlayerScreen() {
 
   return (
     <View style={styles.container}>
-      {/* Artwork fills the screen; the dock is an opaque sheet over its
-          lower edge, so the photo needs no scrim to keep the text legible. */}
-      {!showOrb && session && (
-        <Image
-          source={{ uri: artworkFor(session) }}
-          style={StyleSheet.absoluteFill}
-          resizeMode="cover"
-          accessibilityLabel={`${session.title} artwork`}
-        />
-      )}
+      {/* The SAME artwork as the card, with the same treatment, filling
+          the screen. The glass dock and the scrim keep the text legible. */}
+      {session && <Artwork uri={artworkFor(session)} accessibilityLabel={`${title} artwork`} />}
 
-      {/* Top chrome: back on the left, Set as Alarm on the right */}
+      {/* Top chrome: close on the left, Set as Alarm on the right */}
       <View style={[styles.topBar, { paddingTop: insets.top + SP.xs }]}>
-        <IconButton
-          icon="chevron-down"
-          label="Close"
-          disc={!showOrb}
-          onPress={() => router.back()}
-        />
+        <IconButton icon="x" label="Close" disc onPress={() => router.back()} />
         <View style={{ flex: 1 }} />
         {setAsAlarm}
       </View>
@@ -489,68 +480,71 @@ export default function PlayerScreen() {
         <View style={{ flex: 1 }} />
       )}
 
-      {/* Transport dock — one flat sheet holding metadata + scrubber + controls */}
-      <View style={[styles.dock, { paddingBottom: Math.max(insets.bottom, SP.lg) + SP.sm }]}>
-        <View style={styles.titleRow}>
-          <View style={{ flex: 1 }}>
-            <Txt kind="title3" numberOfLines={1}>{session?.title ?? "Loading…"}</Txt>
-            <Txt kind="subheadline" tone="secondary" numberOfLines={1}>{session?.narrator}</Txt>
-          </View>
-          <IconButton
-            icon="ellipsis-horizontal-circle"
-            label="Session details"
-            color={C.labelSecondary}
-            onPress={() => Alert.alert(session?.title ?? "", session?.description ?? "")}
-          />
-        </View>
-
-        {/* Progress — a thin channel, accent fill, plain thumb */}
-        <View style={styles.progressContainer}>
-          <View
-            ref={trackRef}
-            onLayout={() => {
-              trackRef.current?.measureInWindow((x) => { trackXRef.current = x; });
-            }}
-            style={styles.progressTrackOuter}
-            {...panResponder.panHandlers}
-            accessible={true}
-            accessibilityRole="adjustable"
-            accessibilityLabel="Playback position"
-            accessibilityValue={{ text: `${formatTime(displayElapsed)} of ${formatTime(duration)}` }}
-          >
-            <View style={styles.progressTrack}>
-              <View style={[styles.progressFill, { width: `${progress * 100}%` }]} />
+      {/* The dock: one sheet of glass holding name + scrubber + transport */}
+      <View style={[styles.dockWrap, { paddingBottom: Math.max(insets.bottom, SP.lg) }]}>
+        <Glass glassEffectStyle="clear" style={[styles.dock, !GLASS_AVAILABLE && GLASS_FALLBACK]}>
+          <View style={styles.titleRow}>
+            <View style={{ flex: 1 }}>
+              <Txt kind="title3" numberOfLines={1}>{title}</Txt>
+              <Txt kind="subheadline" tone="secondary" numberOfLines={1}>{session?.narrator}</Txt>
             </View>
-            <View
-              style={[styles.thumb, { left: `${progress * 100}%` }, scrubbing && styles.thumbActive]}
-              pointerEvents="none"
+            <IconButton
+              icon="info"
+              label="Session details"
+              size={22}
+              color={C.labelSecondary}
+              onPress={() => Alert.alert(title, session ? displayDescription(session) : "")}
             />
           </View>
-          <View style={styles.timeRow}>
-            <Txt kind="caption1" tone="secondary">{formatTime(displayElapsed)}</Txt>
-            <Txt kind="caption1" tone="secondary">{formatTime(duration)}</Txt>
-          </View>
-        </View>
 
-        {/* Transport. Play is the biggest glyph — the one thing you reach
-            for half-awake. */}
-        <View style={styles.transport}>
-          <Transport icon="play-back" label="Back 15 seconds" size={34} onPress={() => skip(-15)} />
-          <Transport
-            icon={playing ? "pause" : "play"}
-            label={playing ? "Pause session" : "Play session"}
-            size={56}
-            onPress={togglePlay}
-          />
-          <Transport icon="play-forward" label="Forward 15 seconds" size={34} onPress={() => skip(15)} />
-        </View>
-
-        {completed && (
-          <View style={styles.completedRow}>
-            <Ionicons name="checkmark-circle" size={20} color={C.accent} />
-            <Txt kind="subheadline" tone="secondary">Session complete</Txt>
+          {/* Progress — a thin channel, white fill, plain thumb */}
+          <View style={styles.progressContainer}>
+            <View
+              ref={trackRef}
+              onLayout={() => {
+                trackRef.current?.measureInWindow((x) => { trackXRef.current = x; });
+              }}
+              style={styles.progressTrackOuter}
+              {...panResponder.panHandlers}
+              accessible={true}
+              accessibilityRole="adjustable"
+              accessibilityLabel="Playback position"
+              accessibilityValue={{ text: `${formatTime(displayElapsed)} of ${formatTime(duration)}` }}
+            >
+              <View style={styles.progressTrack}>
+                <View style={[styles.progressFill, { width: `${progress * 100}%` }]} />
+              </View>
+              <View
+                style={[styles.thumb, { left: `${progress * 100}%` }, scrubbing && styles.thumbActive]}
+                pointerEvents="none"
+              />
+            </View>
+            <View style={styles.timeRow}>
+              <Txt kind="caption1" tone="secondary">{formatTime(displayElapsed)}</Txt>
+              <Txt kind="caption1" tone="secondary">{formatTime(duration)}</Txt>
+            </View>
           </View>
-        )}
+
+          {/* Transport. Play is the biggest glyph — the one thing you reach
+              for half-awake. */}
+          <View style={styles.transport}>
+            <Transport icon="rewind" label="Back 15 seconds" size={30} onPress={() => skip(-15)} />
+            <Transport
+              icon={playing ? "pause" : "play"}
+              label={playing ? "Pause session" : "Play session"}
+              size={52}
+              onPress={togglePlay}
+            />
+            <Transport icon="fast-forward" label="Forward 15 seconds" size={30} onPress={() => skip(15)} />
+          </View>
+
+          {completed && (
+            <View style={styles.completedRow}>
+              <Icon name="check-circle" size={20} />
+              <Txt kind="subheadline" tone="secondary">Session complete</Txt>
+            </View>
+          )}
+        </Glass>
       </View>
     </View>
   );
@@ -570,8 +564,9 @@ const styles = StyleSheet.create({
   },
   selectPill: {
     alignSelf: "auto",
-    minHeight: 36,
+    minHeight: 40,
     paddingHorizontal: SP.lg,
+    backgroundColor: C.overlayFill,
   },
 
   // Orb
@@ -607,13 +602,16 @@ const styles = StyleSheet.create({
     zIndex: 1,
   },
 
-  // Transport dock: a raised sheet, no shadow.
+  // Dock: a floating sheet of glass, inset from the edges.
+  dockWrap: {
+    paddingHorizontal: DOCK_MARGIN,
+  },
   dock: {
-    backgroundColor: C.fill,
-    borderTopLeftRadius: R.xl,
-    borderTopRightRadius: R.xl,
+    borderRadius: R.xl,
+    overflow: "hidden",
     paddingHorizontal: DOCK_PAD,
     paddingTop: SP.lg,
+    paddingBottom: SP.md,
   },
   titleRow: {
     flexDirection: "row",

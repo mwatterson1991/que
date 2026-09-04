@@ -2,17 +2,29 @@
  * positivity.ts — the score behind the profile graph.
  *
  * Michael's model: the graph must breathe both ways. Doing the work
- * (gratitude entries, habit completions) earns points; a day with no
- * activity at all costs points. The line dips below the baseline when
- * you drift, climbs when you show up — like a stock ticker on yourself.
+ * (getting up for a session, gratitude entries, habit completions) earns
+ * points; a day with no activity at all costs points. The line dips
+ * below the baseline when you drift, climbs when you show up — like a
+ * stock ticker on yourself.
  *
- * Derived entirely from gratitude entries + habit logs, so it works
- * identically for guests (AsyncStorage) and account holders (Supabase).
+ * Derived entirely from gratitude entries + habit logs + the activity
+ * log, so it works identically for guests (AsyncStorage) and account
+ * holders (Supabase). Guests have no activity log, so for them the wake
+ * points are simply absent rather than wrong.
+ *
+ * The numbers below are the numbers the "Your score" info sheet quotes
+ * (app/score-info.tsx) — change them here and the sheet follows.
  */
 
+export const PTS_PER_WAKE = 5;      // a session finished after the alarm — you got up
 export const PTS_PER_GRATITUDE = 1; // each line written
 export const PTS_PER_HABIT = 2;     // each habit completion logged
 export const MISS_PENALTY = -3;     // a day you didn't show up at all
+/**
+ * Falling forever is not motivating, it is just punishment. After this
+ * many quiet days in a row the score stops dropping and simply waits.
+ */
+export const MAX_CONSECUTIVE_MISSES = 3;
 
 export interface DayActivity {
   date: string; // YYYY-MM-DD local
@@ -53,25 +65,24 @@ function walkDaily(
   gratByDay: Map<string, number>,
   habitByDay: Map<string, number>,
   days: number,
+  wakeByDay: Map<string, number> = new Map(),
 ): { dates: string[]; points: number[] } {
   // The penalty only applies once you've started: quiet days before the
   // first-ever entry are neutral, so a brand-new user starts at 0, not
   // in a hole.
-  const allDates = [...gratByDay.keys(), ...habitByDay.keys()].sort();
+  const allDates = [...gratByDay.keys(), ...habitByDay.keys(), ...wakeByDay.keys()].sort();
   const firstActive = allDates[0];
 
   const points: number[] = [];
   const dates: string[] = [];
-  // Falling forever is not motivating, it is just punishment. After
-  // three quiet days in a row the score stops dropping and simply waits.
-  const MAX_CONSECUTIVE_MISSES = 3;
   let missRun = 0;
   let running = 0;
   for (let i = days - 1; i >= 0; i--) {
     const date = localDate(i);
     const g = gratByDay.get(date) ?? 0;
     const h = habitByDay.get(date) ?? 0;
-    const earned = g * PTS_PER_GRATITUDE + h * PTS_PER_HABIT;
+    const w = wakeByDay.get(date) ?? 0;
+    const earned = g * PTS_PER_GRATITUDE + h * PTS_PER_HABIT + w * PTS_PER_WAKE;
     const started = firstActive !== undefined && date >= firstActive;
     const isToday = i === 0;
     if (earned > 0) {
@@ -201,6 +212,28 @@ export interface HabitLogRowLike {
   logged_at?: string | null;
 }
 
+/** A finished session from the activity log — the "you got up" signal. */
+export interface SessionRowLike {
+  completed_at: string;
+}
+
+/** Local YYYY-MM-DD for an ISO timestamp; null when it can't be parsed. */
+function localDayOf(iso?: string | null): string | null {
+  if (!iso) return null;
+  const d = new Date(iso);
+  if (Number.isNaN(d.getTime())) return null;
+  return d.toLocaleDateString("en-CA");
+}
+
+function countWakesByDay(sessions: SessionRowLike[]): Map<string, number> {
+  const days: string[] = [];
+  for (const s of sessions) {
+    const day = localDayOf(s.completed_at);
+    if (day) days.push(day);
+  }
+  return countByDay(days);
+}
+
 /**
  * Today, at hourly resolution.
  *
@@ -214,6 +247,7 @@ export interface HabitLogRowLike {
 function buildIntraday(
   gratitude: GratitudeRowLike[],
   habitLogs: HabitLogRowLike[],
+  sessions: SessionRowLike[],
   open: number,
 ): { points: TickerPoint[]; earned: number } {
   const today = localDate(0);
@@ -234,6 +268,10 @@ function buildIntraday(
   for (const l of habitLogs) {
     if (l.log_date !== today) continue;
     add(hourOfDay(l.logged_at), PTS_PER_HABIT);
+  }
+  for (const s of sessions) {
+    if (localDayOf(s.completed_at) !== today) continue;
+    add(hourOfDay(s.completed_at), PTS_PER_WAKE);
   }
 
   const now = new Date();
@@ -266,15 +304,18 @@ export function buildTickerSeries(
   gratitude: GratitudeRowLike[],
   habitLogs: HabitLogRowLike[],
   range: TickerRange,
+  sessions: SessionRowLike[] = [],
 ): TickerSeries {
   const gratByDay = countByDay(gratitude.map((g) => g.entry_date));
   const habitByDay = countByDay(habitLogs.map((l) => l.log_date));
-  const walk = walkDaily(gratByDay, habitByDay, TICKER_HISTORY_DAYS);
+  const wakeByDay = countWakesByDay(sessions);
+  const walk = walkDaily(gratByDay, habitByDay, TICKER_HISTORY_DAYS, wakeByDay);
 
   const today = localDate(0);
   const todayPts =
     (gratByDay.get(today) ?? 0) * PTS_PER_GRATITUDE +
-    (habitByDay.get(today) ?? 0) * PTS_PER_HABIT;
+    (habitByDay.get(today) ?? 0) * PTS_PER_HABIT +
+    (wakeByDay.get(today) ?? 0) * PTS_PER_WAKE;
 
   let points: TickerPoint[];
   let open: number;
@@ -284,7 +325,7 @@ export function buildTickerSeries(
 
   if (range === "1D") {
     open = walk.points[walk.points.length - 2] ?? 0; // yesterday's close
-    const intraday = buildIntraday(gratitude, habitLogs, open);
+    const intraday = buildIntraday(gratitude, habitLogs, sessions, open);
     points = intraday.points;
     hasActivity = intraday.earned !== 0;
     startLabel = "12 AM";
@@ -296,7 +337,9 @@ export function buildTickerSeries(
     open = slice[0] ?? 0;
     points = slice.map((v, i) => ({ x: i / Math.max(slice.length - 1, 1), v }));
     hasActivity = sliceDates.some(
-      (d, i) => i > 0 && ((gratByDay.get(d) ?? 0) > 0 || (habitByDay.get(d) ?? 0) > 0),
+      (d, i) =>
+        i > 0 &&
+        ((gratByDay.get(d) ?? 0) > 0 || (habitByDay.get(d) ?? 0) > 0 || (wakeByDay.get(d) ?? 0) > 0),
     );
     const longRange = range === "1Y";
     startLabel = shortDate(sliceDates[0] ?? today, longRange);

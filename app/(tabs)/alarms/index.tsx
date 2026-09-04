@@ -7,6 +7,7 @@ import {
   Image,
   ScrollView,
 } from "react-native";
+import { TAB_BAR_INSET } from "@/lib/nav";
 import { Stack, useRouter, useFocusEffect } from "expo-router";
 import { useCallback, useEffect, useRef } from "react";
 import AsyncStorage from "@react-native-async-storage/async-storage";
@@ -93,10 +94,19 @@ function DeleteAction({
 }
 
 // ─── One alarm row ─────────────────────────────────────────
-// The Clock app's row: a big light time, what it plays underneath, the
-// switch on the right, a separator below. An alarm that is off dims so the
-// bright rows are the ones that will fire. The artwork is the one thing
-// Clock doesn't have — the sound is the point of this app.
+// The Clock app's row, with the sound's poster in front of it:
+//
+//   [ artwork ]  6:30 AM
+//                Calm & Centered · 7 min                          (o)
+//
+// The poster is the largest thing on the left and sits on the same centre
+// line as the time; the sound name and length sit under the time; the
+// switch stays where Clock puts it. An alarm that is off dims so the bright
+// rows are the ones that will fire.
+const ART = 96;
+// Separators start at the text, not the poster — Apple's cell inset.
+const SEPARATOR_INSET = SP.screen + ART + SP.lg;
+
 function AlarmRow({
   item,
   session,
@@ -141,18 +151,21 @@ function AlarmRow({
         accessibilityLabel={`Edit ${item.label || "Alarm"}, ${hour} ${ampm}, ${soundName}, ${duration}`}
         accessibilityHint="Swipe left to delete"
       >
-        {session && (
+        {/* A blank tile when the session is still loading, so the time never jumps. */}
+        {session ? (
           <Image
             source={{ uri: artworkFor(session) }}
             style={[styles.art, !item.enabled && styles.artOff]}
             resizeMode="cover"
             accessible={false}
           />
+        ) : (
+          <View style={styles.art} />
         )}
         <View style={styles.body}>
           <View style={styles.timeRow}>
-            <Txt kind="clock" tone={tone}>{hour}</Txt>
-            <Txt kind="title2" tone={tone} style={styles.ampm}>{ampm}</Txt>
+            <Txt kind="clock" tone={tone} numberOfLines={1}>{hour}</Txt>
+            <Txt kind="title3" tone={tone} style={styles.ampm}>{ampm}</Txt>
           </View>
           <Txt kind="subheadline" tone={item.enabled ? "secondary" : "tertiary"} numberOfLines={1}>
             {soundName} · {duration}
@@ -292,12 +305,12 @@ export default function AlarmsScreen() {
       ) : (
         <ScrollView
           contentInsetAdjustmentBehavior="automatic"
-          contentContainerStyle={styles.list}
+          contentContainerStyle={[styles.list, { paddingBottom: TAB_BAR_INSET }]}
           showsVerticalScrollIndicator={false}
         >
           {alarms.map((item, i) => (
             <View key={item.id}>
-              {i > 0 && <Divider inset={SP.screen} />}
+              {i > 0 && <Divider inset={SEPARATOR_INSET} />}
               <AlarmRow
                 item={item}
                 session={sessionMap[item.mantra_id]}
@@ -333,16 +346,16 @@ const styles = StyleSheet.create({
     alignItems: "center",
     gap: SP.lg,
     paddingHorizontal: SP.screen,
-    paddingVertical: SP.md,
+    paddingVertical: SP.lg,
     backgroundColor: C.bg,
   },
   rowPressed: {
     backgroundColor: C.fill,
   },
   art: {
-    width: 56,
-    height: 56,
-    borderRadius: R.sm,
+    width: ART,
+    height: ART,
+    borderRadius: R.xl,
     backgroundColor: C.fill,
   },
   artOff: {
@@ -350,6 +363,7 @@ const styles = StyleSheet.create({
   },
   body: {
     flex: 1,
+    justifyContent: "center",
   },
   timeRow: {
     flexDirection: "row",

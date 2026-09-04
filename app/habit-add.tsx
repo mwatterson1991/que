@@ -1,11 +1,10 @@
 import { useState } from "react";
 import { View, TextInput, Pressable, ScrollView, StyleSheet } from "react-native";
 import { Stack, useRouter } from "expo-router";
-import { Ionicons } from "@expo/vector-icons";
 import { useHabits } from "@/lib/useSupabase";
 import { PRESET_COLORS } from "@/lib/habitColors";
-import { HabitIcon, iconForHabit } from "@/components/HabitIcon";
-import { Screen, Section, Row, IconButton } from "@/components/ui";
+import { HabitIcon } from "@/components/HabitIcon";
+import { Screen, Section, Row, IconButton, Icon, Txt } from "@/components/ui";
 import { C, SP, R, TYPE, PRESS_OPACITY } from "@/lib/tokens";
 
 // One-tap starters — the blank input is the biggest reason people bail
@@ -27,7 +26,28 @@ const timesLabel = (n: number) => (n === 1 ? "Once a day" : n === 2 ? "Twice a d
 
 // The selection tick on the right of a list row (Settings › Sounds style).
 function Check({ on }: { on: boolean }) {
-  return <View style={styles.check}>{on && <Ionicons name="checkmark" size={22} color={C.accent} />}</View>;
+  return <View style={styles.check}>{on && <Icon name="check" />}</View>;
+}
+
+// A starter row: the exact glyph the habit will wear on the tracker, then
+// the title. Built here rather than with <Row> so the icon comes from the
+// same Feather map the tracker uses.
+function SuggestionRow({ title, color, onPress }: { title: string; color: string; onPress: () => void }) {
+  return (
+    <Pressable
+      onPress={onPress}
+      style={({ pressed }) => [styles.suggestion, pressed && styles.suggestionPressed]}
+      accessibilityRole="button"
+      accessibilityLabel={`Use suggestion: ${title}`}
+    >
+      <View style={styles.suggestionIcon}>
+        <HabitIcon title={title} color={color} size={22} />
+      </View>
+      <Txt kind="body" numberOfLines={1}>
+        {title}
+      </Txt>
+    </Pressable>
+  );
 }
 
 export default function HabitAddScreen() {
@@ -53,7 +73,7 @@ export default function HabitAddScreen() {
     <Screen>
       <Stack.Screen
         options={{
-          headerRight: () => <IconButton icon="checkmark" label="Save habit" disabled={!canSave} onPress={save} />,
+          headerRight: () => <IconButton icon="check" label="Save habit" disabled={!canSave} onPress={save} />,
         }}
       />
       <ScrollView
@@ -65,13 +85,15 @@ export default function HabitAddScreen() {
             final shape as you type. */}
         <Section header="Name">
           <View style={styles.nameRow}>
-            <HabitIcon title={title || "new"} color={color} size={SP.xxl} />
+            <View style={styles.suggestionIcon}>
+              <HabitIcon title={title || "new"} color={color} size={22} />
+            </View>
             <TextInput
               value={title}
               onChangeText={setTitle}
               placeholder="Name your habit"
               placeholderTextColor={C.labelTertiary}
-              selectionColor={C.accent}
+              selectionColor={C.label}
               style={[TYPE.body, styles.input]}
               autoFocus
               returnKeyType="done"
@@ -86,15 +108,7 @@ export default function HabitAddScreen() {
         {title.trim().length === 0 && (
           <Section header="Start with one of these">
             {SUGGESTIONS.map((sug) => (
-              <Row
-                key={sug}
-                icon={iconForHabit(sug)}
-                iconColor={color}
-                title={sug}
-                accessory="none"
-                onPress={() => setTitle(sug)}
-                accessibilityLabel={`Use suggestion: ${sug}`}
-              />
+              <SuggestionRow key={sug} title={sug} color={color} onPress={() => setTitle(sug)} />
             ))}
           </Section>
         )}
@@ -125,7 +139,7 @@ export default function HabitAddScreen() {
 
         <Section
           header="Color"
-          footer="Tap the checkmark up top to save. You can remove a habit later by holding it on the tracker."
+          footer="Your colour on the Progress graph. Tap the checkmark up top to save. You can remove a habit later by holding it on the tracker."
         >
           <View style={styles.colorGrid}>
             {PRESET_COLORS.map((c) => (
@@ -142,7 +156,7 @@ export default function HabitAddScreen() {
                 accessibilityLabel={`Color ${c}`}
                 accessibilityState={{ selected: color === c }}
               >
-                {color === c && <Ionicons name="checkmark" size={16} color={C.onAccent} />}
+                {color === c && <Icon name="check" size={16} color={C.onAccent} />}
               </Pressable>
             ))}
           </View>
@@ -169,6 +183,22 @@ const styles = StyleSheet.create({
     flex: 1,
     color: C.label,
     paddingVertical: 0,
+  },
+  suggestion: {
+    flexDirection: "row",
+    alignItems: "center",
+    gap: SP.md,
+    minHeight: SP.row,
+    paddingHorizontal: SP.lg,
+    paddingVertical: SP.md,
+    backgroundColor: C.fill,
+  },
+  suggestionPressed: {
+    backgroundColor: C.fillHigh,
+  },
+  suggestionIcon: {
+    width: 26,
+    alignItems: "center",
   },
   check: {
     width: SP.xxl,

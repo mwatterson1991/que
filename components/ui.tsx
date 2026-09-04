@@ -4,15 +4,17 @@ import {
   StyleSheet,
   Switch,
   Text,
+  TextInput,
   View,
   type PressableProps,
   type StyleProp,
+  type TextInputProps,
   type TextProps,
   type TextStyle,
   type ViewProps,
   type ViewStyle,
 } from "react-native";
-import { Ionicons } from "@expo/vector-icons";
+import { Feather, Ionicons } from "@expo/vector-icons";
 import { C, R, SP, TYPE, PRESS_OPACITY, type TypeKind } from "@/lib/tokens";
 
 let Haptics: any = null;
@@ -21,15 +23,18 @@ try { Haptics = require("expo-haptics"); } catch {}
 /**
  * ui.tsx — the primitives every screen is built from.
  *
- * They are UIKit shapes, drawn with UIKit's dark values:
+ * They are UIKit shapes, drawn with UIKit's dark values and a white accent:
  *
  *   Screen      black ground
  *   Txt         text in one of Apple's text styles and one label colour
- *   Section     inset grouped list (header, rounded cell group, footer)
- *   Row         a 44pt list cell: icon · title/subtitle · value · accessory
+ *   Icon        a Feather glyph — the app's one icon set (thin line)
+ *   Section     inset grouped list (title3 header, rounded cell group, footer)
+ *   Row         a 56pt list cell: icon · title/subtitle · value · accessory
  *   Toggle      the native Switch, tinted like Apple's
- *   Button      prominent (orange) / gray / plain / destructive
+ *   Button      prominent (white) / gray / plain / destructive — 54pt
  *   IconButton  a tinted glyph with a 44pt hit area (nav bar items)
+ *   Field       a 52pt text field on `fill`, radius 16, 17pt text
+ *   SearchField Field with a search glyph and a clear button
  *   Divider     a separator line
  *   Empty       a centred empty-state message
  *
@@ -78,6 +83,123 @@ export function Txt({
   );
 }
 
+// ─── Icon (Feather — the app's one icon set) ─────────────────────────────────
+
+/** A Feather glyph name. Feather is the app's icon set: thin, consistent line icons. */
+export type IconName = keyof typeof Feather.glyphMap;
+type IoniconName = keyof typeof Ionicons.glyphMap;
+/** Feather names, plus legacy Ionicons names that older screens still pass. Prefer Feather. */
+export type AnyIconName = IconName | IoniconName;
+
+/**
+ * The app's icon. Wraps Feather with the defaults a glyph next to body text
+ * wants: 22pt, label white. Pass `color={C.labelTertiary}` for inactive glyphs.
+ *
+ *   <Icon name="bell" />
+ *   <Icon name="chevron-right" size={20} color={C.labelTertiary} />
+ */
+export function Icon({
+  name,
+  size = 22,
+  color = C.label,
+  style,
+}: {
+  name: IconName;
+  size?: number;
+  color?: string;
+  style?: StyleProp<TextStyle>;
+}) {
+  return <Feather name={name} size={size} color={color} style={style} />;
+}
+
+/**
+ * Ionicons names older screens still pass, mapped to the Feather glyph that
+ * means the same thing, so they render as thin line icons without a change
+ * at the call site. Anything not listed here and not a Feather name falls
+ * back to Ionicons — a filled glyph, which is the cue to migrate it.
+ */
+const LEGACY: Partial<Record<IoniconName, IconName>> = {
+  add: "plus",
+  close: "x",
+  checkmark: "check",
+  "checkmark-circle": "check-circle",
+  "chevron-back": "chevron-left",
+  "chevron-forward": "chevron-right",
+  "chevron-up": "chevron-up",
+  "chevron-down": "chevron-down",
+  "arrow-back": "arrow-left",
+  "arrow-forward": "arrow-right",
+  alarm: "bell",
+  notifications: "bell",
+  "notifications-outline": "bell",
+  person: "user",
+  "person-outline": "user",
+  mail: "mail",
+  "mail-outline": "mail",
+  "phone-portrait": "smartphone",
+  water: "droplet",
+  "musical-notes": "music",
+  book: "book",
+  "stats-chart": "bar-chart-2",
+  "ellipsis-horizontal": "more-horizontal",
+  "ellipsis-horizontal-circle": "more-horizontal",
+  "play-back": "rewind",
+  "play-forward": "fast-forward",
+  play: "play",
+  pause: "pause",
+  trash: "trash-2",
+  "trash-outline": "trash-2",
+  pencil: "edit-3",
+  create: "edit-3",
+  settings: "settings",
+  "settings-outline": "settings",
+  search: "search",
+  moon: "moon",
+  sunny: "sun",
+  "log-out": "log-out",
+  "log-out-outline": "log-out",
+  "information-circle": "info",
+  "help-circle": "help-circle",
+  refresh: "refresh-cw",
+  share: "share",
+  "share-outline": "share",
+  heart: "heart",
+  "heart-outline": "heart",
+  star: "star",
+  "star-outline": "star",
+  "volume-high": "volume-2",
+  "volume-mute": "volume-x",
+  headset: "headphones",
+  cloud: "cloud",
+  "cloud-outline": "cloud",
+  time: "clock",
+  "time-outline": "clock",
+  calendar: "calendar",
+  "calendar-outline": "calendar",
+  flame: "zap",
+  "lock-closed": "lock",
+  "lock-closed-outline": "lock",
+  eye: "eye",
+  "eye-off": "eye-off",
+};
+
+/** Feather when the name is (or maps to) a Feather name; Ionicons only for unmapped legacy names. */
+function Glyph({
+  name,
+  size,
+  color,
+  style,
+}: {
+  name: AnyIconName;
+  size: number;
+  color: string;
+  style?: StyleProp<TextStyle>;
+}) {
+  const feather = name in Feather.glyphMap ? (name as IconName) : LEGACY[name as IoniconName];
+  if (feather) return <Feather name={feather} size={size} color={color} style={style} />;
+  return <Ionicons name={name as IoniconName} size={size} color={color} style={style} />;
+}
+
 // ─── Divider ─────────────────────────────────────────────────────────────────
 
 export function Divider({ inset = 0, style }: { inset?: number; style?: StyleProp<ViewStyle> }) {
@@ -92,6 +214,7 @@ export function Section({
   children,
   style,
 }: {
+  /** Sentence case. Rendered as a title3 semibold heading, not a tiny uppercase footnote. */
   header?: string;
   footer?: string;
   children: ReactNode;
@@ -101,8 +224,8 @@ export function Section({
   return (
     <View style={[styles.section, style]}>
       {header ? (
-        <Txt kind="footnote" tone="secondary" style={styles.sectionHeader}>
-          {header.toUpperCase()}
+        <Txt kind="title3" style={styles.sectionHeader}>
+          {header}
         </Txt>
       ) : null}
       <View style={styles.group}>
@@ -141,7 +264,8 @@ export function Row({
   title: string;
   subtitle?: string;
   value?: string;
-  icon?: keyof typeof Ionicons.glyphMap;
+  /** A Feather name (preferred). Legacy Ionicons names still render. */
+  icon?: AnyIconName;
   iconColor?: string;
   /** chevron (default for tappable rows), none, or a custom node. */
   accessory?: "chevron" | "none" | ReactNode;
@@ -158,7 +282,7 @@ export function Row({
   const content = (
     <>
       {icon && (
-        <Ionicons name={icon} size={22} color={destructive ? C.danger : iconColor} style={styles.rowIcon} />
+        <Glyph name={icon} size={22} color={destructive ? C.danger : iconColor} style={styles.rowIcon} />
       )}
       <View style={styles.rowBody}>
         <Txt
@@ -183,7 +307,7 @@ export function Row({
             </Txt>
           ) : null}
           {showChevron ? (
-            <Ionicons name="chevron-forward" size={18} color={C.labelTertiary} style={styles.chevron} />
+            <Icon name="chevron-right" size={20} color={C.labelTertiary} style={styles.chevron} />
           ) : accessory !== "chevron" && accessory !== "none" ? (
             accessory
           ) : null}
@@ -263,7 +387,8 @@ export function Button({
 }: Omit<PressableProps, "style" | "children"> & {
   title: string;
   tone?: ButtonTone;
-  icon?: keyof typeof Ionicons.glyphMap;
+  /** A Feather name (preferred). Legacy Ionicons names still render. */
+  icon?: AnyIconName;
   style?: StyleProp<ViewStyle>;
   textStyle?: StyleProp<TextStyle>;
   haptic?: boolean;
@@ -290,7 +415,7 @@ export function Button({
       ]}
       {...rest}
     >
-      {icon && <Ionicons name={icon} size={20} color={iconColor} />}
+      {icon && <Glyph name={icon} size={20} color={iconColor} />}
       <Txt kind="headline" tone={labelTone} style={textStyle}>
         {title}
       </Txt>
@@ -303,7 +428,7 @@ export function Button({
 export function IconButton({
   icon,
   label,
-  size = 26,
+  size = 24,
   color = C.accent,
   /** A translucent disc behind the glyph, for placement over artwork. */
   disc = false,
@@ -312,7 +437,8 @@ export function IconButton({
   onPress,
   ...rest
 }: Omit<PressableProps, "style" | "children"> & {
-  icon: keyof typeof Ionicons.glyphMap;
+  /** A Feather name (preferred). Legacy Ionicons names still render. */
+  icon: AnyIconName;
   label: string;
   size?: number;
   color?: string;
@@ -336,8 +462,70 @@ export function IconButton({
       ]}
       {...rest}
     >
-      <Ionicons name={icon} size={size} color={disc ? C.label : color} />
+      <Glyph name={icon} size={size} color={disc ? C.label : color} />
     </Pressable>
+  );
+}
+
+// ─── Field / SearchField ─────────────────────────────────────────────────────
+
+export type FieldProps = Omit<TextInputProps, "style"> & {
+  /** Leading Feather glyph. */
+  icon?: IconName;
+  /** When given, a clear glyph appears while there is text and calls this on press. */
+  onClear?: () => void;
+  /** Container style (the rounded fill). */
+  style?: StyleProp<ViewStyle>;
+  /** The TextInput's own style, for the rare alignment tweak. */
+  inputStyle?: StyleProp<TextStyle>;
+};
+
+/**
+ * A 52pt text field: `fill` ground, radius 16, 17pt body text. Thick and
+ * intentional. Multiline callers should pass `multiline` and a taller
+ * `style={{ height: ... }}`.
+ */
+export function Field({ icon, onClear, style, inputStyle, value, editable, ...rest }: FieldProps) {
+  return (
+    <View style={[styles.field, editable === false && { opacity: 0.5 }, style]}>
+      {icon ? <Icon name={icon} size={20} color={C.labelSecondary} /> : null}
+      <TextInput
+        placeholderTextColor={C.labelTertiary}
+        selectionColor={C.accent}
+        cursorColor={C.accent}
+        keyboardAppearance="dark"
+        value={value}
+        editable={editable}
+        style={[styles.fieldInput, inputStyle]}
+        {...rest}
+      />
+      {onClear && value ? (
+        <Pressable
+          onPress={onClear}
+          hitSlop={8}
+          accessibilityRole="button"
+          accessibilityLabel="Clear text"
+          style={({ pressed }) => pressed && { opacity: PRESS_OPACITY }}
+        >
+          <Icon name="x-circle" size={20} color={C.labelTertiary} />
+        </Pressable>
+      ) : null}
+    </View>
+  );
+}
+
+/** A Field with a search glyph, search keyboard, and a clear button. */
+export function SearchField({ placeholder = "Search", ...rest }: Omit<FieldProps, "icon">) {
+  return (
+    <Field
+      icon="search"
+      placeholder={placeholder}
+      returnKeyType="search"
+      autoCapitalize="none"
+      autoCorrect={false}
+      clearButtonMode="never"
+      {...rest}
+    />
   );
 }
 
@@ -372,11 +560,11 @@ const styles = StyleSheet.create({
 
   section: {
     paddingHorizontal: SP.screen,
-    marginTop: SP.xl,
+    marginTop: SP.xxl,
   },
   sectionHeader: {
-    marginLeft: SP.lg,
-    marginBottom: SP.sm,
+    marginLeft: SP.xs,
+    marginBottom: SP.md,
   },
   sectionFooter: {
     marginHorizontal: SP.lg,
@@ -393,7 +581,7 @@ const styles = StyleSheet.create({
     alignItems: "center",
     minHeight: SP.row,
     paddingHorizontal: SP.lg,
-    paddingVertical: SP.md,
+    paddingVertical: SP.rowY,
     backgroundColor: C.fill,
   },
   rowPressed: {
@@ -401,7 +589,7 @@ const styles = StyleSheet.create({
   },
   rowIcon: {
     marginRight: SP.md,
-    width: 26,
+    width: 28,
     textAlign: "center",
   },
   rowBody: {
@@ -420,7 +608,7 @@ const styles = StyleSheet.create({
     alignItems: "center",
     justifyContent: "center",
     gap: SP.sm,
-    minHeight: 50,
+    minHeight: SP.button,
     paddingHorizontal: SP.xl,
     borderRadius: R.lg,
     alignSelf: "stretch",
@@ -439,6 +627,25 @@ const styles = StyleSheet.create({
   iconBtnDisc: {
     borderRadius: R.pill,
     backgroundColor: C.overlayFill,
+  },
+
+  field: {
+    flexDirection: "row",
+    alignItems: "center",
+    gap: SP.sm,
+    minHeight: SP.field,
+    paddingHorizontal: SP.lg,
+    borderRadius: R.field,
+    backgroundColor: C.fill,
+  },
+  fieldInput: {
+    flex: 1,
+    alignSelf: "stretch",
+    paddingVertical: 0,
+    fontSize: TYPE.body.fontSize,
+    fontWeight: TYPE.body.fontWeight,
+    letterSpacing: TYPE.body.letterSpacing,
+    color: C.label,
   },
 
   empty: {

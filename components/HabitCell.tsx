@@ -1,32 +1,35 @@
 import { Pressable, View, StyleSheet } from "react-native";
-import { Ionicons } from "@expo/vector-icons";
 import Animated, {
   useSharedValue,
   useAnimatedStyle,
   withSequence,
-  withSpring,
+  withTiming,
 } from "react-native-reanimated";
 import { HabitIcon } from "@/components/HabitIcon";
-import { Txt } from "@/components/ui";
+import { Icon, Txt } from "@/components/ui";
 import { C, R, SP } from "@/lib/tokens";
 
 let Haptics: any = null;
 try { Haptics = require("expo-haptics"); } catch {}
 
-// Two springs, not one: the first overshoots fast so the cell "pops" under the
-// thumb, the second settles slower so it lands rather than snaps. Tuned to
-// finish inside ~250ms — long enough to feel, short enough to tap seven in a row.
-const POP = { damping: 12, stiffness: 420, mass: 0.5 };
-const SETTLE = { damping: 15, stiffness: 240, mass: 0.6 };
+// The cell never moves. The only motion is the check control itself dipping
+// under the thumb for 100ms — short enough that the state change, not the
+// animation, is what you notice.
+const DIP_MS = 50;
+
+/** Minimum cell height: a real row you can hit without aiming. */
+const CELL_HEIGHT = 64;
+const CHECK = 28;
+const CHECK_STROKE = 1.5;
 
 /**
- * A Reminders-style list cell on the black ground: the habit's icon in its
- * own colour, title and meta, and a round check control on the right that
- * fills with the accent once the day's quota is met.
+ * One habit: a thin Feather glyph, the title and its meta, and a round check
+ * on the right. Unchecked is a thin white ring; checked is a white disc with
+ * a black tick. Counts between (a 3×-a-day habit at 1) show the number in
+ * the ring.
  */
 export default function HabitCell({
   title,
-  color,
   timesPerDay,
   count,
   streak,
@@ -34,7 +37,6 @@ export default function HabitCell({
   onRemove,
 }: {
   title: string;
-  color: string;
   timesPerDay: number;
   count: number;
   streak: number;
@@ -42,66 +44,64 @@ export default function HabitCell({
   onRemove: () => void;
 }) {
   const scale = useSharedValue(1);
-  const animStyle = useAnimatedStyle(() => ({ transform: [{ scale: scale.value }] }));
+  const checkStyle = useAnimatedStyle(() => ({ transform: [{ scale: scale.value }] }));
 
   const complete = count >= timesPerDay;
 
   const handlePress = () => {
-    scale.value = withSequence(withSpring(1.06, POP), withSpring(1, SETTLE));
-
-    // Soft impact is reserved for actually finishing the habit — the reward.
-    // Every other tap (an increment on a 3x-a-day habit, or undoing) is a
-    // selection tick, so the affirming thump keeps its meaning.
-    const willComplete = !complete && count + 1 >= timesPerDay;
-    if (willComplete) Haptics?.impactAsync?.(Haptics?.ImpactFeedbackStyle?.Soft);
-    else Haptics?.selectionAsync?.();
-
+    // Flip first, feel second, animate last: the parent applies the new
+    // state synchronously, so by the time the haptic lands the tick is there.
     onToggle();
+    Haptics?.impactAsync?.(Haptics.ImpactFeedbackStyle?.Light);
+    scale.value = withSequence(
+      withTiming(0.86, { duration: DIP_MS }),
+      withTiming(1, { duration: DIP_MS })
+    );
   };
 
   const meta = [
     timesPerDay > 1 ? `${count}/${timesPerDay} today` : "",
-    streak > 1 ? `${streak >= 31 ? "31+" : streak}-day streak 🔥` : "",
+    streak > 1 ? `${streak >= 31 ? "31+" : streak}-day streak` : "",
   ]
     .filter(Boolean)
     .join(" · ");
 
   return (
-    <Animated.View style={animStyle}>
-      <Pressable
-        onPress={handlePress}
-        onLongPress={onRemove}
-        delayLongPress={450}
-        style={({ pressed }) => [styles.cell, pressed && styles.cellPressed]}
-        accessibilityRole="checkbox"
-        accessibilityState={{ checked: complete }}
-        accessibilityLabel={`${title}, ${count} of ${timesPerDay} today${streak > 1 ? `, ${streak} day streak` : ""}`}
-        accessibilityHint="Tap to mark complete. Long press to remove."
-      >
-        <HabitIcon title={title} color={color} size={SP.xxxl} />
+    <Pressable
+      onPress={handlePress}
+      onLongPress={onRemove}
+      delayLongPress={450}
+      style={({ pressed }) => [styles.cell, pressed && styles.cellPressed]}
+      accessibilityRole="checkbox"
+      accessibilityState={{ checked: complete }}
+      accessibilityLabel={`${title}, ${count} of ${timesPerDay} today${streak > 1 ? `, ${streak} day streak` : ""}`}
+      accessibilityHint="Tap to mark complete. Long press to remove."
+    >
+      <View style={styles.icon}>
+        <HabitIcon title={title} color={complete ? C.labelSecondary : C.label} />
+      </View>
 
-        <View style={styles.body}>
-          <Txt kind="body" numberOfLines={1} maxFontSizeMultiplier={1.4}>
-            {title}
+      <View style={styles.body}>
+        <Txt kind="body" tone={complete ? "secondary" : "primary"} numberOfLines={1} maxFontSizeMultiplier={1.4}>
+          {title}
+        </Txt>
+        {!!meta && (
+          <Txt kind="footnote" tone="secondary" numberOfLines={1} maxFontSizeMultiplier={1.3}>
+            {meta}
           </Txt>
-          {!!meta && (
-            <Txt kind="footnote" tone="secondary" numberOfLines={1} maxFontSizeMultiplier={1.3}>
-              {meta}
-            </Txt>
-          )}
-        </View>
+        )}
+      </View>
 
-        <View style={[styles.ring, complete ? styles.ringOn : count > 0 ? styles.ringPartial : null]}>
-          {complete ? (
-            <Ionicons name="checkmark" size={18} color={C.onAccent} />
-          ) : count > 0 ? (
-            <Txt kind="caption1" tone="accent">
-              {count}
-            </Txt>
-          ) : null}
-        </View>
-      </Pressable>
-    </Animated.View>
+      <Animated.View style={[styles.check, complete && styles.checkOn, checkStyle]}>
+        {complete ? (
+          <Icon name="check" size={18} color={C.onAccent} />
+        ) : count > 0 ? (
+          <Txt kind="caption1" maxFontSizeMultiplier={1.2}>
+            {count}
+          </Txt>
+        ) : null}
+      </Animated.View>
+    </Pressable>
   );
 }
 
@@ -110,31 +110,33 @@ const styles = StyleSheet.create({
     flexDirection: "row",
     alignItems: "center",
     gap: SP.md,
-    minHeight: SP.row,
-    paddingHorizontal: SP.screen,
+    minHeight: CELL_HEIGHT,
+    paddingHorizontal: SP.lg,
     paddingVertical: SP.md,
-    backgroundColor: C.bg,
+    borderRadius: R.lg,
+    backgroundColor: C.fill,
   },
   cellPressed: {
-    backgroundColor: C.fill,
+    backgroundColor: C.fillHigh,
+  },
+  icon: {
+    width: SP.xxl,
+    alignItems: "center",
   },
   body: {
     flex: 1,
   },
-  ring: {
-    width: SP.xxl,
-    height: SP.xxl,
+  check: {
+    width: CHECK,
+    height: CHECK,
     borderRadius: R.pill,
-    borderWidth: 2,
-    borderColor: C.fillHighest,
+    borderWidth: CHECK_STROKE,
+    borderColor: C.label,
     alignItems: "center",
     justifyContent: "center",
   },
-  ringPartial: {
-    borderColor: C.accent,
-  },
-  ringOn: {
-    backgroundColor: C.accent,
-    borderColor: C.accent,
+  checkOn: {
+    backgroundColor: C.label,
+    borderColor: C.label,
   },
 });

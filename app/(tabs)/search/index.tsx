@@ -2,15 +2,14 @@ import { useState, useEffect, useCallback } from "react";
 import { Stack, useRouter, useLocalSearchParams } from "expo-router";
 import {
   View,
-  TextInput,
   StyleSheet,
   Modal,
   KeyboardAvoidingView,
   Platform,
 } from "react-native";
-import { Ionicons } from "@expo/vector-icons";
-import { Screen, Section, Txt, Button, IconButton } from "@/components/ui";
-import { C, SP, TYPE } from "@/lib/tokens";
+import { Screen, Txt, Button, IconButton, Icon, Field } from "@/components/ui";
+import { C, SP } from "@/lib/tokens";
+import { TAB_BAR_INSET } from "@/lib/nav";
 import { useAuth } from "@/lib/auth";
 import { supabase } from "@/lib/supabase";
 import SoundsBrowser from "@/components/SoundsBrowser";
@@ -86,40 +85,40 @@ function SuggestionModal({
           <Txt kind="headline" style={styles.modalTitle}>
             Suggest a Sound
           </Txt>
-          <IconButton icon="close" label="Close" onPress={onClose} />
+          <IconButton icon="x" label="Close" onPress={onClose} />
         </View>
 
         {success ? (
           <View style={styles.success}>
-            <Ionicons name="checkmark-circle" size={44} color={C.accent} />
+            <Icon name="check-circle" size={44} />
             <Txt kind="headline">Got it. Thanks for the idea.</Txt>
           </View>
         ) : (
           <>
-            <Section header="Your idea" footer={`${text.length}/${MAX_CHARS}`}>
-              <View style={styles.inputCell}>
-                <TextInput
-                  value={text}
-                  onChangeText={(t) => setText(t.slice(0, MAX_CHARS))}
-                  placeholder="e.g. A 5-min session for handling Monday mornings"
-                  placeholderTextColor={C.labelTertiary}
-                  selectionColor={C.accent}
-                  style={styles.input}
-                  multiline
-                  autoFocus
-                  maxLength={MAX_CHARS}
-                  returnKeyType="default"
-                  scrollEnabled={false}
-                />
-              </View>
-            </Section>
-            <Button
-              title="Send"
-              tone="prominent"
-              onPress={handleSubmit}
-              disabled={!canSubmit}
-              style={styles.send}
-            />
+            <View style={styles.form}>
+              <Field
+                value={text}
+                onChangeText={(t) => setText(t.slice(0, MAX_CHARS))}
+                placeholder="e.g. A 5-min session for handling Monday mornings"
+                multiline
+                autoFocus
+                maxLength={MAX_CHARS}
+                returnKeyType="default"
+                scrollEnabled={false}
+                style={styles.inputCell}
+                inputStyle={styles.input}
+              />
+              <Txt kind="footnote" tone="secondary" style={styles.count}>
+                {`${text.length}/${MAX_CHARS}`}
+              </Txt>
+              <Button
+                title="Send"
+                tone="prominent"
+                onPress={handleSubmit}
+                disabled={!canSubmit}
+                style={styles.send}
+              />
+            </View>
           </>
         )}
       </KeyboardAvoidingView>
@@ -154,12 +153,13 @@ export default function SoundsScreen() {
       <Stack.Screen
         options={{
           title: "Sounds",
-          headerRight: () => <IconButton icon="add" label="Suggest a sound" onPress={openSuggest} />,
+          headerRight: () => <IconButton icon="plus" label="Suggest a sound" onPress={openSuggest} />,
         }}
       />
       <SoundsBrowser
         onPressSession={(session) => router.push(`/player?id=${session.id}` as any)}
         footer={<Button title="Suggest a Sound" tone="plain" onPress={openSuggest} />}
+        bottomInset={TAB_BAR_INSET}
       />
       <SuggestionModal visible={modalVisible} onClose={closeModal} userId={user?.id} />
     </Screen>
@@ -181,19 +181,23 @@ const styles = StyleSheet.create({
   modalTitle: {
     flex: 1,
   },
+  form: {
+    paddingHorizontal: SP.screen,
+    paddingTop: SP.xl,
+  },
   inputCell: {
-    backgroundColor: C.fill,
-    paddingHorizontal: SP.lg,
-    paddingVertical: SP.md,
     minHeight: 120,
+    alignItems: "flex-start",
+    paddingVertical: SP.md,
   },
   input: {
-    ...TYPE.body,
-    color: C.label,
     textAlignVertical: "top",
   },
+  count: {
+    marginTop: SP.sm,
+    marginLeft: SP.lg,
+  },
   send: {
-    marginHorizontal: SP.screen,
     marginTop: SP.xl,
   },
   success: {
