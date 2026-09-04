@@ -22,6 +22,7 @@
         "NSMicrophoneUsageDescription": "Morning Que uses your microphone so you can set alarms with your voice.",
         "NSSpeechRecognitionUsageDescription": "Morning Que transcribes what you say to create alarms and mantras.",
         "NSUserNotificationsUsageDescription": "Morning Que uses notifications to fire your alarms at the right time.",
+        "NSAlarmKitUsageDescription": "Morning Que sets real alarms so it can wake you even when your phone is silent or in a Focus.",
         "UIBackgroundModes": [
           "audio",
           "fetch",
@@ -57,7 +58,8 @@
         {
           "color": "#FF9F0A",
           "defaultChannel": "alarms",
-          "enableBackgroundRemoteNotifications": true
+          "enableBackgroundRemoteNotifications": true,
+          "sounds": ["./assets/audio/alarm-chime.wav"]
         }
       ],
       "expo-asset",

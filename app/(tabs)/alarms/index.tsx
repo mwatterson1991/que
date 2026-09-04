@@ -8,7 +8,7 @@ import {
   ScrollView,
 } from "react-native";
 import { TAB_BAR_INSET } from "@/lib/nav";
-import { Stack, useRouter, useFocusEffect } from "expo-router";
+import { useRouter, useFocusEffect } from "expo-router";
 import { useCallback, useEffect, useRef } from "react";
 import AsyncStorage from "@react-native-async-storage/async-storage";
 // The Reanimated Swipeable, not the legacy one: gesture-handler 2.31 ships the
@@ -24,7 +24,7 @@ import Reanimated, {
 import { useAlarms, useSessions } from "@/lib/useSupabase";
 import { rollForward, scheduleAlarm, cancelAlarm, syncAlarms } from "@/lib/alarmScheduler";
 import { artworkFor } from "@/lib/catalog";
-import { Divider, Empty, IconButton, Screen, Toggle, Txt } from "@/components/ui";
+import { Divider, Empty, Screen, Toggle, Txt } from "@/components/ui";
 import { C, R, SP } from "@/lib/tokens";
 
 let Haptics: any = null;
@@ -105,7 +105,6 @@ function DeleteAction({
 // rows are the ones that will fire.
 const ART = 96;
 // Separators start at the text, not the poster — Apple's cell inset.
-const SEPARATOR_INSET = SP.screen + ART + SP.lg;
 
 function AlarmRow({
   item,
@@ -285,17 +284,6 @@ export default function AlarmsScreen() {
 
   return (
     <Screen>
-      <Stack.Screen
-        options={{
-          title: "Alarms",
-          headerLeft: () => (
-            <IconButton icon="moon" label="Goodnight — wind down for sleep" onPress={() => router.push("/goodnight" as any)} />
-          ),
-          headerRight: () => (
-            <IconButton icon="add" label="Add alarm" size={30} onPress={() => router.push("/alarm-config" as any)} />
-          ),
-        }}
-      />
       {loading ? (
         <View style={styles.center}>
           <ActivityIndicator color={C.labelSecondary} />
@@ -310,7 +298,7 @@ export default function AlarmsScreen() {
         >
           {alarms.map((item, i) => (
             <View key={item.id}>
-              {i > 0 && <Divider inset={SEPARATOR_INSET} />}
+              {i > 0 && <Divider />}
               <AlarmRow
                 item={item}
                 session={sessionMap[item.mantra_id]}
@@ -320,7 +308,7 @@ export default function AlarmsScreen() {
               />
             </View>
           ))}
-          <Divider inset={SP.screen} />
+          <Divider />
         </ScrollView>
       )}
     </Screen>

@@ -52,11 +52,11 @@ const MARK = {
 
 const CHECKS: { mark: keyof typeof MARK; title: string; detail: string }[] = [
   { mark: "ok", title: "App open", detail: "Notification banner appears + sound plays" },
-  { mark: "ok", title: "App backgrounded", detail: "Notification fires, tap → opens player" },
-  { mark: "ok", title: "App killed", detail: "Notification fires, tap → opens player" },
+  { mark: "ok", title: "App backgrounded", detail: "Alarm fires; tapping it opens the player" },
+  { mark: "ok", title: "App killed", detail: "Alarm fires; tapping it opens the player" },
   { mark: "ok", title: "Phone locked", detail: "Notification fires on lock screen" },
   { mark: "maybe", title: "DND / Focus mode", detail: "Should break through (Time Sensitive)" },
-  { mark: "no", title: "Silent mode", detail: "Will NOT make sound (needs Critical Alerts)" },
+  { mark: "maybe", title: "Silent mode", detail: "Rings on iOS 26 (native alarm). Muted on older iOS and Android." },
   { mark: "no", title: "Auto-play audio", detail: "Not yet implemented (tap required)" },
 ];
 
@@ -132,7 +132,7 @@ export default function AlarmDebugScreen() {
         {/* Schedule test alarms */}
         <Section
           header="Schedule Test Alarm"
-          footer="Lock your phone after tapping. The alarm fires even if the app is killed. Silent mode will mute the sound (Critical Alerts not yet enabled)."
+          footer="Lock your phone after tapping. The alarm fires even if the app is killed. On iOS 26 it is a real alarm and rings through silent mode; elsewhere it is a burst of five chimes a minute apart."
         >
           <View style={styles.grid}>
             {TEST_ALARMS.map(({ label, ms }) => (

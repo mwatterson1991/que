@@ -27,7 +27,7 @@ export const AMBIENT_SOUNDS: AmbientSoundEntry[] = [
   {
     id: "silence",
     label: "Silence",
-    description: "Voice only — no background sound",
+    description: "Voice only, no background sound",
     icon: "volume-mute-outline",
   },
   {
@@ -63,7 +63,7 @@ export const AMBIENT_SOUNDS: AmbientSoundEntry[] = [
   {
     id: "theta-binaural",
     label: "Theta Binaural",
-    description: "Low binaural hum at 6 Hz — matches the theta brain state",
+    description: "A low binaural hum at 6 Hz, the theta brain state",
     icon: "radio-outline",
   },
 ];

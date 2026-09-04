@@ -142,7 +142,7 @@ export default function AlarmConfigScreen() {
 
     Alert.alert(
       "Alarm set",
-      "Add a habit to track each morning — every one you complete raises your positivity score.",
+      "Add a habit to track each morning. Every one you complete raises your positivity score.",
       [
         { text: "Not now", style: "cancel", onPress: () => router.back() },
         // Pushed, not replaced: backing out of habit-add returns you to the

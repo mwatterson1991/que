@@ -150,12 +150,9 @@ export default function SoundsScreen() {
 
   return (
     <Screen>
-      <Stack.Screen
-        options={{
-          title: "Sounds",
-          headerRight: () => <IconButton icon="plus" label="Suggest a sound" onPress={openSuggest} />,
-        }}
-      />
+      {/* No bar action: the one thing this screen asks you to do is pick a
+          sound. Suggesting one is a quiet link at the foot of the shelves. */}
+      <Stack.Screen options={{ title: "Sounds" }} />
       <SoundsBrowser
         onPressSession={(session) => router.push(`/player?id=${session.id}` as any)}
         footer={<Button title="Suggest a Sound" tone="plain" onPress={openSuggest} />}

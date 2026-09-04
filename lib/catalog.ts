@@ -224,7 +224,9 @@ export function channelFor(session: Pick<Session, "id" | "category"> & { title?:
 const FEATURED: Record<string, string[]> = {
   Naturescapes: ["local-crickets", "local-river", "local-ocean-waves"],
   "Positive Words": ["morning prayer (lord's prayer)", "local-words-stoic", "local-words-grace"],
-  Frequencies: ["local-freq-alpha", "local-theta", "local-freq-delta"],
+  // Theta stays in the catalog for existing alarms but is off the shelf:
+  // its card was indistinguishable from Alpha's.
+  Frequencies: ["local-freq-alpha", "local-freq-delta"],
   // Pruned to four clearly different sessions.
   Hypnotherapy: [
     "quit vaping / nicotine",
@@ -234,6 +236,17 @@ const FEATURED: Record<string, string[]> = {
   ],
   Horoscope: [],
 };
+
+// The database category is the key; this is the name on the shelf.
+// Renaming here costs nothing; renaming the category means migrating rows.
+const DISPLAY_NAMES: Record<string, string> = {
+  Horoscope: "Astrology",
+};
+
+/** What a station is called on screen. */
+export function displayName(channel: string): string {
+  return DISPLAY_NAMES[channel] ?? channel;
+}
 
 export type Rail = {
   channel: string;

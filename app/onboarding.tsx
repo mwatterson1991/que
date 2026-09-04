@@ -145,9 +145,9 @@ function StepPermission({ onGrant, granted }: { onGrant: () => void; granted: bo
       <StepHeading
         eyebrow="STEP 3 OF 4"
         title={"One thing\nbefore you sleep."}
-        subtitle="Que needs permission to wake you. Without it, your alarm is silent — which defeats the point."
+        subtitle="Que needs permission to wake you. Without it, your alarm is silent, which defeats the point."
       />
-      <Section footer="Your alarm fires even when the phone is locked. We only send notifications you schedule — no marketing, no spam.">
+      <Section footer="Your alarm fires even when the phone is locked. We only send the alarms you set. No marketing, no spam.">
         <Row
           icon="notifications"
           title="Allow notifications"
@@ -236,7 +236,7 @@ export default function OnboardingScreen() {
     } else {
       Alert.alert(
         "Permission denied",
-        "You can enable notifications in Settings → Notifications → Que.",
+        "You can enable notifications in Settings, under Notifications, then Morning Que.",
         [{ text: "OK" }]
       );
     }

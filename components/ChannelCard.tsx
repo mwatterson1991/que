@@ -3,7 +3,7 @@ import { View, Pressable, StyleSheet } from "react-native";
 import { Feather } from "@expo/vector-icons";
 import { Txt } from "@/components/ui";
 import { C, R, SP, PRESS_OPACITY } from "@/lib/tokens";
-import { channelArtwork } from "@/lib/catalog";
+import { channelArtwork, displayName } from "@/lib/catalog";
 import { Artwork } from "@/components/SessionCard";
 import {
   CARD_W,
@@ -15,23 +15,23 @@ import {
   tapFeedback,
 } from "@/components/cardLayout";
 
-// The CHANNEL card: the upsell at the END of every shelf. Not a track —
-// a subscription to the whole channel. It never plays anything; tapping
-// it opens the paywall for that channel.
+// The STATION card: the upsell at the END of every shelf. Not a track,
+// a subscription to the whole station. It never plays anything; tapping
+// it opens the paywall for that station.
 //
 // Same glass frame and artwork treatment as a sound card, but the
-// caption is a kicker, the channel's name and one plain promise, so it
+// caption is a kicker, the station's name and one direct promise, so it
 // reads as the shelf's cover rather than one of its tracks.
 
 const PROMISE: Record<string, string> = {
-  Naturescapes: "The full channel — a different real recording every morning.",
-  "Positive Words": "The full channel — a different reading every morning.",
-  Frequencies: "The full channel — every tone, tuned to how you want to wake.",
-  Hypnotherapy: "The full channel — every guided session, narrated by Brian.",
-  Horoscope: "The full channel — a fresh reading for your sign every morning.",
+  Naturescapes: "A new recording every morning from a different place across the world.",
+  "Positive Words": "A different reading every morning.",
+  Frequencies: "Every tone, tuned to how you want to wake.",
+  Hypnotherapy: "Every guided session, narrated by Brian.",
+  Horoscope: "A fresh reading for your sign every morning.",
 };
 
-const FALLBACK_PROMISE = "The full channel — new recordings every month.";
+const FALLBACK_PROMISE = "New recordings every month.";
 
 function ChannelCard({
   channel,
@@ -46,8 +46,9 @@ function ChannelCard({
   const promise = PROMISE[channel] ?? FALLBACK_PROMISE;
   // No recording count next to the promise: "every morning · 5
   // recordings" read as a contradiction. The count is for VoiceOver.
-  const kicker = count === 0 ? "CHANNEL · COMING SOON" : "CHANNEL";
+  const kicker = count === 0 ? "STATION · COMING SOON" : "STATION";
   const meta = count === 0 ? "Coming soon" : count === 1 ? "1 recording" : `${count} recordings`;
+  const name = displayName(channel);
 
   return (
     <Pressable
@@ -57,7 +58,7 @@ function ChannelCard({
       }}
       style={({ pressed }) => [styles.frameWrap, pressed && styles.pressed]}
       accessibilityRole="button"
-      accessibilityLabel={`${channel} channel. ${promise} ${meta}. Opens premium.`}
+      accessibilityLabel={`${name} station. ${promise} ${meta}. Opens premium.`}
     >
       <Glass glassEffectStyle="clear" style={[styles.frame, !GLASS_AVAILABLE && GLASS_FALLBACK]}>
         <View style={styles.tile}>
@@ -68,7 +69,7 @@ function ChannelCard({
               {kicker}
             </Txt>
             <Txt kind="title2" numberOfLines={2} maxFontSizeMultiplier={1.25}>
-              {channel}
+              {name}
             </Txt>
             <Txt kind="footnote" tone="secondary" numberOfLines={3} maxFontSizeMultiplier={1.2}>
               {promise}
