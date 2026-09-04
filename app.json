@@ -23,6 +23,7 @@
         "NSSpeechRecognitionUsageDescription": "Morning Que transcribes what you say to create alarms and mantras.",
         "NSUserNotificationsUsageDescription": "Morning Que uses notifications to fire your alarms at the right time.",
         "NSAlarmKitUsageDescription": "Morning Que sets real alarms so it can wake you even when your phone is silent or in a Focus.",
+        "NSSupportsLiveActivities": true,
         "UIBackgroundModes": [
           "audio",
           "fetch",

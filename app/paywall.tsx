@@ -5,7 +5,7 @@ import { useSafeAreaInsets } from "react-native-safe-area-context";
 import { Screen, Txt, Section, Row, Button, IconButton, Icon } from "@/components/ui";
 import { C, SP } from "@/lib/tokens";
 import { useSessions } from "@/lib/useSupabase";
-import { artworkFor, channelArtwork } from "@/lib/catalog";
+import { artworkFor, channelArtwork, displayName } from "@/lib/catalog";
 import { Artwork } from "@/components/SessionCard";
 import { usePremium, PRICE_MONTHLY, PRICE_YEARLY } from "@/lib/premium";
 
@@ -22,11 +22,11 @@ const BENEFITS = [
 ];
 
 const CHANNEL_LINE: Record<string, string> = {
-  Naturescapes: "The full Naturescapes channel: a different real recording every morning.",
-  "Positive Words": "The full Positive Words channel: a different reading every morning.",
-  Frequencies: "The full Frequencies channel: every tone, tuned to how you want to wake.",
-  Hypnotherapy: "Every guided hypnotherapy session, narrated by Brian.",
-  Horoscope: "A fresh horoscope reading for your sign every morning.",
+  Naturescapes: "A new recording every morning from a different place across the world.",
+  "Positive Words": "A different reading every morning.",
+  Frequencies: "Every tone, tuned to how you want to wake.",
+  Hypnotherapy: "Every guided session, narrated by Brian.",
+  Horoscope: "A fresh reading for your sign every morning.",
 };
 
 const Check = <Icon name="check" size={22} />;
@@ -89,7 +89,7 @@ export default function PaywallScreen() {
               MORNING QUE
             </Txt>
             <Txt kind="editorial" maxFontSizeMultiplier={1.2}>
-              {channel ? `${channel} channel` : "Premium"}
+              {channel ? displayName(channel) : "Premium"}
             </Txt>
             {channelLine ? (
               <Txt kind="subheadline" tone="secondary" maxFontSizeMultiplier={1.3} style={styles.channelLine}>
@@ -149,8 +149,10 @@ const styles = StyleSheet.create({
     paddingTop: SP.xxl,
     backgroundColor: C.scrim,
   },
+  // Right padding keeps the title clear of the close button above it.
   titles: {
-    paddingHorizontal: SP.screen,
+    paddingLeft: SP.screen,
+    paddingRight: SP.screen + SP.hit,
   },
   channelLine: {
     marginTop: SP.sm,

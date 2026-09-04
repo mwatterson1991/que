@@ -1,3 +1,4 @@
+import AsyncStorage from "@react-native-async-storage/async-storage";
 import {
   createAudioPlayer,
   setAudioModeAsync,
@@ -148,16 +149,55 @@ export async function playSession(
     setPlayerStatusCallback(player, statusCallback);
   }
 
-  // Never blast: every session eases in from silence to a comfortable
-  // level. The user raises it past that only by choice (volume rocker).
+  // Never blast: every session eases in from silence to the user's level.
   player.volume = 0;
   player.play();
-  fadePlayerTo(player, COMFORT_VOLUME, 1800);
+  fadePlayerTo(player, getVolume(), FADE_IN_MS);
   return player;
 }
 
-/** Comfortable default listening level — deliberately below full. */
-export const COMFORT_VOLUME = 0.65;
+// ─── Master volume ─────────────────────────────────────────
+// One level for the whole app, set on the player's volume bar and kept
+// between sessions. Every play and resume eases up to it from silence,
+// so tapping a sound is never a jolt. The ambient layer scales with it.
+
+/** Comfortable default listening level, deliberately below full. */
+export const COMFORT_VOLUME = 0.55;
+/** How long a play or resume takes to reach the master level. */
+export const FADE_IN_MS = 2500;
+const VOLUME_KEY = "player_volume_v1";
+
+let masterVolume = COMFORT_VOLUME;
+const volumeListeners = new Set<(v: number) => void>();
+
+/** The current master level, 0..1. */
+export function getVolume(): number {
+  return masterVolume;
+}
+
+/** Read the saved level once at startup. */
+export async function loadVolume(): Promise<number> {
+  try {
+    const raw = await AsyncStorage.getItem(VOLUME_KEY);
+    const v = raw === null ? NaN : Number(raw);
+    if (Number.isFinite(v) && v >= 0 && v <= 1) masterVolume = v;
+  } catch {}
+  return masterVolume;
+}
+
+/** Set the level, apply it to whatever is playing, and remember it. */
+export function setVolume(v: number) {
+  masterVolume = Math.max(0, Math.min(1, v));
+  if (currentPlayer) fadePlayerTo(currentPlayer, masterVolume, 120);
+  for (const fn of volumeListeners) fn(masterVolume);
+  AsyncStorage.setItem(VOLUME_KEY, String(masterVolume)).catch(() => {});
+}
+
+/** Other players (the ambient layer) follow the master level through this. */
+export function onVolumeChange(fn: (v: number) => void): () => void {
+  volumeListeners.add(fn);
+  return () => { volumeListeners.delete(fn); };
+}
 
 const fadeTimers = new WeakMap<AudioPlayer, ReturnType<typeof setInterval>>();
 
@@ -208,11 +248,13 @@ export async function pauseSession() {
   }
 }
 
-/** Resume current playback */
+/** Resume current playback, easing back up rather than snapping on. */
 export async function resumeSession() {
   if (currentPlayer) {
     try {
+      currentPlayer.volume = 0;
       currentPlayer.play();
+      fadePlayerTo(currentPlayer, getVolume(), 1200);
     } catch {}
   }
 }

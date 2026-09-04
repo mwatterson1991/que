@@ -358,6 +358,30 @@ export function Ticker({
             </LinearGradient>
           </Defs>
 
+          {/* Gridlines, the way Stocks rules its chart: faint, behind everything. */}
+          {[0.2, 0.4, 0.6, 0.8].map((f) => (
+            <Line
+              key={`h${f}`}
+              x1={padX}
+              y1={H * f}
+              x2={W - padX}
+              y2={H * f}
+              stroke={C.separator}
+              strokeWidth="1"
+            />
+          ))}
+          {[0.25, 0.5, 0.75].map((f) => (
+            <Line
+              key={`v${f}`}
+              x1={padX + (W - padX * 2) * f}
+              y1={0}
+              x2={padX + (W - padX * 2) * f}
+              y2={H}
+              stroke={C.separator}
+              strokeWidth="1"
+            />
+          ))}
+
           <AnimatedPath animatedProps={fillProps} fill="url(#tickFill)" stroke="none" />
 
           {/* Previous close — zero when you're living near it, otherwise

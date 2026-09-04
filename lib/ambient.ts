@@ -1,3 +1,4 @@
+import { getVolume, onVolumeChange } from "@/lib/audio";
 import { createAudioPlayer, AudioPlayer } from "expo-audio";
 import { releasePlayer, fadePlayerTo } from "./audio";
 
@@ -100,10 +101,15 @@ export async function startAmbient(id: AmbientSoundId): Promise<void> {
   player.loop = true;
   player.volume = 0;
   player.play();
-  fadePlayerTo(player, AMBIENT_VOLUME, 2000);
+  fadePlayerTo(player, AMBIENT_VOLUME * getVolume(), 2000);
 
   ambientPlayer = player;
 }
+
+// The ambient bed follows the master volume set on the player.
+onVolumeChange((v) => {
+  if (ambientPlayer) fadePlayerTo(ambientPlayer, AMBIENT_VOLUME * v, 120);
+});
 
 /** Pause the ambient loop (e.g. when the user pauses the session). */
 export async function pauseAmbient(): Promise<void> {
@@ -115,7 +121,11 @@ export async function pauseAmbient(): Promise<void> {
 /** Resume the ambient loop. */
 export async function resumeAmbient(): Promise<void> {
   if (ambientPlayer) {
-    try { ambientPlayer.play(); } catch {}
+    try {
+      ambientPlayer.volume = 0;
+      ambientPlayer.play();
+      fadePlayerTo(ambientPlayer, AMBIENT_VOLUME * getVolume(), 1200);
+    } catch {}
   }
 }
 
