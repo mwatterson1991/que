@@ -1,0 +1,28 @@
+# Ship to TestFlight on every merge to main.
+#
+# Runs on Expo's servers with the project's own credentials, so no laptop
+# and no token in any chat session is involved. One-time setup: link this
+# GitHub repo to the EAS project (expo.dev → project → GitHub). See
+# SHIPPING.md at the repo root.
+name: Ship to TestFlight
+
+on:
+  push:
+    branches:
+      - main
+
+jobs:
+  build_ios:
+    name: Build iOS
+    type: build
+    params:
+      platform: ios
+      profile: production
+
+  submit_ios:
+    name: Submit to TestFlight
+    needs: [build_ios]
+    type: submit
+    params:
+      build_id: ${{ needs.build_ios.outputs.build_id }}
+      profile: production
