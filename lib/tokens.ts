@@ -153,6 +153,8 @@ export const R = {
   lg: 18,
   /** Large artwork tiles. */
   xl: 20,
+  /** Floating sheets (the player dock). */
+  xxl: 28,
   pill: 999,
 } as const;
 

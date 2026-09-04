@@ -266,7 +266,15 @@ export async function cancelAlarm(alarmId: string): Promise<void> {
 
 // ─── Cancel all alarms ────────────────────────────────────
 export async function cancelAllAlarms(): Promise<void> {
-  await Notifications.cancelAllScheduledNotificationsAsync();
+  // Only the alarm notifications: habit reminders share the same queue.
+  try {
+    const all = await Notifications.getAllScheduledNotificationsAsync();
+    await Promise.all(
+      all
+        .filter((n) => n.content.data?.type === "alarm")
+        .map((n) => Notifications.cancelScheduledNotificationAsync(n.identifier).catch(() => {})),
+    );
+  } catch {}
   if (Kit && hasNativeAlarms()) {
     try {
       const all = await Kit.AlarmKit.getAlarms();

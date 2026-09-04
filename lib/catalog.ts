@@ -280,3 +280,32 @@ export function groupIntoRails(sessions: Session[]): Rail[] {
 export function isHypnotherapy(session: Pick<Session, "id" | "category"> & { title?: string }): boolean {
   return channelFor(session) === "Hypnotherapy";
 }
+
+// ─── Bedtime ───────────────────────────────────────────────
+// Some recordings are for going to sleep, not for waking up. They wear a
+// moon on their card and in the player so nobody sets one as an alarm by
+// mistake.
+const BEDTIME_IDS = new Set(["local-crickets", "local-freq-delta", "local-theta"]);
+const BEDTIME_WORDS = ["sleep", "night", "wind down", "deep rest"];
+
+export function isBedtime(session: Pick<Session, "id" | "title" | "category">): boolean {
+  if (BEDTIME_IDS.has(session.id)) return true;
+  const t = `${session.title} ${session.category}`.toLowerCase();
+  return BEDTIME_WORDS.some((w) => t.includes(w));
+}
+
+// ─── Video ─────────────────────────────────────────────────
+// Slow-motion loops that play behind the glass: one per station card and,
+// where there is one, behind a session in the player. URLs point at
+// Supabase storage (or any https host); an entry missing here means the
+// screen falls back to the still artwork. Michael supplies the clips.
+const VIDEO_BY_CHANNEL: Record<string, string> = {};
+const VIDEO_BY_SESSION: Record<string, string> = {};
+
+export function videoForChannel(channel: string): string | null {
+  return VIDEO_BY_CHANNEL[channel] ?? null;
+}
+
+export function videoForSession(session: Pick<Session, "id">): string | null {
+  return VIDEO_BY_SESSION[session.id] ?? null;
+}

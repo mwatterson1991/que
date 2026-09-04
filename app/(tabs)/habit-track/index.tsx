@@ -1,14 +1,55 @@
 import { useCallback, useRef, useState } from "react";
 import { TAB_BAR_INSET } from "@/lib/nav";
-import { View, FlatList, StyleSheet, ActivityIndicator, Alert } from "react-native";
+import { View, FlatList, Pressable, StyleSheet, ActivityIndicator, Alert } from "react-native";
 import { Stack, useRouter, useFocusEffect } from "expo-router";
+// The Reanimated Swipeable, the same one the alarms list uses: it shares the
+// Reanimated driver with the check control's dip.
+import ReanimatedSwipeable from "react-native-gesture-handler/ReanimatedSwipeable";
+import type { SwipeableMethods } from "react-native-gesture-handler/ReanimatedSwipeable";
+import Reanimated, { useAnimatedStyle, type SharedValue } from "react-native-reanimated";
 import { useHabits, useHabitLogs } from "@/lib/useSupabase";
 import { useAuth } from "@/lib/auth";
-import { Screen, Empty, Button, IconButton, Txt } from "@/components/ui";
+import { clearReminder } from "@/lib/habitReminders";
+import { Screen, Empty, Button, Divider, IconButton, Txt } from "@/components/ui";
 import { C, SP } from "@/lib/tokens";
-import HabitCell from "@/components/HabitCell";
+import HabitCell, { HABIT_SEPARATOR_INSET } from "@/components/HabitCell";
+
+let Haptics: any = null;
+try { Haptics = require("expo-haptics"); } catch {}
 
 const POINTS_PER_LOG = 2;
+
+// Swipe-left delete action.
+// Its own component so the animated style lives in a real render, not
+// inside the renderRightActions callback.
+const DELETE_W = 92;
+
+function DeleteAction({
+  drag,
+  label,
+  onPress,
+}: {
+  drag: SharedValue<number>;
+  label: string;
+  onPress: () => void;
+}) {
+  const style = useAnimatedStyle(() => ({
+    transform: [{ translateX: drag.value + DELETE_W }],
+  }));
+
+  return (
+    <Reanimated.View style={[styles.deleteAction, style]}>
+      <Pressable
+        onPress={onPress}
+        style={styles.deleteHit}
+        accessibilityRole="button"
+        accessibilityLabel={`Delete ${label}`}
+      >
+        <Txt kind="body">Delete</Txt>
+      </Pressable>
+    </Reanimated.View>
+  );
+}
 
 export default function HabitTrackScreen() {
   const router = useRouter();
@@ -53,15 +94,27 @@ export default function HabitTrackScreen() {
     return streak;
   };
 
-  const confirmArchive = (habitId: string, title: string) => {
-    Alert.alert("Remove habit?", `"${title}" and its history will be hidden from tracking.`, [
+  // Swipe reveals Delete; the Alert is the actual commit point, because a
+  // stray swipe should never silently drop a streak.
+  const confirmDelete = (habitId: string, title: string) => {
+    Haptics?.notificationAsync?.(Haptics.NotificationFeedbackType?.Warning);
+    Alert.alert("Delete habit?", `"${title}" and its history will be hidden from tracking.`, [
       { text: "Cancel", style: "cancel" },
-      { text: "Remove", style: "destructive", onPress: async () => { await archive(habitId); refreshHabits(); } },
+      {
+        text: "Delete",
+        style: "destructive",
+        onPress: async () => {
+          // Its reminders live on the phone, so they go with it.
+          await clearReminder(habitId);
+          await archive(habitId);
+          refreshHabits();
+        },
+      },
     ]);
   };
 
-  // The whole cell is the target, so this is what a tap on a habit means:
-  // add one completion, or — once the day's quota is met — undo the last one.
+  // What a tap on the check means: add one completion, or, once the day's
+  // quota is met, undo the last one.
   const toggleHabit = async (habitId: string, timesPerDay: number) => {
     const count = countFor(habitId);
     const adding = count < timesPerDay;
@@ -94,6 +147,7 @@ export default function HabitTrackScreen() {
   };
 
   const addHabit = () => router.push("/habit-add" as any);
+  const editHabit = (habitId: string) => router.push(`/habit-add?id=${habitId}` as any);
   const seeGraph = () => router.push("/profile-page?from=habits" as any);
 
   const header = (
@@ -145,16 +199,36 @@ export default function HabitTrackScreen() {
         contentInsetAdjustmentBehavior="automatic"
         contentContainerStyle={[styles.list, { paddingBottom: TAB_BAR_INSET }]}
         renderItem={({ item }) => (
-          <HabitCell
-            title={item.title}
-            timesPerDay={item.times_per_day}
-            count={countFor(item.id)}
-            streak={streakFor(item.id)}
-            onToggle={() => toggleHabit(item.id, item.times_per_day)}
-            onRemove={() => confirmArchive(item.id, item.title)}
-          />
+          <ReanimatedSwipeable
+            containerStyle={styles.rowWrap}
+            friction={2}
+            rightThreshold={40}
+            overshootRight={false}
+            enableTrackpadTwoFingerGesture
+            renderRightActions={(_progress, drag, methods: SwipeableMethods) => (
+              <DeleteAction
+                drag={drag}
+                label={item.title}
+                onPress={() => {
+                  methods.close();
+                  confirmDelete(item.id, item.title);
+                }}
+              />
+            )}
+          >
+            <HabitCell
+              title={item.title}
+              color={item.color}
+              timesPerDay={item.times_per_day}
+              count={countFor(item.id)}
+              streak={streakFor(item.id)}
+              onToggle={() => toggleHabit(item.id, item.times_per_day)}
+              onEdit={() => editHabit(item.id)}
+            />
+          </ReanimatedSwipeable>
         )}
-        ItemSeparatorComponent={() => <View style={styles.gap} />}
+        ItemSeparatorComponent={() => <Divider inset={HABIT_SEPARATOR_INSET} />}
+        ListFooterComponentStyle={habits.length > 0 ? styles.footerWrap : undefined}
         ListEmptyComponent={
           <View style={styles.empty}>
             <Empty title="No habits yet" body="Add your first one. One small thing you want to do every morning." />
@@ -196,24 +270,41 @@ const styles = StyleSheet.create({
     paddingBottom: SP.xl,
   },
   list: {
-    paddingHorizontal: SP.screen,
-    paddingTop: SP.sm,
     paddingBottom: SP.xxxl,
   },
-  gap: {
-    height: SP.sm,
+  rowWrap: {
+    backgroundColor: C.bg,
   },
   empty: {
     paddingTop: SP.xxxl,
+    paddingHorizontal: SP.screen,
     gap: SP.xl,
   },
+  // The last row's separator, then the score and the graph button.
+  footerWrap: {
+    borderTopWidth: StyleSheet.hairlineWidth,
+    borderColor: C.separator,
+  },
   footer: {
-    marginTop: SP.xxl,
+    paddingHorizontal: SP.screen,
     gap: SP.md,
   },
   // Points earned are good news, so they are green, like the switch.
   points: {
     textAlign: "center",
+    marginTop: SP.lg,
     color: C.switchOn,
+  },
+
+  // Swipe-to-delete
+  deleteAction: {
+    width: DELETE_W,
+    justifyContent: "center",
+  },
+  deleteHit: {
+    flex: 1,
+    backgroundColor: C.danger,
+    alignItems: "center",
+    justifyContent: "center",
   },
 });

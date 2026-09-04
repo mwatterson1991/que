@@ -2,9 +2,10 @@ import { memo, useId } from "react";
 import { View, Image, Pressable, StyleSheet, type StyleProp, type ViewStyle } from "react-native";
 import { Feather } from "@expo/vector-icons";
 import { Svg, Defs, LinearGradient, Stop, Rect } from "react-native-svg";
+import { VideoView, type VideoPlayer } from "expo-video";
 import { Txt } from "@/components/ui";
 import { C, R, SP, PRESS_OPACITY } from "@/lib/tokens";
-import { artworkFor, displayTitle, displayDescription, hasAudio } from "@/lib/catalog";
+import { artworkFor, displayTitle, displayDescription, hasAudio, isBedtime } from "@/lib/catalog";
 import {
   CARD_W,
   CARD_H,
@@ -25,7 +26,9 @@ import type { Session } from "@/lib/types";
 // veil of the ground colour, so highlights sit at the same level on
 // every card) and a bottom scrim (ground colour fading up from the
 // foot, so the caption always lands on the same dark). Cards, channel
-// cards and the player all draw through this, and nothing else.
+// cards and the player all draw through this, and nothing else. Hand
+// it a `player` and a looping video takes the photograph's place under
+// the same two layers.
 
 const TONE_OPACITY = 0.16;
 const SCRIM_TOP = 0.42; // scrim starts this far down the tile
@@ -33,10 +36,13 @@ const SCRIM_PEAK = 0.9; // and reaches this opacity at the foot
 
 export function Artwork({
   uri,
+  player,
   style,
   accessibilityLabel,
 }: {
   uri: string;
+  /** A muted, looping expo-video player. When given, it replaces the still. */
+  player?: VideoPlayer | null;
   style?: StyleProp<ViewStyle>;
   accessibilityLabel?: string;
 }) {
@@ -44,12 +50,22 @@ export function Artwork({
   const id = `scrim${useId().replace(/[^a-zA-Z0-9]/g, "")}`;
   return (
     <View style={[StyleSheet.absoluteFill, style]} pointerEvents="none">
-      <Image
-        source={{ uri }}
-        style={StyleSheet.absoluteFill}
-        resizeMode="cover"
-        accessibilityLabel={accessibilityLabel}
-      />
+      {player ? (
+        <VideoView
+          player={player}
+          style={StyleSheet.absoluteFill}
+          contentFit="cover"
+          nativeControls={false}
+          accessibilityLabel={accessibilityLabel}
+        />
+      ) : (
+        <Image
+          source={{ uri }}
+          style={StyleSheet.absoluteFill}
+          resizeMode="cover"
+          accessibilityLabel={accessibilityLabel}
+        />
+      )}
       <View style={styles.tone} />
       <Svg width="100%" height="100%" style={StyleSheet.absoluteFill}>
         <Defs>
@@ -66,10 +82,12 @@ export function Artwork({
 }
 
 // ─── The SOUND card ────────────────────────────────────────
-// One recording as an artwork tile inside a Liquid Glass frame. The
-// picture fills the tile, the name and one line about what you will
-// hear sit on the scrim, and nothing else is drawn — except a white
-// tick when it is the chosen alarm sound.
+// One recording as a full-bleed artwork tile inside a hairline of
+// Liquid Glass. The picture runs to the edge, the name and one line
+// about what you will hear sit on the scrim, and nothing else is
+// drawn, except a white tick when it is the chosen alarm sound, a lock
+// when it is premium, and a moon (top left) when it is a bedtime
+// recording rather than a wake-up one.
 
 function formatDuration(sec: number) {
   const min = Math.max(1, Math.round(sec / 60));
@@ -95,6 +113,7 @@ function SessionCard({
   const title = displayTitle(session);
   const description = displayDescription(session);
   const playable = hasAudio(session);
+  const bedtime = isBedtime(session);
   const duration = formatDuration(session.duration_sec);
 
   return (
@@ -112,9 +131,9 @@ function SessionCard({
       ]}
       accessibilityRole="button"
       accessibilityState={{ selected: !!selected, disabled: !playable }}
-      accessibilityLabel={`${title}. ${description}. ${duration}${locked ? ", premium" : ""}${
-        playable ? "" : ", coming soon"
-      }${selected ? ", selected" : ""}`}
+      accessibilityLabel={`${title}. ${description}. ${duration}${bedtime ? ", bedtime" : ""}${
+        locked ? ", premium" : ""
+      }${playable ? "" : ", coming soon"}${selected ? ", selected" : ""}`}
     >
       <Glass
         glassEffectStyle="clear"
@@ -123,12 +142,18 @@ function SessionCard({
         <View style={styles.tile}>
           <Artwork uri={artworkFor(session)} />
 
+          {bedtime ? (
+            <View style={[styles.badge, styles.badgeLeft]}>
+              <Feather name="moon" size={14} color={C.label} />
+            </View>
+          ) : null}
+
           {selected ? (
-            <View style={[styles.badge, styles.badgeSelected]}>
+            <View style={[styles.badge, styles.badgeRight, styles.badgeSelected]}>
               <Feather name="check" size={18} color={C.bg} />
             </View>
           ) : locked ? (
-            <View style={styles.badge}>
+            <View style={[styles.badge, styles.badgeRight]}>
               <Feather name="lock" size={14} color={C.label} />
             </View>
           ) : null}
@@ -158,7 +183,7 @@ const styles = StyleSheet.create({
   pressed: {
     opacity: PRESS_OPACITY,
   },
-  // The glass frame: a thin rim of glass around the picture.
+  // The glass frame: a hairline rim of glass around the picture.
   frame: {
     flex: 1,
     borderRadius: R.xl,
@@ -192,16 +217,23 @@ const styles = StyleSheet.create({
     padding: SP.lg,
     gap: 2,
   },
+  // A translucent disc over the artwork. Status (moon) sits top left;
+  // state (tick, lock) sits top right.
   badge: {
     position: "absolute",
     top: SP.md,
-    right: SP.md,
     width: 30,
     height: 30,
     borderRadius: R.pill,
     alignItems: "center",
     justifyContent: "center",
     backgroundColor: C.overlayFill,
+  },
+  badgeLeft: {
+    left: SP.md,
+  },
+  badgeRight: {
+    right: SP.md,
   },
   badgeSelected: {
     backgroundColor: C.label,

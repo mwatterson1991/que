@@ -7,6 +7,7 @@ import { useAlarms, useSessions, useHabits } from "@/lib/useSupabase";
 import { rollForward, scheduleAlarm, cancelAlarm } from "@/lib/alarmScheduler";
 import { artworkFor } from "@/lib/catalog";
 import { consumePickedSound } from "@/lib/soundPicker";
+import { adoptNewAlarmHaptic, getAlarmHaptic, patternById } from "@/lib/haptics";
 import { WheelColumn, WheelHighlight, HOURS, MINUTES, MERIDIEM } from "@/components/TimeWheel";
 import { Row, Screen, Section, Txt } from "@/components/ui";
 import { C, R, SP, PRESS_OPACITY } from "@/lib/tokens";
@@ -53,8 +54,9 @@ function BarIcon({
   );
 }
 
-// The alarm sheet: the time wheel on top, then one grouped list — Sound,
-// and Delete when editing. Save lives in the bar.
+// The alarm sheet: the chosen sound's poster on top, the time wheel under
+// it, then one plain list: Sound, Haptics, and Delete when editing. Save
+// lives in the bar.
 export default function AlarmConfigScreen() {
   const router = useRouter();
   const { id } = useLocalSearchParams<{ id?: string }>();
@@ -71,6 +73,11 @@ export default function AlarmConfigScreen() {
   const [merIdx, setMerIdx] = useState(0); // AM
   const [sessionId, setSessionId] = useState("");
   const [hydrated, setHydrated] = useState(false);
+  // The haptic pattern lives on the phone, keyed by alarm id ("new" until
+  // the alarm is saved). Read on mount and again on focus, so coming back
+  // from the picker shows the new choice.
+  const hapticKey = existing?.id ?? "new";
+  const [hapticId, setHapticId] = useState<string | null>(null);
 
   // Hydrate form once from the alarm (or defaults for a new one)
   useEffect(() => {
@@ -89,12 +96,16 @@ export default function AlarmConfigScreen() {
     }
   }, [existing, hydrated, id, sessions]);
 
-  // Sound picked from /sounds on the way back
+  // Sound picked from /sounds, and the haptic picked from /haptic-picker,
+  // on the way back
   useFocusEffect(
     useCallback(() => {
       const picked = consumePickedSound();
       if (picked) setSessionId(picked);
-    }, [])
+      let live = true;
+      getAlarmHaptic(hapticKey).then((h) => { if (live) setHapticId(h); });
+      return () => { live = false; };
+    }, [hapticKey])
   );
 
   const session = sessions.find((s) => s.id === sessionId);
@@ -119,13 +130,15 @@ export default function AlarmConfigScreen() {
         await scheduleAlarm({ ...updated, next_fire_at: rollForward(updated) });
       }
     } else {
-      await add({
+      const created = await add({
         label,
         mantra_id: sessionId,
         next_fire_at: fire.toISOString(),
         repeat_days: [],
         enabled: false,
       });
+      // The haptic chosen while this was "new" now belongs to the real id.
+      if (created?.data) await adoptNewAlarmHaptic(created.data.id);
     }
     Haptics?.notificationAsync?.(Haptics.NotificationFeedbackType?.Success);
     await leaveAfterSave();
@@ -181,6 +194,38 @@ export default function AlarmConfigScreen() {
         }}
       />
       <ScrollView contentInsetAdjustmentBehavior="automatic" contentContainerStyle={styles.scroll}>
+        {/* The chosen sound's poster: tap to change. A blank tile while the
+            session loads, so the wheel never jumps. */}
+        <Pressable
+          onPress={() => router.push(`/sounds?current=${sessionId}` as any)}
+          style={({ pressed }) => [styles.artWrap, pressed && { opacity: PRESS_OPACITY }]}
+          accessibilityRole="button"
+          accessibilityState={{ selected: !!session }}
+          accessibilityLabel={
+            session
+              ? `Selected sound: ${session.title}, ${session.category}, ${Math.round(session.duration_sec / 60)} minutes. Change sound`
+              : "Choose sound"
+          }
+        >
+          {session && (
+            <>
+              <Image source={{ uri: artworkFor(session) }} style={StyleSheet.absoluteFill} resizeMode="cover" />
+              <View style={styles.artCaption}>
+                <View style={styles.artCaptionText}>
+                  <Txt kind="headline" numberOfLines={1}>{session.title}</Txt>
+                  <Txt kind="footnote" tone="secondary" numberOfLines={1}>
+                    {session.category} · {Math.round(session.duration_sec / 60)} min
+                  </Txt>
+                </View>
+                {/* The selection tick: a filled accent disc, the one the Sounds browser uses. */}
+                <View style={styles.tick}>
+                  <Feather name="check" size={TICK - SP.sm} color={C.onAccent} />
+                </View>
+              </View>
+            </>
+          )}
+        </Pressable>
+
         {/* Time wheel */}
         <View style={styles.wheelWrap} accessible accessibilityLabel="Alarm time">
           <WheelHighlight width={WHEEL_W} />
@@ -192,7 +237,7 @@ export default function AlarmConfigScreen() {
           </View>
         </View>
 
-        {/* Sound — the row names it, the poster below wears the tick */}
+        {/* Sound and Haptics */}
         <Section>
           <Row
             title="Sound"
@@ -200,30 +245,15 @@ export default function AlarmConfigScreen() {
             onPress={() => router.push(`/sounds?current=${sessionId}` as any)}
             accessibilityLabel={session ? `Sound, ${session.title}. Change sound` : "Choose sound"}
           />
+          <Row
+            title="Haptics"
+            value={hapticId ? patternById(hapticId).name : ""}
+            onPress={() => router.push(`/haptic-picker?alarm=${hapticKey}` as any)}
+            accessibilityLabel={
+              hapticId ? `Haptics, ${patternById(hapticId).name}. Change haptics` : "Choose haptics"
+            }
+          />
         </Section>
-        {session && (
-          <Pressable
-            onPress={() => router.push(`/sounds?current=${sessionId}` as any)}
-            style={({ pressed }) => [styles.artWrap, pressed && { opacity: PRESS_OPACITY }]}
-            accessibilityRole="button"
-            accessibilityState={{ selected: true }}
-            accessibilityLabel={`Selected sound: ${session.title}, ${session.category}, ${Math.round(session.duration_sec / 60)} minutes. Change sound`}
-          >
-            <Image source={{ uri: artworkFor(session) }} style={StyleSheet.absoluteFill} resizeMode="cover" />
-            <View style={styles.artCaption}>
-              <View style={styles.artCaptionText}>
-                <Txt kind="headline" numberOfLines={1}>{session.title}</Txt>
-                <Txt kind="footnote" tone="secondary" numberOfLines={1}>
-                  {session.category} · {Math.round(session.duration_sec / 60)} min
-                </Txt>
-              </View>
-              {/* The selection tick: a filled accent disc, the one the Sounds browser uses. */}
-              <View style={styles.tick}>
-                <Feather name="check" size={TICK - SP.sm} color={C.onAccent} />
-              </View>
-            </View>
-          </Pressable>
-        )}
 
         {!isNew && (
           <Section>
@@ -262,7 +292,7 @@ const styles = StyleSheet.create({
   },
   artWrap: {
     marginHorizontal: SP.screen,
-    marginTop: SP.md,
+    marginTop: SP.lg,
     height: 200,
     borderRadius: R.xl,
     overflow: "hidden",

@@ -25,7 +25,7 @@ import { useAlarms, useSessions } from "@/lib/useSupabase";
 import { rollForward, scheduleAlarm, cancelAlarm, syncAlarms } from "@/lib/alarmScheduler";
 import { artworkFor } from "@/lib/catalog";
 import { Divider, Empty, Screen, Toggle, Txt } from "@/components/ui";
-import { C, R, SP } from "@/lib/tokens";
+import { C, R, SP, TYPE } from "@/lib/tokens";
 
 let Haptics: any = null;
 try { Haptics = require("expo-haptics"); } catch {}
@@ -96,15 +96,16 @@ function DeleteAction({
 // ─── One alarm row ─────────────────────────────────────────
 // The Clock app's row, with the sound's poster in front of it:
 //
-//   [ artwork ]  6:30 AM
-//                Calm & Centered · 7 min                          (o)
+//   [ artwork ]  6:30 AM                                          (o)
+//   [         ]  Calm & Centered · 7 min
 //
-// The poster is the largest thing on the left and sits on the same centre
-// line as the time; the sound name and length sit under the time; the
-// switch stays where Clock puts it. An alarm that is off dims so the bright
-// rows are the ones that will fire.
-const ART = 96;
-// Separators start at the text, not the poster — Apple's cell inset.
+// The poster is exactly as tall as the text block beside it: its top sits
+// on the top of the time digits, its bottom on the bottom of the sound
+// line. The switch is centred on the time line, and the sound line runs
+// the full width beneath it, right to the row's edge. An alarm that is
+// off dims so the bright rows are the ones that will fire.
+const BODY_GAP = SP.xs;
+const ART = TYPE.clock.lineHeight + BODY_GAP + TYPE.subheadline.lineHeight;
 
 function AlarmRow({
   item,
@@ -163,18 +164,20 @@ function AlarmRow({
         )}
         <View style={styles.body}>
           <View style={styles.timeRow}>
-            <Txt kind="clock" tone={tone} numberOfLines={1}>{hour}</Txt>
-            <Txt kind="title3" tone={tone} style={styles.ampm}>{ampm}</Txt>
+            <View style={styles.time}>
+              <Txt kind="clock" tone={tone} numberOfLines={1}>{hour}</Txt>
+              <Txt kind="title3" tone={tone} style={styles.ampm}>{ampm}</Txt>
+            </View>
+            <Toggle
+              value={item.enabled}
+              onValueChange={(val) => onToggle(item.id, val)}
+              accessibilityLabel={`${item.label || "Alarm"} at ${hour} ${ampm}`}
+            />
           </View>
-          <Txt kind="subheadline" tone={item.enabled ? "secondary" : "tertiary"} numberOfLines={1}>
+          <Txt kind="subheadline" tone={item.enabled ? "secondary" : "tertiary"} numberOfLines={2}>
             {soundName} · {duration}
           </Txt>
         </View>
-        <Toggle
-          value={item.enabled}
-          onValueChange={(val) => onToggle(item.id, val)}
-          accessibilityLabel={`${item.label || "Alarm"} at ${hour} ${ampm}`}
-        />
       </Pressable>
     </ReanimatedSwipeable>
   );
@@ -339,7 +342,7 @@ const styles = StyleSheet.create({
   },
   row: {
     flexDirection: "row",
-    alignItems: "center",
+    alignItems: "flex-start",
     gap: SP.lg,
     paddingHorizontal: SP.screen,
     paddingVertical: SP.lg,
@@ -359,9 +362,15 @@ const styles = StyleSheet.create({
   },
   body: {
     flex: 1,
-    justifyContent: "center",
+    gap: BODY_GAP,
   },
+  // The switch sits on the time line, centred on it.
   timeRow: {
+    flexDirection: "row",
+    alignItems: "center",
+  },
+  time: {
+    flex: 1,
     flexDirection: "row",
     alignItems: "baseline",
   },

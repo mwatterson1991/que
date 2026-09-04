@@ -455,14 +455,21 @@ export function IconButton({
       onPress={onPress}
       style={({ pressed }) => [
         styles.iconBtn,
-        disc && styles.iconBtnDisc,
         pressed && { opacity: PRESS_OPACITY },
         disabled && { opacity: 0.35 },
         style,
       ]}
       {...rest}
     >
-      <Glyph name={icon} size={disc ? Math.min(size, 20) : size} color={disc ? C.label : color} />
+      {disc ? (
+        // The disc is its own square view inside the hit area, so it can
+        // never be stretched into an oval by whatever the parent lays out.
+        <View style={styles.disc}>
+          <Glyph name={icon} size={Math.min(size, 22)} color={C.label} />
+        </View>
+      ) : (
+        <Glyph name={icon} size={size} color={color} />
+      )}
     </Pressable>
   );
 }
@@ -628,13 +635,14 @@ const styles = StyleSheet.create({
     alignItems: "center",
     justifyContent: "center",
   },
-  // A smaller disc inside the same 44pt hit area, so it reads as a quiet
-  // control over artwork rather than a button.
-  iconBtnDisc: {
-    width: 34,
-    height: 34,
-    margin: (SP.hit - 34) / 2,
-    borderRadius: R.pill,
+  // A true circle over artwork: fixed square, fixed radius, inside the hit area.
+  disc: {
+    width: 40,
+    height: 40,
+    aspectRatio: 1,
+    borderRadius: 20,
+    alignItems: "center",
+    justifyContent: "center",
     backgroundColor: C.overlayFill,
   },
 

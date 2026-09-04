@@ -1,9 +1,10 @@
 import { memo } from "react";
 import { View, Pressable, StyleSheet } from "react-native";
 import { Feather } from "@expo/vector-icons";
+import { useVideoPlayer } from "expo-video";
 import { Txt } from "@/components/ui";
 import { C, R, SP, PRESS_OPACITY } from "@/lib/tokens";
-import { channelArtwork, displayName } from "@/lib/catalog";
+import { channelArtwork, displayName, videoForChannel } from "@/lib/catalog";
 import { Artwork } from "@/components/SessionCard";
 import {
   CARD_W,
@@ -19,9 +20,11 @@ import {
 // a subscription to the whole station. It never plays anything; tapping
 // it opens the paywall for that station.
 //
-// Same glass frame and artwork treatment as a sound card, but the
-// caption is a kicker, the station's name and one direct promise, so it
-// reads as the shelf's cover rather than one of its tracks.
+// It has to read as a collection, not one more recording, so it is
+// drawn as a deck: two dimmer cards peek out above the glass frame like
+// a pile, the station's name sits large and centred with the kicker
+// above and the promise below, and where the station has a clip, a
+// muted loop plays behind the glass instead of the still.
 
 const PROMISE: Record<string, string> = {
   Naturescapes: "A new recording every morning from a different place across the world.",
@@ -32,6 +35,10 @@ const PROMISE: Record<string, string> = {
 };
 
 const FALLBACK_PROMISE = "New recordings every month.";
+
+/** Each card behind the front one steps up this much and in this much. */
+const DECK_STEP = 6;
+const DECK_INSET = 10;
 
 function ChannelCard({
   channel,
@@ -50,6 +57,14 @@ function ChannelCard({
   const meta = count === 0 ? "Coming soon" : count === 1 ? "1 recording" : `${count} recordings`;
   const name = displayName(channel);
 
+  // A null source makes an idle player, so the hook order never changes.
+  const video = videoForChannel(channel);
+  const player = useVideoPlayer(video, (p) => {
+    p.loop = true;
+    p.muted = true;
+    p.play();
+  });
+
   return (
     <Pressable
       onPress={() => {
@@ -60,18 +75,27 @@ function ChannelCard({
       accessibilityRole="button"
       accessibilityLabel={`${name} station. ${promise} ${meta}. Opens premium.`}
     >
+      <View style={[styles.deckCard, styles.deckBack]} />
+      <View style={[styles.deckCard, styles.deckMid]} />
+
       <Glass glassEffectStyle="clear" style={[styles.frame, !GLASS_AVAILABLE && GLASS_FALLBACK]}>
         <View style={styles.tile}>
-          <Artwork uri={channelArtwork(channel)} />
+          <Artwork uri={channelArtwork(channel)} player={video ? player : null} />
 
           <View style={styles.caption}>
-            <Txt kind="caption1" tone="secondary" maxFontSizeMultiplier={1.2}>
+            <Txt kind="caption1" tone="secondary" style={styles.centred} maxFontSizeMultiplier={1.2}>
               {kicker}
             </Txt>
-            <Txt kind="title2" numberOfLines={2} maxFontSizeMultiplier={1.25}>
+            <Txt kind="title1" numberOfLines={2} style={styles.centred} maxFontSizeMultiplier={1.2}>
               {name}
             </Txt>
-            <Txt kind="footnote" tone="secondary" numberOfLines={3} maxFontSizeMultiplier={1.2}>
+            <Txt
+              kind="footnote"
+              tone="secondary"
+              numberOfLines={3}
+              style={styles.centred}
+              maxFontSizeMultiplier={1.2}
+            >
               {promise}
             </Txt>
             <View style={styles.unlockRow}>
@@ -93,9 +117,30 @@ const styles = StyleSheet.create({
   frameWrap: {
     width: CARD_W,
     height: CARD_H,
+    // Room above the frame for the two cards behind it to peek out.
+    paddingTop: DECK_STEP * 2,
   },
   pressed: {
     opacity: PRESS_OPACITY,
+  },
+  // The pile: the same rounded shape, narrower and dimmer with each
+  // step back, anchored to the foot so only a top edge shows.
+  deckCard: {
+    position: "absolute",
+    bottom: 0,
+    borderRadius: R.xl,
+  },
+  deckBack: {
+    top: 0,
+    left: DECK_INSET * 2,
+    right: DECK_INSET * 2,
+    backgroundColor: C.fill,
+  },
+  deckMid: {
+    top: DECK_STEP,
+    left: DECK_INSET,
+    right: DECK_INSET,
+    backgroundColor: C.fillHigh,
   },
   frame: {
     flex: 1,
@@ -116,6 +161,10 @@ const styles = StyleSheet.create({
     bottom: 0,
     padding: SP.lg,
     gap: SP.xs,
+    alignItems: "center",
+  },
+  centred: {
+    textAlign: "center",
   },
   unlockRow: {
     flexDirection: "row",
