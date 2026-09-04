@@ -30,7 +30,14 @@ const ARTWORK_BY_ID: Record<string, string> = {
   "local-freq-delta": pex(9336097), // long-exposure dusk water, near still
 
   // Positive Words: a candle, a page in low light, a window.
+  "local-words-kings": pex(8858805), // a lit candle beside an open book
+  "local-words-prodigal": pex(11539621), // an open book and a candle, dark
+
+  // Stoicism: marble in low light.
   "local-words-stoic": pex(28426413), // open book in dim light on dark wood
+  "local-stoic-med-2": pex(24907794), // a bust of Marcus Aurelius, side lit
+  "local-stoic-med-5": pex(16272966), // a marble bust, close, in shadow
+  "local-stoic-enchiridion": pex(36089246), // Roman statues in a dim hall
   "local-words-grace": pex(23110026), // morning light through a sheer curtain
   "local-words-affirm": pex(2889618), // warm morning light across a dark room
 
@@ -59,6 +66,7 @@ const ARTWORK_BY_TITLE: Record<string, string> = {
 const ARTWORK_BY_CATEGORY: Record<string, string> = {
   Naturescapes: pex(18386434), // a band of mist over a lake
   "Positive Words": pex(33473773), // two candles on dark sand
+  Stoicism: pex(19085077), // a marble figure in a spotlight, dark room
   Frequencies: pex(187637), // dark seascape through silhouetted leaves
   Hypnotherapy: pex(13491656), // dark foggy forest
   Horoscope: pex(12863822), // the moon
@@ -125,6 +133,28 @@ const local = (
   created_at: "2026-08-22T00:00:00Z",
 });
 
+// A public-domain reading streamed from the Internet Archive. LibriVox
+// recordings are real people reading in their own voices, released into
+// the public domain; the 64 kbps files are used so a wake-up does not
+// wait on a large download. Bytes and seconds come from the archive's
+// own metadata for each file.
+const stream = (
+  id: string,
+  title: string,
+  description: string,
+  url: string,
+  duration_sec: number,
+  category: string,
+  narrator: string,
+  tier: "free" | "premium" = "free",
+): Session => ({
+  ...local(id, title, description, "", duration_sec, category, narrator, tier),
+  audio_url: url,
+  audio_asset: null,
+});
+
+const IA = (item: string, file: string) => `https://archive.org/download/${item}/${file}`;
+
 export const LOCAL_SESSIONS: Session[] = [
   // Naturescapes — five real field recordings. Three are free; the
   // other two are part of the channel.
@@ -141,9 +171,18 @@ export const LOCAL_SESSIONS: Session[] = [
 
   // Positive Words — the Lord's Prayer is a database session (see
   // FEATURED); these two are bundled. Affirmations are in the channel.
-  local("local-words-stoic", "Marcus Aurelius & Seneca", "Meditations and On the Shortness of Life, read at dawn", "words-stoic", 41, "Positive Words", "Lily"),
+  local("local-words-stoic", "Marcus Aurelius & Seneca", "Meditations and On the Shortness of Life, read at dawn", "words-stoic", 41, "Stoicism", "Lily"),
   local("local-words-grace", "Scripture for the Morning", "Psalms and Paul, read slowly for the day ahead", "words-grace", 37, "Positive Words", "Lily"),
   local("local-words-affirm", "Morning Affirmations", "Kind, powerful words to begin again", "words-affirm", 39, "Positive Words", "Lily", "premium"),
+  stream("local-words-kings", "The Still Small Voice", "1 Kings 19. Elijah in the cave: not in the wind, not in the earthquake, not in the fire. King James Version.", IA("bible_kjv_11_1king_0909_librivox", "1kings_19_kjv_64kb.mp3"), 263, "Positive Words", "Joy Chan"),
+  stream("local-words-prodigal", "The Prodigal Son", "Luke 15 and 16. The lost sheep, the lost coin, and the son who came home. King James Version.", IA("bible_kjv_nt_03_luke_0812_librivox", "luke_15-16_kjv_64kb.mp3"), 654, "Positive Words", "LibriVox reader", "premium"),
+
+  // Stoicism. Marcus Aurelius in George Long's translation, read by
+  // LibriVox volunteers. Book Two and Book Five both open with the
+  // morning, which is why they lead the shelf.
+  stream("local-stoic-med-2", "Meditations, Book Two", "Begin the morning by saying to thyself: I shall meet with the busybody, the ungrateful, arrogant, deceitful, envious, unsocial.", IA("meditations_0708_librivox", "meditations_02_marcusaurelius_64kb.mp3"), 830, "Stoicism", "Kevin McAsh"),
+  stream("local-stoic-med-5", "Meditations, Book Five", "In the morning when thou risest unwillingly, let this thought be present: I am rising to the work of a human being.", IA("meditations_0708_librivox", "meditations_05_marcusaurelius_64kb.mp3"), 1957, "Stoicism", "Cicorée"),
+  stream("local-stoic-enchiridion", "The Enchiridion", "Epictetus, complete. Some things are within our power, while others are not.", IA("enchiridion_librivox", "enchiridion-01-epictetus_64kb.mp3"), 3086, "Stoicism", "D. E. Wittkower", "premium"),
 
   // Horoscope — channel only. These stay in the catalog so existing
   // alarms and search still resolve, but the shelf shows one card.
@@ -197,6 +236,7 @@ const HYPNOTHERAPY_CATEGORIES = new Set([
 export const CHANNEL_ORDER = [
   "Naturescapes",
   "Positive Words",
+  "Stoicism",
   "Frequencies",
   "Hypnotherapy",
   "Horoscope",
@@ -223,7 +263,10 @@ export function channelFor(session: Pick<Session, "id" | "category"> & { title?:
 // card rather than shown on the shelf.
 const FEATURED: Record<string, string[]> = {
   Naturescapes: ["local-crickets", "local-river", "local-ocean-waves"],
-  "Positive Words": ["morning prayer (lord's prayer)", "local-words-stoic", "local-words-grace"],
+  "Positive Words": ["morning prayer (lord's prayer)", "local-words-kings", "local-words-grace"],
+  // The synthetic voice reading (local-words-stoic) stays in the catalog
+  // for alarms that already use it, but the shelf leads with real readers.
+  Stoicism: ["local-stoic-med-2", "local-stoic-med-5"],
   // Theta stays in the catalog for existing alarms but is off the shelf:
   // its card was indistinguishable from Alpha's.
   Frequencies: ["local-freq-alpha", "local-freq-delta"],
@@ -299,13 +342,22 @@ export function isBedtime(session: Pick<Session, "id" | "title" | "category">): 
 // where there is one, behind a session in the player. URLs point at
 // Supabase storage (or any https host); an entry missing here means the
 // screen falls back to the still artwork. Michael supplies the clips.
-const VIDEO_BY_CHANNEL: Record<string, string> = {};
-const VIDEO_BY_SESSION: Record<string, string> = {};
+// A source is a URL string or a bundled require(); expo-video takes either.
+export type VideoSource = string | number;
 
-export function videoForChannel(channel: string): string | null {
+const OCEAN = require("../assets/video/ocean.mp4") as number;
+
+const VIDEO_BY_CHANNEL: Record<string, VideoSource> = {
+  Naturescapes: OCEAN,
+};
+const VIDEO_BY_SESSION: Record<string, VideoSource> = {
+  "local-ocean-waves": OCEAN,
+};
+
+export function videoForChannel(channel: string): VideoSource | null {
   return VIDEO_BY_CHANNEL[channel] ?? null;
 }
 
-export function videoForSession(session: Pick<Session, "id">): string | null {
+export function videoForSession(session: Pick<Session, "id">): VideoSource | null {
   return VIDEO_BY_SESSION[session.id] ?? null;
 }

@@ -1,10 +1,10 @@
 import { memo, useId } from "react";
-import { View, Image, Pressable, StyleSheet, type StyleProp, type ViewStyle } from "react-native";
+import { View, Image, StyleSheet, type StyleProp, type ViewStyle } from "react-native";
 import { Feather } from "@expo/vector-icons";
 import { Svg, Defs, LinearGradient, Stop, Rect } from "react-native-svg";
 import { VideoView, type VideoPlayer } from "expo-video";
-import { Txt } from "@/components/ui";
-import { C, R, SP, PRESS_OPACITY } from "@/lib/tokens";
+import { Txt, Press } from "@/components/ui";
+import { C, R, SP } from "@/lib/tokens";
 import { artworkFor, displayTitle, displayDescription, hasAudio, isBedtime } from "@/lib/catalog";
 import {
   CARD_W,
@@ -16,7 +16,6 @@ import {
   Glass,
   GLASS_AVAILABLE,
   GLASS_FALLBACK,
-  tapFeedback,
 } from "@/components/cardLayout";
 import type { Session } from "@/lib/types";
 
@@ -117,18 +116,10 @@ function SessionCard({
   const duration = formatDuration(session.duration_sec);
 
   return (
-    <Pressable
+    <Press
       disabled={!playable}
-      onPress={() => {
-        tapFeedback();
-        onPress(session);
-      }}
-      style={({ pressed }) => [
-        styles.frameWrap,
-        { width, height },
-        wide && styles.frameWide,
-        pressed && styles.pressed,
-      ]}
+      onPress={() => onPress(session)}
+      style={[styles.frameWrap, { width, height }, wide && styles.frameWide]}
       accessibilityRole="button"
       accessibilityState={{ selected: !!selected, disabled: !playable }}
       accessibilityLabel={`${title}. ${description}. ${duration}${bedtime ? ", bedtime" : ""}${
@@ -168,7 +159,7 @@ function SessionCard({
           </View>
         </View>
       </Glass>
-    </Pressable>
+    </Press>
   );
 }
 
@@ -179,9 +170,6 @@ const styles = StyleSheet.create({
   frameWrap: {},
   frameWide: {
     marginBottom: RAIL_GAP,
-  },
-  pressed: {
-    opacity: PRESS_OPACITY,
   },
   // The glass frame: a hairline rim of glass around the picture.
   frame: {

@@ -222,6 +222,10 @@ export default function RootLayout() {
           />
           <Stack.Screen name="paywall" options={{ ...BARE, presentation: "modal", animation: "slide_from_bottom" }} />
           <Stack.Screen name="score-info" options={{ ...BARE, presentation: "modal", animation: "slide_from_bottom" }} />
+          <Stack.Screen
+            name="stat-info"
+            options={{ ...BARE, presentation: "formSheet", sheetAllowedDetents: [0.5], sheetGrabberVisible: true, sheetCornerRadius: 28 }}
+          />
 
           {/* Editors present as sheets */}
           <Stack.Screen name="alarm-config" options={SHEET} />

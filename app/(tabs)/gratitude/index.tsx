@@ -11,6 +11,15 @@ import {
 } from "react-native";
 import { Stack, useFocusEffect, useRouter } from "expo-router";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
+import Animated, {
+  FadeInDown,
+  useAnimatedStyle,
+  useSharedValue,
+  withDelay,
+  withSpring,
+} from "react-native-reanimated";
+import { feel, PRESS_SPRING } from "@/lib/feel";
+import { PTS_PER_GRATITUDE } from "@/lib/positivity";
 import { useGratitudeEntries } from "@/lib/useSupabase";
 import { useAuth } from "@/lib/auth";
 import { HandwritingField } from "@/components/HandwritingField";
@@ -19,6 +28,47 @@ import { C, SP, T, PRESS_OPACITY } from "@/lib/tokens";
 import { TAB_BAR_INSET } from "@/lib/nav";
 
 const TOTAL = 7;
+
+// What a line is worth, shown in green beside it: one point per line and
+// a bonus on the seventh. Mirrors the award in lib/useSupabase.ts.
+const COMPLETION_BONUS = 3;
+const pointsFor = (entryNumber: number) =>
+  PTS_PER_GRATITUDE + (entryNumber === TOTAL ? COMPLETION_BONUS : 0);
+
+// Rows are keyed by day and slot, not by id: a signed-in save lands as an
+// optimistic row whose id is swapped for the real one a moment later, and
+// the row must not remount (and re-animate) when that happens.
+const rowKey = (date: string, entryNumber: number) => `${date}-${entryNumber}`;
+
+// A freshly written line settles into place from just below.
+const ENTER_ROW = FadeInDown.springify()
+  .damping(PRESS_SPRING.damping)
+  .stiffness(PRESS_SPRING.stiffness)
+  .mass(PRESS_SPRING.mass)
+  .withInitialValues({ opacity: 0, transform: [{ translateY: 12 }] });
+
+// The green points beside a line. On a line written just now it pops in a
+// beat after the row has landed; on everything else it is simply there.
+function Points({ entryNumber, pop }: { entryNumber: number; pop: boolean }) {
+  const scale = useSharedValue(pop ? 0.6 : 1);
+  const opacity = useSharedValue(pop ? 0 : 1);
+  useEffect(() => {
+    if (!pop) return;
+    scale.value = withDelay(150, withSpring(1, PRESS_SPRING));
+    opacity.value = withDelay(150, withSpring(1, PRESS_SPRING));
+  }, [pop, scale, opacity]);
+  const style = useAnimatedStyle(() => ({
+    opacity: opacity.value,
+    transform: [{ scale: scale.value }],
+  }));
+  return (
+    <Animated.View style={[styles.pointsWrap, style]}>
+      <Txt kind="footnote" style={styles.entryPoints} maxFontSizeMultiplier={1.2}>
+        +{pointsFor(entryNumber)}
+      </Txt>
+    </Animated.View>
+  );
+}
 
 // This is a page you write on, so it stays still: entries sit directly on
 // the black ground for maximum contrast, with nothing moving behind them.
@@ -65,6 +115,9 @@ export default function GratitudeScreen() {
   // Set when a save is in flight so the scroll follows the new line once
   // the transcript has actually grown, not before.
   const followNext = useRef(false);
+  // Lines written during this visit. Only these animate in; whatever was
+  // already on the page when the screen mounted just sits there.
+  const addedKeys = useRef(new Set<string>());
 
   // ── Keyboard ──
   // KeyboardAvoidingView measures its own frame against its parent while
@@ -167,8 +220,13 @@ export default function GratitudeScreen() {
       clearDraft(n);
       return;
     }
+    const isNew = !savedText(n);
     clearDraft(n);
     followNext.current = true;
+    if (isNew) {
+      addedKeys.current.add(rowKey(today, n));
+      feel.success();
+    }
     await upsert(n, text, today);
     requestAnimationFrame(scrollToEnd);
   };
@@ -247,7 +305,7 @@ export default function GratitudeScreen() {
                     {dateLabel(date).toUpperCase()}
                   </Txt>
                   {dayEntries.map((e, i) => (
-                    <Fragment key={e.id}>
+                    <Fragment key={rowKey(date, e.entry_number)}>
                       {i > 0 && <Divider />}
                       <View style={styles.entry}>
                         <Txt kind="body" tone="tertiary" style={styles.index}>
@@ -256,6 +314,7 @@ export default function GratitudeScreen() {
                         <Txt kind="body" style={styles.flex}>
                           {e.entry_text}
                         </Txt>
+                        <Points entryNumber={e.entry_number} pop={false} />
                       </View>
                     </Fragment>
                   ))}
@@ -272,31 +331,36 @@ export default function GratitudeScreen() {
             {todayEntries
               .slice()
               .sort((a, b) => a.entry_number - b.entry_number)
-              .map((e, i) => (
-                <Fragment key={e.id}>
-                  {i > 0 && <Divider />}
-                  <View style={styles.entry}>
-                    <Txt kind="body" tone="tertiary" style={styles.index}>
-                      {shownNumber(today, e.entry_number)}
-                    </Txt>
-                    {/* Already written, so it renders fully drawn: no animation,
-                        one merged <Path> per entry. */}
-                    <HandwritingField
-                      value={getValue(e.entry_number)}
-                      onChangeText={(t) =>
-                        setDrafts((d) => ({ ...d, [e.entry_number]: t }))
-                      }
-                      onBlur={() => commit(e.entry_number)}
-                      onSubmitEditing={() => commit(e.entry_number)}
-                      strokeWidth={1.7}
-                      returnKeyType="done"
-                      submitBehavior="blurAndSubmit"
-                      maxFontSizeMultiplier={1.6}
-                      accessibilityLabel={`Gratitude ${shownNumber(today, e.entry_number)}`}
-                    />
-                  </View>
-                </Fragment>
-              ))}
+              .map((e, i) => {
+                const key = rowKey(today, e.entry_number);
+                const fresh = addedKeys.current.has(key);
+                return (
+                  <Fragment key={key}>
+                    {i > 0 && <Divider />}
+                    <Animated.View entering={fresh ? ENTER_ROW : undefined} style={styles.entry}>
+                      <Txt kind="body" tone="tertiary" style={styles.index}>
+                        {shownNumber(today, e.entry_number)}
+                      </Txt>
+                      {/* Already written, so it renders fully drawn: no animation,
+                          one merged <Path> per entry. */}
+                      <HandwritingField
+                        value={getValue(e.entry_number)}
+                        onChangeText={(t) =>
+                          setDrafts((d) => ({ ...d, [e.entry_number]: t }))
+                        }
+                        onBlur={() => commit(e.entry_number)}
+                        onSubmitEditing={() => commit(e.entry_number)}
+                        strokeWidth={1.7}
+                        returnKeyType="done"
+                        submitBehavior="blurAndSubmit"
+                        maxFontSizeMultiplier={1.6}
+                        accessibilityLabel={`Gratitude ${shownNumber(today, e.entry_number)}`}
+                      />
+                      <Points entryNumber={e.entry_number} pop={fresh} />
+                    </Animated.View>
+                  </Fragment>
+                );
+              })}
 
             {/* ── Reward loop: points in green, the graph is a link ── */}
             {savedCount > 0 && (
@@ -409,6 +473,15 @@ const styles = StyleSheet.create({
   // enough for three digits once the count has compounded for a while.
   index: {
     width: 36,
+  },
+  // Sits on the line's first baseline, like the index on the other side.
+  pointsWrap: {
+    paddingTop: 2,
+    marginLeft: SP.md,
+  },
+  entryPoints: {
+    color: C.switchOn,
+    fontVariant: ["tabular-nums"],
   },
 
   // Composer

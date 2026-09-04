@@ -7,8 +7,7 @@ import { Icon, Txt, type IconName } from "@/components/ui";
 import { C, PRESS_OPACITY, R, SP } from "@/lib/tokens";
 import { TAB_BAR_GAP, TAB_BAR_HEIGHT } from "@/lib/nav";
 
-let Haptics: any = null;
-try { Haptics = require("expo-haptics"); } catch {}
+import { feel } from "@/lib/feel";
 
 /**
  * Five tabs, the way Clock, Music and Fitness are arranged. Each tab is
@@ -96,7 +95,7 @@ function GlassTabBar({ state, descriptors, navigation, insets }: TabBarProps) {
             const onPress = () => {
               const event = navigation.emit({ type: "tabPress", target: route.key, canPreventDefault: true });
               if (!focused && !event.defaultPrevented) {
-                Haptics?.selectionAsync?.();
+                feel.tick();
                 navigation.navigate(route.name, route.params);
               }
             };

@@ -1,9 +1,11 @@
 import { useRef } from "react";
 import { TAB_BAR_INSET } from "@/lib/nav";
-import { View, ScrollView, StyleSheet, Share } from "react-native";
+import { View, ScrollView, StyleSheet, Share, Pressable } from "react-native";
 import { Stack, useRouter, useLocalSearchParams } from "expo-router";
+import Animated, { useAnimatedStyle, useSharedValue, withSpring } from "react-native-reanimated";
 import { Screen, Txt, IconButton } from "@/components/ui";
 import { C, R, SP } from "@/lib/tokens";
+import { feel, PRESS_SCALE, PRESS_SPRING } from "@/lib/feel";
 import { Ticker } from "@/components/Ticker";
 import { TICKER_HISTORY_DAYS } from "@/lib/positivity";
 import { useHabits, useHabitLogs, useProfile, useActivity, useGratitudeEntries } from "@/lib/useSupabase";
@@ -22,16 +24,39 @@ const BACK_TARGET: Record<string, string> = {
 // ─── Stat tiles ──────────────────────────────────────────
 // Three squares in a row under the chart: the number big and light, the
 // label small beneath it. This is the one place a filled tile is allowed.
-function Tile({ value, label }: { value: number; label: string }) {
+// Each one presses down a touch and opens a half sheet that says what the
+// number means.
+type StatKind = "gratitude" | "habits" | "streak";
+
+function Tile({ kind, value, label }: { kind: StatKind; value: number; label: string }) {
+  const router = useRouter();
+  const scale = useSharedValue(1);
+  const pressed = useAnimatedStyle(() => ({ transform: [{ scale: scale.value }] }));
+
+  const open = () => {
+    feel.tap();
+    router.push({ pathname: "/stat-info", params: { kind, value: String(value) } } as any);
+  };
+
   return (
-    <View style={styles.tile} accessible accessibilityLabel={`${label}, ${value}`}>
-      <Txt kind="stat" maxFontSizeMultiplier={1.2} numberOfLines={1} adjustsFontSizeToFit>
-        {value}
-      </Txt>
-      <Txt kind="caption1" tone="secondary">
-        {label}
-      </Txt>
-    </View>
+    <Pressable
+      style={styles.tileHit}
+      onPressIn={() => { scale.value = withSpring(PRESS_SCALE, PRESS_SPRING); }}
+      onPressOut={() => { scale.value = withSpring(1, PRESS_SPRING); }}
+      onPress={open}
+      accessibilityRole="button"
+      accessibilityLabel={`${label}, ${value}`}
+      accessibilityHint="Explains this number"
+    >
+      <Animated.View style={[styles.tile, pressed]}>
+        <Txt kind="stat" maxFontSizeMultiplier={1.2} numberOfLines={1} adjustsFontSizeToFit>
+          {value}
+        </Txt>
+        <Txt kind="caption1" tone="secondary">
+          {label}
+        </Txt>
+      </Animated.View>
+    </Pressable>
   );
 }
 
@@ -129,9 +154,9 @@ export default function ProfileScreen() {
         <ScoreTicker chartRef={chartRef} lifetimeScore={profile?.score ?? 0} onInfo={openInfo} />
 
         <View style={styles.tiles}>
-          <Tile value={entries.length} label="Gratitude" />
-          <Tile value={habits.length} label="Habits" />
-          <Tile value={profile?.day_streak ?? 0} label="Streak" />
+          <Tile kind="gratitude" value={entries.length} label="Gratitude" />
+          <Tile kind="habits" value={habits.length} label="Habits" />
+          <Tile kind="streak" value={profile?.day_streak ?? 0} label="Streak" />
         </View>
       </ScrollView>
     </Screen>
@@ -152,8 +177,10 @@ const styles = StyleSheet.create({
     paddingHorizontal: SP.screen,
     marginTop: SP.xl,
   },
-  tile: {
+  tileHit: {
     flex: 1,
+  },
+  tile: {
     aspectRatio: 1,
     alignItems: "center",
     justifyContent: "center",

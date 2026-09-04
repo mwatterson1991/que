@@ -96,6 +96,8 @@ export const TYPE = {
   editorial: { fontSize: 34, lineHeight: 40, fontWeight: "600", letterSpacing: -0.6 },
   /** Big stat numbers. */
   stat: { fontSize: 44, lineHeight: 50, fontWeight: "300", letterSpacing: -1, ...tabular },
+  /** Alarm-list row time. Clock app: ultralight digits, tight, tabular. */
+  clockRow: { fontSize: 50, lineHeight: 56, fontWeight: "200", letterSpacing: -1.5, ...tabular },
 } as const satisfies Record<string, TextStyle>;
 
 export type TypeKind = keyof typeof TYPE;

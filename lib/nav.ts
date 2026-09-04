@@ -41,14 +41,22 @@ type NativeStackNavigationOptions = Exclude<
  * Music all do), pushed screens use the standard inline title.
  */
 
-// On iOS the bar is translucent system material, the way Music's and
-// Settings' are: content scrolls up underneath it and blurs, so the top
-// of the screen is not a hard black cut. Scroll views under it use
+// The bar behaves like Clock's. At rest the large title sits on the same
+// black as the screen, so there is no band and no cut. Once the list
+// scrolls, the bar collapses to a compact title on system material and
+// the content blurs up under it. Scroll views under it use
 // contentInsetAdjustmentBehavior="automatic" and no manual top padding.
 // Android keeps an opaque bar; its transparent header does not inset.
 const TRANSLUCENT: NativeStackNavigationOptions =
   Platform.OS === "ios"
-    ? { headerTransparent: true, headerBlurEffect: "systemChromeMaterialDark", headerStyle: { backgroundColor: "transparent" } }
+    ? {
+        headerTransparent: true,
+        headerBlurEffect: "systemChromeMaterialDark",
+        headerStyle: { backgroundColor: "transparent" },
+        // The scroll-edge appearance: solid screen black until the content
+        // moves, which is what removes the grey band behind the title.
+        headerLargeStyle: { backgroundColor: C.bg },
+      }
     : { headerTransparent: false, headerStyle: { backgroundColor: C.bg } };
 
 export const STACK: NativeStackNavigationOptions = {
