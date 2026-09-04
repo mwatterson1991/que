@@ -7,11 +7,11 @@ import {
   PanResponder,
   GestureResponderEvent,
   Alert,
-  ScrollView,
+  Image,
 } from "react-native";
 import { useLocalSearchParams, useRouter } from "expo-router";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
-import { Svg, Defs, LinearGradient, Stop, Rect } from "react-native-svg";
+import { Ionicons } from "@expo/vector-icons";
 import Animated, {
   useSharedValue,
   useDerivedValue,
@@ -65,8 +65,6 @@ const DOCK_MARGIN = SP.md;
 const DOCK_PAD = SP.xl;
 const TRACK_WIDTH = SCREEN_W - DOCK_MARGIN * 2 - DOCK_PAD * 2;
 const PARTICLE_COUNT = 72;
-const MANTRA_GAP = 20;
-const TELEPROMPTER_PAD = 400; // static padding so item y positions never shift
 
 function formatTime(secs: number) {
   const m = Math.floor(secs / 60);
@@ -168,96 +166,6 @@ function HypnoticOrb({ playing }: { playing: boolean }) {
   );
 }
 
-// ─── Teleprompter mantra display ─────────────────────────
-// The two edge fades let the lines enter and leave softly: ground
-// colour fading to clear, over the artwork.
-function EdgeFade({ side }: { side: "top" | "bottom" }) {
-  const id = side === "top" ? "fadeTop" : "fadeBottom";
-  return (
-    <View style={side === "top" ? styles.fadeTop : styles.fadeBottom} pointerEvents="none">
-      <Svg width="100%" height="100%">
-        <Defs>
-          <LinearGradient id={id} x1="0" y1="0" x2="0" y2="1">
-            <Stop offset="0%" stopColor={C.bg} stopOpacity={side === "top" ? 0.7 : 0} />
-            <Stop offset="100%" stopColor={C.bg} stopOpacity={side === "top" ? 0 : 0.7} />
-          </LinearGradient>
-        </Defs>
-        <Rect x="0" y="0" width="100%" height="100%" fill={`url(#${id})`} />
-      </Svg>
-    </View>
-  );
-}
-
-function MantraTeleprompter({
-  mantras,
-  activeMantra,
-}: {
-  mantras: string[];
-  activeMantra: number;
-}) {
-  const scrollRef = useRef<ScrollView>(null);
-  // All refs — no state — so callbacks never capture stale values
-  const containerHRef = useRef(0);
-  const itemYRef = useRef<number[]>([]);
-  const itemHRef = useRef<number[]>([]);
-
-  const scrollToIndex = (idx: number, animated: boolean) => {
-    const cH = containerHRef.current;
-    const y = itemYRef.current[idx];
-    const h = itemHRef.current[idx];
-    if (cH === 0 || y === undefined || h === undefined || !scrollRef.current) return;
-    // y includes TELEPROMPTER_PAD offset, so math is straightforward
-    const target = y - cH / 2 + h / 2;
-    scrollRef.current.scrollTo({ y: Math.max(0, target), animated });
-  };
-
-  useEffect(() => {
-    scrollToIndex(activeMantra, true);
-  }, [activeMantra]);
-
-  return (
-    <View
-      style={styles.mantraArea}
-      onLayout={(e) => {
-        containerHRef.current = e.nativeEvent.layout.height;
-        scrollToIndex(activeMantra, false);
-      }}
-    >
-      <ScrollView
-        ref={scrollRef}
-        scrollEnabled={false}
-        showsVerticalScrollIndicator={false}
-        // Static padding so item y values never shift after first layout
-        contentContainerStyle={{ paddingVertical: TELEPROMPTER_PAD }}
-      >
-        {mantras.map((m, i) => (
-          <View
-            key={i}
-            onLayout={(e) => {
-              itemYRef.current[i] = e.nativeEvent.layout.y;
-              itemHRef.current[i] = e.nativeEvent.layout.height;
-              // Scroll to center item 0 as soon as it (and the container) are measured
-              if (i === activeMantra) scrollToIndex(activeMantra, false);
-            }}
-            style={{ marginBottom: MANTRA_GAP }}
-          >
-            <Txt
-              kind="title2"
-              style={[styles.mantraText, { color: i === activeMantra ? C.label : C.labelQuaternary }]}
-              maxFontSizeMultiplier={1.3}
-            >
-              {m}
-            </Txt>
-          </View>
-        ))}
-      </ScrollView>
-
-      <EdgeFade side="top" />
-      <EdgeFade side="bottom" />
-    </View>
-  );
-}
-
 // ─── Transport glyphs ────────────────────────────────────
 // Apple Music's idiom: bare white glyphs, the play/pause one biggest.
 function Transport({
@@ -303,7 +211,6 @@ export default function PlayerScreen() {
   const [playing, setPlaying] = useState(false);
   const [elapsed, setElapsed] = useState(0);
   const [duration, setDuration] = useState(0);
-  const [activeMantra, setActiveMantra] = useState(0);
   const [completed, setCompleted] = useState(false);
   const [scrubbing, setScrubbing] = useState(false);
   const [scrubPos, setScrubPos] = useState(0);
@@ -352,14 +259,6 @@ export default function PlayerScreen() {
       stopAmbient();
     };
   }, [session, isAlarmMode]);
-
-  useEffect(() => {
-    if (!playing || !session?.mantras?.length) return;
-    const t = setInterval(() => {
-      setActiveMantra((a) => (a + 1) % session.mantras.length);
-    }, 8000);
-    return () => clearInterval(t);
-  }, [playing, session?.mantras?.length]);
 
   const loggedRef = useRef(false);
   useEffect(() => {
@@ -442,9 +341,9 @@ export default function PlayerScreen() {
 
   const displayElapsed = scrubbing ? Math.floor(scrubPos * duration) : elapsed;
   const progress = duration > 0 ? displayElapsed / duration : 0;
-  const mantras = session?.mantras ?? [];
-  // Hypnotherapy adds the orb + mantra teleprompter over the artwork;
-  // everything else is the picture alone.
+  // Hypnotherapy adds the orb over the artwork; everything else is the
+  // picture alone. The read-along teleprompter returns when each word can
+  // be lit on its real timing.
   const showOrb = session ? isHypnotherapy(session) : true;
   const title = session ? displayTitle(session) : "Loading…";
 
@@ -471,14 +370,9 @@ export default function PlayerScreen() {
         {setAsAlarm}
       </View>
 
-      {showOrb ? (
-        <>
-          <HypnoticOrb playing={playing} />
-          <MantraTeleprompter mantras={mantras} activeMantra={activeMantra} />
-        </>
-      ) : (
-        <View style={{ flex: 1 }} />
-      )}
+      {/* Hypnotherapy shows the orb alone until the read-along view (each
+          word lit as it is spoken) is built on real word timings. */}
+      <View style={styles.stage}>{showOrb && <HypnoticOrb playing={playing} />}</View>
 
       {/* The dock: one sheet of glass holding name + scrubber + transport */}
       <View style={[styles.dockWrap, { paddingBottom: Math.max(insets.bottom, SP.lg) }]}>
@@ -574,32 +468,12 @@ const styles = StyleSheet.create({
     height: 130,
     alignItems: "center",
     justifyContent: "center",
-    marginTop: SP.xs,
   },
 
-  // Mantras
-  mantraArea: {
+  // The space between the top chrome and the dock
+  stage: {
     flex: 1,
-    overflow: "hidden",
-  },
-  mantraText: {
-    paddingHorizontal: SP.xl,
-  },
-  fadeTop: {
-    position: "absolute",
-    top: 0,
-    left: 0,
-    right: 0,
-    height: 100,
-    zIndex: 1,
-  },
-  fadeBottom: {
-    position: "absolute",
-    bottom: 0,
-    left: 0,
-    right: 0,
-    height: 100,
-    zIndex: 1,
+    justifyContent: "center",
   },
 
   // Dock: a floating sheet of glass, inset from the edges.

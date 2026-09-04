@@ -157,7 +157,7 @@ export default function HabitTrackScreen() {
         ItemSeparatorComponent={() => <View style={styles.gap} />}
         ListEmptyComponent={
           <View style={styles.empty}>
-            <Empty title="No habits yet" body="Add your first one — one small thing you want to do every morning." />
+            <Empty title="No habits yet" body="Add your first one. One small thing you want to do every morning." />
             <Button title="Add a habit" icon="plus" onPress={addHabit} accessibilityLabel="Add habit" />
           </View>
         }
@@ -167,7 +167,7 @@ export default function HabitTrackScreen() {
               {/* The score is information; the graph is an action. They used
                   to share one green link, so they read as the same thing. */}
               {points > 0 && (
-                <Txt kind="subheadline" tone="secondary" style={styles.points}>
+                <Txt kind="headline" style={styles.points}>
                   +{points} points today
                 </Txt>
               )}
@@ -211,7 +211,9 @@ const styles = StyleSheet.create({
     marginTop: SP.xxl,
     gap: SP.md,
   },
+  // Points earned are good news, so they are green, like the switch.
   points: {
     textAlign: "center",
+    color: C.switchOn,
   },
 });

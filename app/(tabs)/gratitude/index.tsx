@@ -4,12 +4,8 @@ import {
   ScrollView,
   Pressable,
   StyleSheet,
-  KeyboardAvoidingView,
-  Platform,
   ActivityIndicator,
-  Keyboard,
 } from "react-native";
-import { useSafeAreaInsets } from "react-native-safe-area-context";
 import { Stack, useFocusEffect, useRouter } from "expo-router";
 import { useGratitudeEntries } from "@/lib/useSupabase";
 import { useAuth } from "@/lib/auth";
@@ -45,7 +41,6 @@ export default function GratitudeScreen() {
   const { entries, loading, refresh, upsert, localDateString } = useGratitudeEntries();
   const { user, isGuest } = useAuth();
   const router = useRouter();
-  const { top: safeTop } = useSafeAreaInsets();
   const today = localDateString();
 
   // Reload whenever screen comes into focus
@@ -55,26 +50,13 @@ export default function GratitudeScreen() {
   const [drafts, setDrafts] = useState<Record<number, string>>({});
 
   const scrollRef = useRef<ScrollView>(null);
-  const didFirstPin = useRef(false);
 
-  // The list grows downward and the composer lives at the bottom, so "correct"
-  // scroll position is always the end. First pin jumps (the screen should open
-  // already at the bottom, not animate there); later ones glide.
-  const pinToBottom = useCallback((animated: boolean) => {
-    scrollRef.current?.scrollToEnd({ animated });
+  // The composer sits at the TOP of the page, under the title, so the
+  // keyboard can never cover it. New entries appear right beneath it, and
+  // the record of past days runs down from there, newest first.
+  const pinToTop = useCallback(() => {
+    scrollRef.current?.scrollTo({ y: 0, animated: true });
   }, []);
-
-  // Keyboard appearing shrinks the ScrollView without changing its content
-  // size, so onContentSizeChange never fires — re-pin explicitly or autoFocus
-  // leaves the newest entries hidden behind the keyboard on first paint.
-  // With the keyboard down the composer would sit under the floating tab
-  // bar, so it pads itself by the bar's inset until the keyboard returns.
-  const [keyboardUp, setKeyboardUp] = useState(false);
-  useEffect(() => {
-    const show = Keyboard.addListener("keyboardDidShow", () => { setKeyboardUp(true); pinToBottom(true); });
-    const hide = Keyboard.addListener("keyboardDidHide", () => setKeyboardUp(false));
-    return () => { show.remove(); hide.remove(); };
-  }, [pinToBottom]);
 
   // Today's saved entries
   const todayEntries = useMemo(
@@ -88,8 +70,7 @@ export default function GratitudeScreen() {
   // The one the composer at the bottom is currently collecting
   const activeNumber = Math.min(savedCount + 1, TOTAL);
 
-  // Past days, OLDEST first — this reads as a transcript, so the most recent
-  // thing sits nearest the composer, the way a chat does.
+  // Past days, NEWEST first, so yesterday sits just below today.
   const historyDates = useMemo(() => {
     const seen = new Set<string>();
     const dates: string[] = [];
@@ -98,7 +79,7 @@ export default function GratitudeScreen() {
       seen.add(e.entry_date);
       dates.push(e.entry_date);
     }
-    return dates.sort((a, b) => a.localeCompare(b));
+    return dates.sort((a, b) => b.localeCompare(a));
   }, [entries, today]);
 
   // The numbers compound. Storage still keeps entry_number 1–7 per day; what
@@ -151,7 +132,7 @@ export default function GratitudeScreen() {
     }
     clearDraft(n);
     await upsert(n, text, today);
-    requestAnimationFrame(() => pinToBottom(true));
+    requestAnimationFrame(pinToTop);
   };
 
   const seeGraph = () => router.push("/profile-page?from=gratitude" as any);
@@ -173,7 +154,7 @@ export default function GratitudeScreen() {
       <Screen style={styles.gate}>
         {header}
         <Txt kind="title2" maxFontSizeMultiplier={1.2}>
-          Today I'm grateful for…
+          Today I'm grateful for
         </Txt>
         <Txt kind="subheadline" tone="secondary" style={styles.gateBody}>
           Write down seven things each morning and watch your positivity
@@ -190,28 +171,126 @@ export default function GratitudeScreen() {
   return (
     <Screen>
       {header}
-      <KeyboardAvoidingView
+      <ScrollView
+        ref={scrollRef}
         style={styles.flex}
-        behavior={Platform.OS === "ios" ? "padding" : undefined}
-        // KeyboardAvoidingView measures its frame relative to its PARENT, but
-        // the keyboard reports window coordinates. Under an opaque stack header
-        // those differ by the bar's height (status area + one 44pt bar), so
-        // that's the offset.
-        keyboardVerticalOffset={safeTop + SP.hit}
+        contentInsetAdjustmentBehavior="automatic"
+        contentContainerStyle={styles.scroll}
+        keyboardShouldPersistTaps="handled"
+        keyboardDismissMode="interactive"
       >
-        <ScrollView
-          ref={scrollRef}
-          style={styles.flex}
-          contentInsetAdjustmentBehavior="automatic"
-          contentContainerStyle={styles.scroll}
-          keyboardShouldPersistTaps="handled"
-          keyboardDismissMode="interactive"
-          onContentSizeChange={() => {
-            pinToBottom(didFirstPin.current);
-            didFirstPin.current = true;
-          }}
-        >
-          {/* ── Past days, oldest at the top ── */}
+        {/* ── Composer: first thing under the title, above the keyboard ── */}
+        {!isComplete && (
+          <View style={styles.composer}>
+            <View style={styles.promptRow}>
+              <Txt kind="title3" style={styles.flex} maxFontSizeMultiplier={1.2}>
+                Today I'm grateful for
+              </Txt>
+              <Txt kind="subheadline" tone="secondary" maxFontSizeMultiplier={1.2}>
+                {savedCount} of {TOTAL} today
+              </Txt>
+            </View>
+            <View style={styles.entry}>
+              <Txt kind="body" tone="tertiary" style={styles.index}>
+                {shownNumber(today, activeNumber)}
+              </Txt>
+              {/* The live line. Each letter you type is drawn stroke by stroke on
+                  a single-stroke script face, so the entry appears to be written
+                  rather than printed. The input underneath is untouched. */}
+              <HandwritingField
+                value={composerText}
+                onChangeText={(t) => setDrafts((d) => ({ ...d, [activeNumber]: t }))}
+                onBlur={() => commit(activeNumber)}
+                onSubmitEditing={() => commit(activeNumber)}
+                placeholder={savedCount === 0 ? "Something small counts" : "And one more"}
+                strokeWidth={1.9}
+                animate
+                // The cursor is already blinking when you land — nothing to tap
+                // before you can write.
+                autoFocus
+                returnKeyType="done"
+                // "submit" fires onSubmitEditing WITHOUT blurring, so Done saves
+                // and the caret is instantly ready for the next one. On the
+                // seventh the composer unmounts anyway. Done is the save; there
+                // is no button.
+                submitBehavior="submit"
+                maxFontSizeMultiplier={1.6}
+                accessibilityLabel={`Gratitude ${shownNumber(today, activeNumber)}, ${activeNumber} of ${TOTAL} today`}
+              />
+            </View>
+          </View>
+        )}
+
+          {/* ── Today, still editable in place ── */}
+          {(savedCount > 0 || historyDates.length > 0) && (
+            <Txt kind="footnote" tone="secondary" style={styles.dayLabel}>
+              TODAY
+            </Txt>
+          )}
+          {todayEntries
+            .slice()
+            .sort((a, b) => a.entry_number - b.entry_number)
+            .map((e, i) => (
+              <Fragment key={e.id}>
+                {i > 0 && <Divider />}
+                <View style={styles.entry}>
+                  <Txt kind="body" tone="tertiary" style={styles.index}>
+                    {shownNumber(today, e.entry_number)}
+                  </Txt>
+                  {/* Already written, so it renders fully drawn: no animation,
+                      one merged <Path> per entry. */}
+                  <HandwritingField
+                    value={getValue(e.entry_number)}
+                    onChangeText={(t) =>
+                      setDrafts((d) => ({ ...d, [e.entry_number]: t }))
+                    }
+                    onBlur={() => commit(e.entry_number)}
+                    onSubmitEditing={() => commit(e.entry_number)}
+                    strokeWidth={1.7}
+                    returnKeyType="done"
+                    submitBehavior="blurAndSubmit"
+                    maxFontSizeMultiplier={1.6}
+                    accessibilityLabel={`Gratitude ${shownNumber(today, e.entry_number)}`}
+                  />
+                </View>
+              </Fragment>
+            ))}
+
+          {/* ── Reward loop: points in green, the graph is a link ── */}
+          {savedCount > 0 && (
+            <View style={styles.reward}>
+              <View style={styles.complete}>
+                {isComplete && <Icon name="check-circle" size={T.title2} />}
+                <Txt kind="headline" style={styles.points}>
+                  {isComplete ? `Day complete, +${TOTAL} today` : `+${savedCount} today`}
+                </Txt>
+              </View>
+              <Button
+                tone="plain"
+                title="See your graph"
+                onPress={seeGraph}
+                accessibilityLabel="See your graph"
+              />
+            </View>
+          )}
+
+          {/* ── Soft account nudge for guests ── */}
+          {isGuest && savedCount > 0 && (
+            <Pressable
+              onPress={() => router.push("/auth")}
+              style={({ pressed }) => [styles.nudge, pressed && { opacity: PRESS_OPACITY }]}
+              accessibilityRole="button"
+              accessibilityLabel="Create a free account to keep your entries safe"
+            >
+              <Txt kind="footnote" tone="secondary">
+                Your entries live on this phone.{" "}
+                <Txt kind="footnote" tone="accent">Create a free account</Txt> to keep
+                them safe.
+              </Txt>
+            </Pressable>
+          )}
+
+          {/* ── Past days, newest first ── */}
           {historyDates.map((date) => {
             const dayEntries = entries
               .filter((e) => e.entry_date === date)
@@ -238,130 +317,7 @@ export default function GratitudeScreen() {
               </View>
             );
           })}
-
-          {/* ── Today, still editable in place ── */}
-          {(savedCount > 0 || historyDates.length > 0) && (
-            <Txt kind="footnote" tone="secondary" style={styles.dayLabel}>
-              TODAY
-            </Txt>
-          )}
-          {todayEntries
-            .slice()
-            .sort((a, b) => a.entry_number - b.entry_number)
-            .map((e, i) => (
-              <Fragment key={e.id}>
-                {i > 0 && <Divider />}
-                <View style={styles.entry}>
-                  <Txt kind="body" tone="tertiary" style={styles.index}>
-                    {shownNumber(today, e.entry_number)}
-                  </Txt>
-                  {/* Already written, so it renders fully drawn — no animation,
-                      one merged <Path> per entry. Today's page stays in your
-                      hand; the days above it are the typed-up record. */}
-                  <HandwritingField
-                    value={getValue(e.entry_number)}
-                    onChangeText={(t) =>
-                      setDrafts((d) => ({ ...d, [e.entry_number]: t }))
-                    }
-                    onBlur={() => commit(e.entry_number)}
-                    onSubmitEditing={() => commit(e.entry_number)}
-                    strokeWidth={1.7}
-                    returnKeyType="done"
-                    submitBehavior="blurAndSubmit"
-                    maxFontSizeMultiplier={1.6}
-                    accessibilityLabel={`Gratitude ${shownNumber(today, e.entry_number)}`}
-                  />
-                </View>
-              </Fragment>
-            ))}
-
-          {/* ── Reward loop: the score is a quiet line, the graph is a button ── */}
-          {savedCount > 0 && (
-            <View style={styles.reward}>
-              {isComplete ? (
-                <View style={styles.complete}>
-                  <Icon name="check-circle" size={T.title2} />
-                  <Txt kind="subheadline" tone="secondary">
-                    Day complete — +{TOTAL} points today
-                  </Txt>
-                </View>
-              ) : (
-                <Txt kind="subheadline" tone="secondary" style={styles.points}>
-                  +{savedCount} points today
-                </Txt>
-              )}
-              <Button
-                tone="gray"
-                title="See your graph"
-                onPress={seeGraph}
-                accessibilityLabel="See your graph"
-              />
-            </View>
-          )}
-
-          {/* ── Soft account nudge for guests ── */}
-          {isGuest && savedCount > 0 && (
-            <Pressable
-              onPress={() => router.push("/auth")}
-              style={({ pressed }) => [styles.nudge, pressed && { opacity: PRESS_OPACITY }]}
-              accessibilityRole="button"
-              accessibilityLabel="Create a free account to keep your entries safe"
-            >
-              <Txt kind="footnote" tone="secondary">
-                Your entries live on this phone.{" "}
-                <Txt kind="footnote">Create a free account</Txt> to keep
-                them safe.
-              </Txt>
-            </Pressable>
-          )}
-        </ScrollView>
-
-        {/* ── Composer: pinned to the bottom, a sibling of the ScrollView so
-            the KeyboardAvoidingView lifts it and the transcript shrinks.
-            There is no Save button: the keyboard's Done key is the save,
-            so nothing can hide behind the keyboard. ── */}
-        {!isComplete && (
-          <View style={[styles.composer, { paddingBottom: keyboardUp ? SP.md : TAB_BAR_INSET }]}>
-            <View style={styles.promptRow}>
-              <Txt kind="title3" style={styles.flex} maxFontSizeMultiplier={1.2}>
-                Today I'm grateful for…
-              </Txt>
-              <Txt kind="subheadline" tone="secondary" maxFontSizeMultiplier={1.2}>
-                {savedCount} of {TOTAL} today
-              </Txt>
-            </View>
-            <View style={styles.entry}>
-              <Txt kind="body" tone="tertiary" style={styles.index}>
-                {shownNumber(today, activeNumber)}
-              </Txt>
-              {/* The live line. Each letter you type is drawn stroke by stroke on
-                  a single-stroke script face, so the entry appears to be written
-                  rather than printed. The input underneath is untouched. */}
-              <HandwritingField
-                value={composerText}
-                onChangeText={(t) => setDrafts((d) => ({ ...d, [activeNumber]: t }))}
-                onBlur={() => commit(activeNumber)}
-                onSubmitEditing={() => commit(activeNumber)}
-                placeholder={
-                  savedCount === 0 ? "Something small counts…" : "And one more…"
-                }
-                strokeWidth={1.9}
-                animate
-                // The cursor is already blinking when you land — nothing to tap
-                // before you can write.
-                autoFocus
-                returnKeyType="done"
-                // "submit" fires onSubmitEditing WITHOUT blurring, so Done saves
-                // and the caret is instantly ready for the next one. On the
-                // seventh the composer unmounts anyway.
-                submitBehavior="submit"
-                maxFontSizeMultiplier={1.6}
-                accessibilityLabel={`Gratitude ${shownNumber(today, activeNumber)}, ${activeNumber} of ${TOTAL} today`}
-              />
-            </View>
-          </View>
-        )}
-      </KeyboardAvoidingView>
+      </ScrollView>
     </Screen>
   );
 }
@@ -376,13 +332,10 @@ const styles = StyleSheet.create({
   // Transcript
   scroll: {
     paddingHorizontal: SP.xl,
+    // Headroom so the first handwritten line's ascenders clear the title.
     paddingTop: SP.xl + SP.md,
-    paddingBottom: SP.md,
-    flexGrow: 1,
-    // Content sits at the BOTTOM of the scroll view when there's little of it,
-    // so an empty day starts right above the composer instead of stranded at
-    // the top with a wall of black beneath it.
-    justifyContent: "flex-end",
+    // Room to scroll the last entry above the keyboard.
+    paddingBottom: 320,
   },
   day: {
     marginBottom: SP.xl,
@@ -405,11 +358,10 @@ const styles = StyleSheet.create({
   // Composer
   composer: {
     gap: SP.md,
-    paddingHorizontal: SP.xl,
-    paddingVertical: SP.md,
-    borderTopWidth: StyleSheet.hairlineWidth,
-    borderTopColor: C.separator,
-    backgroundColor: C.bg,
+    paddingBottom: SP.lg,
+    marginBottom: SP.lg,
+    borderBottomWidth: StyleSheet.hairlineWidth,
+    borderBottomColor: C.separator,
   },
   promptRow: {
     flexDirection: "row",

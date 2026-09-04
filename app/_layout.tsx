@@ -1,5 +1,5 @@
 import { useEffect, useRef, useState } from "react";
-import { Alert, LogBox } from "react-native";
+import { Alert, AppState, LogBox } from "react-native";
 
 // view-shot's native half ships with the next dev build; hide its
 // missing-module warning until then.
@@ -12,6 +12,7 @@ import * as Notifications from "expo-notifications";
 import AsyncStorage from "@react-native-async-storage/async-storage";
 import { AuthProvider, useAuth } from "@/lib/auth";
 import { requestAlarmPermissions, ensureAndroidChannel } from "@/lib/alarmScheduler";
+import { consumeDueAlarm, markLaunched } from "@/lib/alarmLaunch";
 import { initBackgroundAudio } from "@/lib/backgroundAudio";
 import { STACK, BARE, SHEET } from "@/lib/nav";
 import { C } from "@/lib/tokens";
@@ -78,20 +79,36 @@ function NotificationGate() {
 
     // Notification tapped (app was backgrounded or killed)
     responseListener.current = Notifications.addNotificationResponseReceivedListener(
-      (response) => {
+      async (response) => {
         const data = response.notification.request.content.data;
         if (data?.type !== "alarm") return;
         const sessionId = data?.sessionId as string | undefined;
-        if (sessionId) {
-          // Small delay to let the navigator mount after cold start
-          setTimeout(() => router.push(`/player?id=${sessionId}&alarm=1` as any), 300);
-        }
+        const alarmId = data?.alarmId as string | undefined;
+        if (!sessionId) return;
+        // The foreground check below may already have opened it.
+        if (alarmId && !(await markLaunched(alarmId))) return;
+        // Small delay to let the navigator mount after cold start
+        setTimeout(() => router.push(`/player?id=${sessionId}&alarm=1` as any), 300);
       }
     );
+
+    // A native (AlarmKit) alarm rings without the app running. When the
+    // phone is unlocked into Morning Que shortly after one was due, go
+    // straight to that alarm's session. Runs on launch and on every
+    // return to the foreground; each alarm opens at most once a day.
+    const openDueAlarm = async () => {
+      const sessionId = await consumeDueAlarm();
+      if (sessionId) setTimeout(() => router.push(`/player?id=${sessionId}&alarm=1` as any), 300);
+    };
+    openDueAlarm();
+    const appState = AppState.addEventListener("change", (state) => {
+      if (state === "active") openDueAlarm();
+    });
 
     return () => {
       receivedListener.current?.remove();
       responseListener.current?.remove();
+      appState.remove();
     };
   }, []);
 
@@ -188,7 +205,11 @@ export default function RootLayout() {
           <Stack.Screen name="(tabs)" options={BARE} />
 
           {/* Full-screen surfaces */}
-          <Stack.Screen name="player" options={{ ...BARE, animation: "fade" }} />
+          {/* Now Playing rises over the tabs like Music's, and swipes back down. */}
+          <Stack.Screen
+            name="player"
+            options={{ ...BARE, presentation: "fullScreenModal", animation: "slide_from_bottom", gestureEnabled: true }}
+          />
           <Stack.Screen name="goodnight" options={{ ...BARE, animation: "fade" }} />
           <Stack.Screen name="paywall" options={{ ...BARE, presentation: "modal", animation: "slide_from_bottom" }} />
           <Stack.Screen name="score-info" options={{ ...BARE, presentation: "modal", animation: "slide_from_bottom" }} />

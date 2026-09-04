@@ -147,3 +147,49 @@ Critical Alerts entitlement request is the correct path forward.
 - [ ] **Repeat alarms** — daily repeat implemented via re-scheduling after fire. Needs device verification.
 - [ ] **Snooze** — not yet implemented.
 - [ ] **Audio auto-play when notification tapped** — currently navigates to player but does NOT auto-start audio. Add auto-play on `?autoplay=1` param.
+
+---
+
+## Update 2026-09-04: real alarms
+
+The report from the field was "it sends a notification and the notification
+does nothing". Correct: a local notification is one default ding, muted by the
+silent switch, gone in a second. That is not an alarm.
+
+### What changed
+
+1. **AlarmKit on iOS 26.** `lib/alarmScheduler.ts` now schedules a native
+   alarm through `react-native-ios-alarmkit` when the device supports it. It
+   rings on the lock screen with a full-screen alert, plays the app's own
+   chime, breaks through the silent switch and Focus, offers Stop and a
+   9-minute Snooze, and repeats daily on its own. Requires
+   `NSAlarmKitUsageDescription` (added to app.json) and a new native build.
+   The module is a silent no-op below iOS 26 and on Android.
+2. **A real chime.** `assets/audio/alarm-chime.wav`, 28 seconds, a rising
+   three-note bell, bundled via the expo-notifications config plugin so both
+   the native alarm and the notifications can use it (iOS caps notification
+   sounds at 30 s).
+3. **A burst, not a ding.** Where AlarmKit is unavailable, five notifications
+   are scheduled a minute apart, each with the chime and Time Sensitive
+   priority. Cancelling an alarm cancels all five.
+4. **Opening the session.** `lib/alarmLaunch.ts` keeps a note of every armed
+   alarm. On launch and on every return to the foreground, if an alarm was due
+   in the last 15 minutes the app opens that session in alarm mode, once per
+   day. A notification tap does the same and the two paths cannot double up.
+
+### What to test on the next build
+
+| Test | Expected |
+| --- | --- |
+| iOS 26, alarm set, phone locked and on silent | Full-screen alarm with chime at the time; Stop / Snooze |
+| Unlock into the app within 15 min | Session player opens in alarm mode |
+| Older iOS or Android, phone locked | Five chimes a minute apart; tap opens the session |
+| Toggle alarm off | Nothing fires (native alarm and all five notifications cancelled) |
+| Debug screen | Shows native alarm availability and the pending list (one row per alarm) |
+
+### Still open
+
+- Silent mode on iOS < 26 and on Android is still muted. The Critical Alerts
+  entitlement remains the only fix there.
+- Android reliability on some manufacturers (battery optimisation) is
+  untested.

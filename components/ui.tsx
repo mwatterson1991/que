@@ -231,7 +231,7 @@ export function Section({
       <View style={styles.group}>
         {items.map((child, i) => (
           <Fragment key={(child as any).key ?? i}>
-            {i > 0 && <Divider inset={SP.lg} />}
+            {i > 0 && <Divider inset={SP.screen} />}
             {child}
           </Fragment>
         ))}
@@ -462,7 +462,7 @@ export function IconButton({
       ]}
       {...rest}
     >
-      <Glyph name={icon} size={size} color={disc ? C.label : color} />
+      <Glyph name={icon} size={disc ? Math.min(size, 20) : size} color={disc ? C.label : color} />
     </Pressable>
   );
 }
@@ -558,34 +558,36 @@ const styles = StyleSheet.create({
     backgroundColor: C.separator,
   },
 
+  // Plain list style: rows sit straight on the black ground with hairline
+  // separators between them, the way Clock and Settings' top level do.
+  // No grouped boxes.
   section: {
-    paddingHorizontal: SP.screen,
     marginTop: SP.xxl,
   },
   sectionHeader: {
-    marginLeft: SP.xs,
+    marginLeft: SP.screen,
     marginBottom: SP.md,
   },
   sectionFooter: {
-    marginHorizontal: SP.lg,
+    marginHorizontal: SP.screen,
     marginTop: SP.sm,
   },
   group: {
-    backgroundColor: C.fill,
-    borderRadius: R.md,
-    overflow: "hidden",
+    borderTopWidth: StyleSheet.hairlineWidth,
+    borderBottomWidth: StyleSheet.hairlineWidth,
+    borderColor: C.separator,
   },
 
   row: {
     flexDirection: "row",
     alignItems: "center",
     minHeight: SP.row,
-    paddingHorizontal: SP.lg,
+    paddingHorizontal: SP.screen,
     paddingVertical: SP.rowY,
-    backgroundColor: C.fill,
+    backgroundColor: C.bg,
   },
   rowPressed: {
-    backgroundColor: C.fillHigh,
+    backgroundColor: C.fill,
   },
   rowIcon: {
     marginRight: SP.md,
@@ -611,6 +613,8 @@ const styles = StyleSheet.create({
     minHeight: SP.button,
     paddingHorizontal: SP.xl,
     borderRadius: R.lg,
+    // Apple's continuous (squircle) corner, not a plain arc.
+    borderCurve: "continuous",
     alignSelf: "stretch",
   },
   btn_prominent: { backgroundColor: C.accent },
@@ -624,7 +628,12 @@ const styles = StyleSheet.create({
     alignItems: "center",
     justifyContent: "center",
   },
+  // A smaller disc inside the same 44pt hit area, so it reads as a quiet
+  // control over artwork rather than a button.
   iconBtnDisc: {
+    width: 34,
+    height: 34,
+    margin: (SP.hit - 34) / 2,
     borderRadius: R.pill,
     backgroundColor: C.overlayFill,
   },

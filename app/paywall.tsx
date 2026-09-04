@@ -14,8 +14,8 @@ import { usePremium, PRICE_MONTHLY, PRICE_YEARLY } from "@/lib/premium";
 // so the paywall wears that channel's cover and says what the channel is.
 
 const BENEFITS = [
-  "Naturescapes — a different real recording every morning",
-  "Positive Words — prayers, scripture and the Stoics, read aloud",
+  "Naturescapes. A new recording every morning from a different place across the world",
+  "Positive Words. Prayers, scripture and the Stoics, read aloud",
   "Every hypnotherapy session, narrated by Brian",
   "The full frequencies library and daily horoscope readings",
   "New recordings every month",
@@ -138,7 +138,7 @@ export default function PaywallScreen() {
 const styles = StyleSheet.create({
   close: {
     position: "absolute",
-    left: SP.screen,
+    right: SP.screen,
     zIndex: 2,
   },
   scroll: {

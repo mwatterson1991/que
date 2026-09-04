@@ -113,7 +113,7 @@ export default function ProfileScreen() {
     try {
       await Share.share({
         message:
-          "I've been waking up with Morning Que — alarms that ease you awake with nature sound and guided sessions. Fall in love with your mornings: https://morningque.netlify.app",
+          "I've been waking up with Morning Que. Alarms that ease you awake with real nature sound and guided sessions. https://morningque.netlify.app",
       });
     } catch {}
   };

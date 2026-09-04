@@ -132,6 +132,8 @@ export default function TabsLayout() {
       tabBar={(props) => <GlassTabBar {...props} />}
       screenOptions={{
         headerShown: false,
+        // Glyphs only, like Music and Photos.
+        tabBarShowLabel: false,
         tabBarActiveTintColor: C.accent,
         tabBarInactiveTintColor: C.labelTertiary,
         sceneStyle: { backgroundColor: C.bg },
