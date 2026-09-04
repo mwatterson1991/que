@@ -43,6 +43,9 @@ const ARTWORK_BY_ID: Record<string, string> = {
 // Hypnotherapy sessions live in the database, so they are matched by
 // title. Each of the four featured sessions gets a paired image.
 const ARTWORK_BY_TITLE: Record<string, string> = {
+  "calm & centered start": pex(13697290), // fog lifting off a still lake
+  "general morning mindset": pex(1287083), // low sun through mist
+  "high performer daily activation": pex(15764165), // a lone figure on a foggy ridge
   "quit vaping / nicotine": pex(18567789), // someone breathing in a foggy mountain dusk
   "reduce anxiety": pex(36852508), // a hooded figure over a still, foggy lake
   "improve sleep quality": pex(8481534), // dark crumpled sheets, asleep

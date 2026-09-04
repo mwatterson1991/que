@@ -376,7 +376,7 @@ const styles = StyleSheet.create({
   // Transcript
   scroll: {
     paddingHorizontal: SP.xl,
-    paddingTop: SP.lg,
+    paddingTop: SP.xl + SP.md,
     paddingBottom: SP.md,
     flexGrow: 1,
     // Content sits at the BOTTOM of the scroll view when there's little of it,
