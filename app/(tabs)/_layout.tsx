@@ -112,10 +112,8 @@ function GlassTabBar({ state, descriptors, navigation, insets }: TabBarProps) {
                 testID={options.tabBarButtonTestID}
                 style={({ pressed }) => [styles.item, pressed && !focused && { opacity: PRESS_OPACITY }]}
               >
-                <Icon name={ICON[route.name] ?? "circle"} size={22} color={focused ? C.label : C.labelTertiary} />
-                <Txt kind="caption2" tone={focused ? "primary" : "tertiary"} numberOfLines={1}>
-                  {label}
-                </Txt>
+                {/* Glyphs only; the label is for VoiceOver. */}
+                <Icon name={ICON[route.name] ?? "circle"} size={26} color={focused ? C.label : C.labelTertiary} />
               </Pressable>
             );
           })}

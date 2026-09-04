@@ -275,7 +275,15 @@ export default function AlarmsScreen() {
     if (enabled) {
       const next_fire_at = rollForward(alarm);
       const { data: updated } = await update(id, { enabled: true, next_fire_at });
-      await scheduleAlarm(updated ?? { ...alarm, enabled: true, next_fire_at });
+      const armed = await scheduleAlarm(updated ?? { ...alarm, enabled: true, next_fire_at });
+      // Never let a switch look on when nothing is armed behind it.
+      if (!armed) {
+        await update(id, { enabled: false });
+        Alert.alert(
+          "Alarm not armed",
+          "The phone refused to set this alarm. Open Settings, then Alarm Diagnostics, to see why.",
+        );
+      }
     } else {
       await update(id, { enabled: false });
       await cancelAlarm(id);

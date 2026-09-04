@@ -78,7 +78,9 @@ export async function markLaunched(id: string, now = new Date()): Promise<boolea
  * If an alarm was due within the window and has not been launched today,
  * mark it launched and return its session id.
  */
-export async function consumeDueAlarm(now = new Date()): Promise<string | null> {
+export async function consumeDueAlarm(
+  now = new Date(),
+): Promise<{ alarmId: string; sessionId: string } | null> {
   const book = await read();
   const today = localDate(now);
   for (const entry of Object.values(book)) {
@@ -89,7 +91,7 @@ export async function consumeDueAlarm(now = new Date()): Promise<string | null> 
     if (delta >= -WINDOW_AFTER_MS && delta <= WINDOW_BEFORE_MS) {
       entry.launchedOn = today;
       await write(book);
-      return entry.sessionId;
+      return { alarmId: entry.id, sessionId: entry.sessionId };
     }
   }
   return null;

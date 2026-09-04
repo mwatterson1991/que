@@ -99,13 +99,14 @@ export default function SettingsScreen() {
             value={ambientLabel}
             onPress={() => router.push(`/ambient-picker?current=${prefs?.ambient_sound ?? "silence"}` as any)}
           />
+          {/* In every build: when an alarm doesn't fire, this screen says why. */}
+          <Row icon="activity" title="Alarm Diagnostics" onPress={() => router.push("/alarm-debug" as any)} />
         </Section>
 
-        {/* Developer — hidden in release builds */}
+        {/* Developer, hidden in release builds */}
         {__DEV__ && (
           <Section header="Developer">
-            <Row icon="bug" title="Debug Alarms" onPress={() => router.push("/alarm-debug" as any)} />
-            <Row icon="refresh" title="Reset Onboarding" accessory="none" onPress={resetOnboarding} />
+            <Row icon="refresh-cw" title="Reset Onboarding" accessory="none" onPress={resetOnboarding} />
           </Section>
         )}
 

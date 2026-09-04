@@ -32,6 +32,8 @@ import {
   resumeSession,
   seekSession,
   stopSession,
+  getVolume,
+  setVolume,
   SessionPlaybackStatus,
 } from "@/lib/audio";
 import {
@@ -189,6 +191,53 @@ function Transport({
     >
       <Icon name={icon} size={size} color={C.label} />
     </Pressable>
+  );
+}
+
+// ─── Volume ──────────────────────────────────────────────
+// The app's one level, set here and kept. Drag anywhere on the bar.
+function VolumeBar() {
+  const [level, setLevel] = useState(getVolume());
+  const barRef = useRef<View>(null);
+  const widthRef = useRef(1);
+  const xRef = useRef(0);
+
+  const set = (pageX: number) => {
+    const v = Math.max(0, Math.min(1, (pageX - xRef.current) / widthRef.current));
+    setLevel(v);
+    setVolume(v);
+  };
+  const pan = useRef(
+    PanResponder.create({
+      onStartShouldSetPanResponder: () => true,
+      onMoveShouldSetPanResponder: () => true,
+      onPanResponderGrant: (e: GestureResponderEvent) => set(e.nativeEvent.pageX),
+      onPanResponderMove: (e: GestureResponderEvent) => set(e.nativeEvent.pageX),
+    }),
+  ).current;
+
+  return (
+    <View style={styles.volumeRow}>
+      <Icon name="volume-1" size={16} color={C.labelSecondary} />
+      <View
+        ref={barRef}
+        onLayout={(e) => {
+          widthRef.current = Math.max(1, e.nativeEvent.layout.width);
+          barRef.current?.measureInWindow((x) => { xRef.current = x; });
+        }}
+        style={styles.volumeTrackOuter}
+        {...pan.panHandlers}
+        accessible
+        accessibilityRole="adjustable"
+        accessibilityLabel="Volume"
+        accessibilityValue={{ text: `${Math.round(level * 100)} percent` }}
+      >
+        <View style={styles.volumeTrack}>
+          <View style={[styles.volumeFill, { width: `${level * 100}%` }]} />
+        </View>
+      </View>
+      <Icon name="volume-2" size={16} color={C.labelSecondary} />
+    </View>
   );
 }
 
@@ -432,6 +481,8 @@ export default function PlayerScreen() {
             <Transport icon="fast-forward" label="Forward 15 seconds" size={30} onPress={() => skip(15)} />
           </View>
 
+          <VolumeBar />
+
           {completed && (
             <View style={styles.completedRow}>
               <Icon name="check-circle" size={20} />
@@ -543,6 +594,30 @@ const styles = StyleSheet.create({
     minHeight: SP.hit,
     alignItems: "center",
     justifyContent: "center",
+  },
+
+  // Volume
+  volumeRow: {
+    flexDirection: "row",
+    alignItems: "center",
+    gap: SP.md,
+    marginTop: SP.md,
+  },
+  volumeTrackOuter: {
+    flex: 1,
+    height: 28,
+    justifyContent: "center",
+  },
+  volumeTrack: {
+    height: 4,
+    backgroundColor: C.fillHighest,
+    borderRadius: 2,
+    overflow: "hidden",
+  },
+  volumeFill: {
+    height: 4,
+    backgroundColor: C.label,
+    borderRadius: 2,
   },
 
   // Completion

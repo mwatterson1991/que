@@ -12,6 +12,8 @@ import {
   scheduleAlarm,
   cancelAllAlarms,
   getPendingAlarms,
+  getAlarmDiagnostics,
+  type AlarmDiagnostics,
   SchedulableAlarm,
 } from "@/lib/alarmScheduler";
 import { Screen, Section, Row, Button } from "@/components/ui";
@@ -51,23 +53,24 @@ const MARK = {
 } as const;
 
 const CHECKS: { mark: keyof typeof MARK; title: string; detail: string }[] = [
-  { mark: "ok", title: "App open", detail: "Notification banner appears + sound plays" },
-  { mark: "ok", title: "App backgrounded", detail: "Alarm fires; tapping it opens the player" },
-  { mark: "ok", title: "App killed", detail: "Alarm fires; tapping it opens the player" },
-  { mark: "ok", title: "Phone locked", detail: "Notification fires on lock screen" },
-  { mark: "maybe", title: "DND / Focus mode", detail: "Should break through (Time Sensitive)" },
-  { mark: "maybe", title: "Silent mode", detail: "Rings on iOS 26 (native alarm). Muted on older iOS and Android." },
-  { mark: "no", title: "Auto-play audio", detail: "Not yet implemented (tap required)" },
+  { mark: "ok", title: "Phone locked", detail: "iOS 26: full-screen alarm with Stop and Snooze. Else: chime notifications" },
+  { mark: "ok", title: "App killed", detail: "Same. The alarm lives in the system, not the app" },
+  { mark: "ok", title: "Unlock into the app", detail: "Opens the session within 15 minutes of the alarm" },
+  { mark: "maybe", title: "Focus mode", detail: "Native alarm breaks through; notifications are Time Sensitive" },
+  { mark: "maybe", title: "Silent mode", detail: "Native alarm rings. Notifications are muted" },
+  { mark: "no", title: "Audio without opening the app", detail: "iOS does not allow it; the alarm sound is the chime" },
 ];
 
 export default function AlarmDebugScreen() {
-  const [permStatus, setPermStatus] = useState<string>("checking…");
+  const [permStatus, setPermStatus] = useState<string>("checking");
   const [pending, setPending] = useState<Notifications.NotificationRequest[]>([]);
+  const [diag, setDiag] = useState<AlarmDiagnostics | null>(null);
   const [loading, setLoading] = useState(false);
 
   const refreshPending = useCallback(async () => {
     const p = await getPendingAlarms();
     setPending(p);
+    setDiag(await getAlarmDiagnostics());
   }, []);
 
   useFocusEffect(useCallback(() => {
@@ -88,10 +91,11 @@ export default function AlarmDebugScreen() {
     setLoading(false);
     if (id) {
       const fireAt = formatDate(new Date(alarm.next_fire_at));
-      Alert.alert("Scheduled ✓", `"${alarm.label}" will fire at ${fireAt}.\n\nLock your phone and wait.`);
+      Alert.alert("Armed", `"${alarm.label}" will fire at ${fireAt}.\n\nLock your phone and wait.`);
       await refreshPending();
     } else {
-      Alert.alert("Failed", "Could not schedule alarm. Check console for errors.");
+      await refreshPending();
+      Alert.alert("Nothing armed", "See the Engine and Last arm attempt sections above for the reason.");
     }
   };
 
@@ -105,8 +109,34 @@ export default function AlarmDebugScreen() {
 
   return (
     <Screen>
-      <Stack.Screen options={{ title: "Alarm Debug" }} />
+      <Stack.Screen options={{ title: "Alarm Diagnostics" }} />
       <ScrollView contentInsetAdjustmentBehavior="automatic" contentContainerStyle={styles.scroll}>
+        {/* The engine: what this phone can do, and what the last arm did.
+            Screenshot this when a morning goes wrong. */}
+        <Section header="Engine" footer={diag?.nativeSupported
+          ? "Native alarms ring through silent mode and Focus. Backup notifications fire at the same time, a minute apart."
+          : "This device has no native alarms (needs iOS 26). Alarms are notifications, muted by the silent switch."}>
+          <Row title="Platform" value={diag?.platform ?? "…"} />
+          <Row title="Native alarm module" value={diag?.nativeModule ?? "…"} />
+          <Row title="Native alarms" value={diag ? (diag.nativeSupported ? diag.nativeAuthorization : "unsupported") : "…"} />
+          <Row title="Native alarms armed" value={diag ? String(diag.nativeArmed ?? "n/a") : "…"} />
+          <Row title="Notification permission" value={diag?.notificationPermission ?? "…"} />
+          <Row title="Backup notifications pending" value={diag ? String(diag.pendingNotifications) : "…"} />
+        </Section>
+
+        <Section header="Last arm attempt">
+          {diag?.lastReport ? (
+            <>
+              <Row title={diag.lastReport.label} value={formatDate(new Date(diag.lastReport.fireAt))} />
+              <Row title="Native" subtitle={diag.lastReport.native} />
+              <Row title="Notifications" subtitle={diag.lastReport.notifications} />
+              <Row title="Attempted" value={formatDate(new Date(diag.lastReport.at))} />
+            </>
+          ) : (
+            <Row title="No alarm has been armed on this install yet" accessory="none" disabled />
+          )}
+        </Section>
+
         {/* Permission status */}
         <Section header="Notification Permission">
           <Row

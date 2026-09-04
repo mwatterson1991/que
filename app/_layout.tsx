@@ -11,9 +11,10 @@ import * as SplashScreen from "expo-splash-screen";
 import * as Notifications from "expo-notifications";
 import AsyncStorage from "@react-native-async-storage/async-storage";
 import { AuthProvider, useAuth } from "@/lib/auth";
-import { requestAlarmPermissions, ensureAndroidChannel } from "@/lib/alarmScheduler";
+import { requestAlarmPermissions, ensureAndroidChannel, cancelBackupNotifications } from "@/lib/alarmScheduler";
 import { consumeDueAlarm, markLaunched } from "@/lib/alarmLaunch";
 import { initBackgroundAudio } from "@/lib/backgroundAudio";
+import { loadVolume } from "@/lib/audio";
 import { STACK, BARE, SHEET } from "@/lib/nav";
 import { C } from "@/lib/tokens";
 import { WELCOME_COUNT_KEY, WELCOME_MAX_SHOWS } from "./welcome";
@@ -54,6 +55,7 @@ function NotificationGate() {
     // Permissions + Android channel on every app launch
     requestAlarmPermissions();
     ensureAndroidChannel();
+    loadVolume();
 
     // Foreground notification received — show an in-app alert for alarms
     receivedListener.current = Notifications.addNotificationReceivedListener(
@@ -85,6 +87,7 @@ function NotificationGate() {
         const sessionId = data?.sessionId as string | undefined;
         const alarmId = data?.alarmId as string | undefined;
         if (!sessionId) return;
+        if (alarmId) cancelBackupNotifications(alarmId);
         // The foreground check below may already have opened it.
         if (alarmId && !(await markLaunched(alarmId))) return;
         // Small delay to let the navigator mount after cold start
@@ -94,11 +97,14 @@ function NotificationGate() {
 
     // A native (AlarmKit) alarm rings without the app running. When the
     // phone is unlocked into Morning Que shortly after one was due, go
-    // straight to that alarm's session. Runs on launch and on every
-    // return to the foreground; each alarm opens at most once a day.
+    // straight to that alarm's session and silence the backup chimes.
+    // Runs on launch and on every return to the foreground; each alarm
+    // opens at most once a day.
     const openDueAlarm = async () => {
-      const sessionId = await consumeDueAlarm();
-      if (sessionId) setTimeout(() => router.push(`/player?id=${sessionId}&alarm=1` as any), 300);
+      const due = await consumeDueAlarm();
+      if (!due) return;
+      cancelBackupNotifications(due.alarmId);
+      setTimeout(() => router.push(`/player?id=${due.sessionId}&alarm=1` as any), 300);
     };
     openDueAlarm();
     const appState = AppState.addEventListener("change", (state) => {
