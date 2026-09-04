@@ -1,10 +1,10 @@
 import type { ComponentProps, ComponentType } from "react";
-import { Dimensions, View } from "react-native";
+import { Dimensions, StyleSheet, View } from "react-native";
 import { C } from "@/lib/tokens";
 
 // Card geometry lives here so the cards and the rails that snap them
 // agree on a single set of numbers. Portrait-only app, so the window is
-// measured once at module load rather than per-render — a rail's
+// measured once at module load rather than per-render: a rail's
 // snapToInterval must be a stable constant or scrolling stutters.
 
 const { width: SCREEN_W, height: SCREEN_H } = Dimensions.get("window");
@@ -21,7 +21,7 @@ const PEEK = 0.14;
 export const CARD_W = Math.round((SCREEN_W - RAIL_EDGE - RAIL_GAP) / (1 + PEEK));
 
 /** Portrait, but short enough that the NEXT rail's title shows under
- * it — the peek is the affordance that there is another category. */
+ * it. The peek is the affordance that there is another category. */
 const CARD_ASPECT = 1.18;
 
 // Capped against screen height: header + search spend roughly 220pt,
@@ -31,14 +31,16 @@ export const CARD_H = Math.min(
   Math.round(SCREEN_H * 0.44),
 );
 
-/** The glass frame's inset around the artwork. */
-export const GLASS_PAD = 5;
+/** The glass frame's inset around the artwork. A hairline: the picture
+ * runs to the edge of the card and the glass is the rim that catches
+ * the light around it, not a mat between the two. */
+export const GLASS_PAD = StyleSheet.hairlineWidth;
 
 /** One swipe = one card. FlatList snaps on multiples of this. */
 export const SNAP_INTERVAL = CARD_W + RAIL_GAP;
 
 // Trailing padding so the LAST card can still scroll flush to the left
-// gutter — without it the final snap point is unreachable and the rail
+// gutter. Without it the final snap point is unreachable and the rail
 // bounces back. Derived, not guessed: content must be at least a
 // screen-width longer than the last card's snap offset.
 export const RAIL_TAIL = Math.max(RAIL_EDGE, SCREEN_W - RAIL_EDGE - CARD_W);
@@ -48,7 +50,7 @@ export const RAIL_TAIL = Math.max(RAIL_EDGE, SCREEN_W - RAIL_EDGE - CARD_W);
 export const WIDE_W = SCREEN_W - RAIL_EDGE * 2;
 export const WIDE_H = Math.round(WIDE_W * 0.42);
 
-// Optional at runtime — a dev client without the module must not crash.
+// Optional at runtime: a dev client without the module must not crash.
 let Haptics: any = null;
 try {
   Haptics = require("expo-haptics");

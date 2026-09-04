@@ -4,9 +4,9 @@ import { C } from "@/lib/tokens";
 export type HabitIconName = IconName;
 
 // WHY derive instead of store: the `habits` table has no `icon` column, and
-// adding one means a migration plus an icon picker in the add flow — friction
+// adding one means a migration plus an icon picker in the add flow, friction
 // for something the title already tells us. A habit called "Morning walk" is
-// obviously a walk. So we map title → glyph deterministically: the same title
+// obviously a walk. So we map title to glyph deterministically: the same title
 // always renders the same icon, on every device, with nothing to store or sync.
 // If we ever add a real `icon` column, this stays as the fallback.
 //
@@ -16,7 +16,7 @@ export type HabitIconName = IconName;
 // the gym, a compass for getting outside) rather than reaching for a second
 // icon family.
 
-// Multi-word forms first — these only read correctly as a phrase ("cold shower"
+// Multi-word forms first: these only read correctly as a phrase ("cold shower"
 // is snow, not water; "make the bed" is a bed, not sleep), and a plain
 // substring test on the whole title is the honest way to catch them.
 const PHRASES: ReadonlyArray<readonly [string, HabitIconName]> = [
@@ -33,7 +33,7 @@ const PHRASES: ReadonlyArray<readonly [string, HabitIconName]> = [
   ["to do", "list"],
 ];
 
-// Single words, matched as WORD PREFIXES rather than raw substrings — "great"
+// Single words, matched as WORD PREFIXES rather than raw substrings: "great"
 // must not match "eat", and "create" must not match "eat" either. Prefix
 // matching also gets the grammar for free: "meditat" covers meditate and
 // meditation, "walk" covers walking, "read" covers reading.
@@ -48,7 +48,7 @@ const WORDS: ReadonlyArray<readonly [readonly string[], HabitIconName]> = [
   [["bike", "bicycl", "cycl", "ride"], "navigation"],
   [["read", "page", "chapter"], "book-open"],
   [["meditat", "breath", "mindful", "calm", "stillness", "quiet"], "wind"],
-  // No bare "light" here on purpose — it would steal "lights out" from sleep.
+  // No bare "light" here on purpose; it would steal "lights out" from sleep.
   [["sun", "sunlight", "sunshine", "daylight"], "sunrise"],
   [["stretch", "yoga", "mobility", "posture"], "maximize-2"],
   [["phone", "screen", "scroll", "social", "instagram", "tiktok"], "smartphone"],
@@ -89,9 +89,9 @@ export function iconForHabit(title: string): HabitIconName {
   return DEFAULT_HABIT_ICON;
 }
 
-// The glyph on its own — no chip, no fill. On the tracker it is white like
-// every other glyph in the app; the add screen passes the habit's colour so
-// the colour picker still previews something.
+// The glyph on its own, no chip, no fill. The habit's colour is data on its
+// row, so the tracker and the editor both pass it; the default is label
+// white for the starter list, where nothing has a colour yet.
 export function HabitIcon({
   title,
   color = C.label,

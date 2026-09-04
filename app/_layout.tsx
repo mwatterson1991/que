@@ -216,7 +216,10 @@ export default function RootLayout() {
             name="player"
             options={{ ...BARE, presentation: "fullScreenModal", animation: "slide_from_bottom", gestureEnabled: true }}
           />
-          <Stack.Screen name="goodnight" options={{ ...BARE, animation: "fade" }} />
+          <Stack.Screen
+            name="goodnight"
+            options={{ ...BARE, presentation: "fullScreenModal", animation: "slide_from_bottom", gestureEnabled: true }}
+          />
           <Stack.Screen name="paywall" options={{ ...BARE, presentation: "modal", animation: "slide_from_bottom" }} />
           <Stack.Screen name="score-info" options={{ ...BARE, presentation: "modal", animation: "slide_from_bottom" }} />
 
@@ -230,7 +233,8 @@ export default function RootLayout() {
           <Stack.Screen name="edit-profile" options={{ title: "Profile" }} />
           <Stack.Screen name="edit-email" options={{ title: "Email" }} />
           <Stack.Screen name="ambient-picker" options={{ title: "Ambient Sound" }} />
-          <Stack.Screen name="alarm-debug" options={{ title: "Alarm Debug" }} />
+          <Stack.Screen name="haptic-picker" options={{ title: "Haptics" }} />
+          <Stack.Screen name="alarm-debug" options={{ title: "Alarm Diagnostics" }} />
         </Stack>
       </GestureHandlerRootView>
     </AuthProvider>

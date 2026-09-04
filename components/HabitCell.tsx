@@ -12,43 +12,50 @@ import { C, R, SP } from "@/lib/tokens";
 let Haptics: any = null;
 try { Haptics = require("expo-haptics"); } catch {}
 
-// The cell never moves. The only motion is the check control itself dipping
-// under the thumb for 100ms — short enough that the state change, not the
+// The row never moves. The only motion is the check control itself dipping
+// under the thumb for 100ms, short enough that the state change, not the
 // animation, is what you notice.
 const DIP_MS = 50;
 
-/** Minimum cell height: a real row you can hit without aiming. */
+/** Minimum row height: a real row you can hit without aiming. */
 const CELL_HEIGHT = 64;
 const CHECK = 28;
 const CHECK_STROKE = 1.5;
+/** Left inset of the separator under this row: where the text starts. */
+export const HABIT_SEPARATOR_INSET = SP.screen + SP.xxl + SP.md;
 
 /**
- * One habit: a thin Feather glyph, the title and its meta, and a round check
- * on the right. Unchecked is a thin white ring; checked is a white disc with
- * a black tick. Counts between (a 3×-a-day habit at 1) show the number in
+ * One habit, a plain row on black: the Feather glyph in the habit's own
+ * colour, the title and its meta, and a round check on the right.
+ *
+ * Two targets. The text area opens the habit for editing; the check logs
+ * it. Unchecked is a thin white ring; checked is a white disc with a black
+ * tick. Counts between (a three times a day habit at 1) show the number in
  * the ring.
  */
 export default function HabitCell({
   title,
+  color,
   timesPerDay,
   count,
   streak,
   onToggle,
-  onRemove,
+  onEdit,
 }: {
   title: string;
+  color: string;
   timesPerDay: number;
   count: number;
   streak: number;
   onToggle: () => void;
-  onRemove: () => void;
+  onEdit: () => void;
 }) {
   const scale = useSharedValue(1);
   const checkStyle = useAnimatedStyle(() => ({ transform: [{ scale: scale.value }] }));
 
   const complete = count >= timesPerDay;
 
-  const handlePress = () => {
+  const handleToggle = () => {
     // Flip first, feel second, animate last: the parent applies the new
     // state synchronously, so by the time the haptic lands the tick is there.
     onToggle();
@@ -61,47 +68,57 @@ export default function HabitCell({
 
   const meta = [
     timesPerDay > 1 ? `${count}/${timesPerDay} today` : "",
-    streak > 1 ? `${streak >= 31 ? "31+" : streak}-day streak` : "",
+    streak > 1 ? `${streak >= 31 ? "31+" : streak} day streak` : "",
   ]
     .filter(Boolean)
     .join(" · ");
 
+  const status = `${count} of ${timesPerDay} today${streak > 1 ? `, ${streak} day streak` : ""}`;
+
   return (
-    <Pressable
-      onPress={handlePress}
-      onLongPress={onRemove}
-      delayLongPress={450}
-      style={({ pressed }) => [styles.cell, pressed && styles.cellPressed]}
-      accessibilityRole="checkbox"
-      accessibilityState={{ checked: complete }}
-      accessibilityLabel={`${title}, ${count} of ${timesPerDay} today${streak > 1 ? `, ${streak} day streak` : ""}`}
-      accessibilityHint="Tap to mark complete. Long press to remove."
-    >
-      <View style={styles.icon}>
-        <HabitIcon title={title} color={complete ? C.labelSecondary : C.label} />
-      </View>
+    <View style={styles.cell}>
+      <Pressable
+        onPress={onEdit}
+        style={({ pressed }) => [styles.main, pressed && styles.mainPressed]}
+        accessibilityRole="button"
+        accessibilityLabel={`${title}, ${status}`}
+        accessibilityHint="Opens the habit to edit. Swipe left to delete."
+      >
+        <View style={styles.icon}>
+          <HabitIcon title={title} color={color} />
+        </View>
 
-      <View style={styles.body}>
-        <Txt kind="body" tone={complete ? "secondary" : "primary"} numberOfLines={1} maxFontSizeMultiplier={1.4}>
-          {title}
-        </Txt>
-        {!!meta && (
-          <Txt kind="footnote" tone="secondary" numberOfLines={1} maxFontSizeMultiplier={1.3}>
-            {meta}
+        <View style={styles.body}>
+          <Txt kind="body" tone={complete ? "secondary" : "primary"} numberOfLines={1} maxFontSizeMultiplier={1.4}>
+            {title}
           </Txt>
-        )}
-      </View>
+          {!!meta && (
+            <Txt kind="footnote" tone="secondary" numberOfLines={1} maxFontSizeMultiplier={1.3}>
+              {meta}
+            </Txt>
+          )}
+        </View>
+      </Pressable>
 
-      <Animated.View style={[styles.check, complete && styles.checkOn, checkStyle]}>
-        {complete ? (
-          <Icon name="check" size={18} color={C.onAccent} />
-        ) : count > 0 ? (
-          <Txt kind="caption1" maxFontSizeMultiplier={1.2}>
-            {count}
-          </Txt>
-        ) : null}
-      </Animated.View>
-    </Pressable>
+      <Pressable
+        onPress={handleToggle}
+        style={styles.checkHit}
+        accessibilityRole="checkbox"
+        accessibilityState={{ checked: complete }}
+        accessibilityLabel={`Log ${title}`}
+        accessibilityValue={{ text: status }}
+      >
+        <Animated.View style={[styles.check, complete && styles.checkOn, checkStyle]}>
+          {complete ? (
+            <Icon name="check" size={18} color={C.onAccent} />
+          ) : count > 0 ? (
+            <Txt kind="caption1" maxFontSizeMultiplier={1.2}>
+              {count}
+            </Txt>
+          ) : null}
+        </Animated.View>
+      </Pressable>
+    </View>
   );
 }
 
@@ -109,15 +126,21 @@ const styles = StyleSheet.create({
   cell: {
     flexDirection: "row",
     alignItems: "center",
-    gap: SP.md,
     minHeight: CELL_HEIGHT,
-    paddingHorizontal: SP.lg,
-    paddingVertical: SP.md,
-    borderRadius: R.lg,
-    backgroundColor: C.fill,
+    paddingRight: SP.screen,
+    backgroundColor: C.bg,
   },
-  cellPressed: {
-    backgroundColor: C.fillHigh,
+  main: {
+    flex: 1,
+    flexDirection: "row",
+    alignItems: "center",
+    alignSelf: "stretch",
+    gap: SP.md,
+    paddingLeft: SP.screen,
+    paddingVertical: SP.md,
+  },
+  mainPressed: {
+    backgroundColor: C.fill,
   },
   icon: {
     width: SP.xxl,
@@ -125,6 +148,12 @@ const styles = StyleSheet.create({
   },
   body: {
     flex: 1,
+  },
+  checkHit: {
+    width: SP.hit,
+    height: SP.hit,
+    alignItems: "center",
+    justifyContent: "center",
   },
   check: {
     width: CHECK,

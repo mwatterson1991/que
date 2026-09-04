@@ -1,4 +1,5 @@
 import type { ComponentProps } from "react";
+import { Platform } from "react-native";
 import type { Stack } from "expo-router";
 import { C, SP, TYPE } from "@/lib/tokens";
 
@@ -40,8 +41,18 @@ type NativeStackNavigationOptions = Exclude<
  * Music all do), pushed screens use the standard inline title.
  */
 
+// On iOS the bar is translucent system material, the way Music's and
+// Settings' are: content scrolls up underneath it and blurs, so the top
+// of the screen is not a hard black cut. Scroll views under it use
+// contentInsetAdjustmentBehavior="automatic" and no manual top padding.
+// Android keeps an opaque bar; its transparent header does not inset.
+const TRANSLUCENT: NativeStackNavigationOptions =
+  Platform.OS === "ios"
+    ? { headerTransparent: true, headerBlurEffect: "systemChromeMaterialDark", headerStyle: { backgroundColor: "transparent" } }
+    : { headerTransparent: false, headerStyle: { backgroundColor: C.bg } };
+
 export const STACK: NativeStackNavigationOptions = {
-  headerStyle: { backgroundColor: C.bg },
+  ...TRANSLUCENT,
   headerShadowVisible: false,
   headerTintColor: C.accent,
   headerTitleStyle: { color: C.label, fontSize: TYPE.headline.fontSize, fontWeight: TYPE.headline.fontWeight },
@@ -51,12 +62,11 @@ export const STACK: NativeStackNavigationOptions = {
   animation: "default",
 };
 
-/** The first screen of a tab: large title that collapses on scroll. */
+/** The first screen of a tab: large title that collapses into the blur on scroll. */
 export const ROOT: NativeStackNavigationOptions = {
   ...STACK,
   headerLargeTitle: true,
   headerLargeTitleShadowVisible: false,
-  headerTransparent: false,
 };
 
 /** A full-screen surface with no bar (welcome, player, wind-down, paywall). */

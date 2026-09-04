@@ -1,9 +1,9 @@
-import { useRef, type ReactNode } from "react";
+import { useRef } from "react";
 import { TAB_BAR_INSET } from "@/lib/nav";
 import { View, ScrollView, StyleSheet, Share } from "react-native";
 import { Stack, useRouter, useLocalSearchParams } from "expo-router";
-import { Screen, Txt, Divider, Icon, IconButton, type IconName } from "@/components/ui";
-import { SP } from "@/lib/tokens";
+import { Screen, Txt, IconButton } from "@/components/ui";
+import { C, R, SP } from "@/lib/tokens";
 import { Ticker } from "@/components/Ticker";
 import { TICKER_HISTORY_DAYS } from "@/lib/positivity";
 import { useHabits, useHabitLogs, useProfile, useActivity, useGratitudeEntries } from "@/lib/useSupabase";
@@ -19,38 +19,17 @@ const BACK_TARGET: Record<string, string> = {
   gratitude: "/gratitude",
 };
 
-// ─── Plain list ──────────────────────────────────────────
-// Stats and activity live as rows on the black ground — a thin line
-// between each, a thin line icon on the left, no grouped box.
-function List({ header, children }: { header: string; children: ReactNode }) {
-  const items = (Array.isArray(children) ? children : [children]).flat().filter(Boolean);
+// ─── Stat tiles ──────────────────────────────────────────
+// Three squares in a row under the chart: the number big and light, the
+// label small beneath it. This is the one place a filled tile is allowed.
+function Tile({ value, label }: { value: number; label: string }) {
   return (
-    <View style={styles.list}>
-      <Txt kind="footnote" tone="secondary" style={styles.listHeader}>
-        {header.toUpperCase()}
-      </Txt>
-      {items.map((child, i) => (
-        <View key={i}>
-          {i > 0 && <Divider inset={LINE_INSET} />}
-          {child}
-        </View>
-      ))}
-    </View>
-  );
-}
-
-const LINE_ICON = 20;
-const LINE_INSET = LINE_ICON + SP.md;
-
-function LineItem({ icon, title, value }: { icon: IconName; title: string; value: string }) {
-  return (
-    <View style={styles.line} accessible accessibilityLabel={`${title}, ${value}`}>
-      <Icon name={icon} size={LINE_ICON} style={styles.lineIcon} />
-      <Txt kind="body" style={styles.lineTitle} numberOfLines={1}>
-        {title}
-      </Txt>
-      <Txt kind="body" tone="secondary" numberOfLines={1}>
+    <View style={styles.tile} accessible accessibilityLabel={`${label}, ${value}`}>
+      <Txt kind="stat" maxFontSizeMultiplier={1.2} numberOfLines={1} adjustsFontSizeToFit>
         {value}
+      </Txt>
+      <Txt kind="caption1" tone="secondary">
+        {label}
       </Txt>
     </View>
   );
@@ -91,9 +70,9 @@ export default function ProfileScreen() {
   const router = useRouter();
   const { from } = useLocalSearchParams<{ from?: string }>();
   const chartRef = useRef(null);
-  const { activity } = useActivity();
   const { profile } = useProfile();
   const { habits } = useHabits();
+  const { entries } = useGratitudeEntries();
 
   // Share your graph like a stock ticker on yourself. With the view-shot
   // module (next build) this attaches the actual chart as an image; until
@@ -149,25 +128,11 @@ export default function ProfileScreen() {
       <ScrollView contentInsetAdjustmentBehavior="automatic" contentContainerStyle={[styles.scroll, { paddingBottom: TAB_BAR_INSET }]}>
         <ScoreTicker chartRef={chartRef} lifetimeScore={profile?.score ?? 0} onInfo={openInfo} />
 
-        <List header="Stats">
-          <LineItem icon="zap" title="Day streak" value={String(profile?.day_streak ?? 0)} />
-          <LineItem icon="sunrise" title="Sessions" value={String(profile?.sessions_completed ?? 0)} />
-          <LineItem icon="check-circle" title="Habits" value={String(habits.length)} />
-        </List>
-
-        {/* Recent activity — real sessions from the activity log */}
-        {activity.length > 0 && (
-          <List header="Recent activity">
-            {activity.slice(0, 5).map((item) => (
-              <LineItem
-                key={item.id}
-                icon="play-circle"
-                title={item.title}
-                value={new Date(item.completed_at).toLocaleDateString("en-US", { month: "short", day: "numeric" })}
-              />
-            ))}
-          </List>
-        )}
+        <View style={styles.tiles}>
+          <Tile value={entries.length} label="Gratitude" />
+          <Tile value={habits.length} label="Habits" />
+          <Tile value={profile?.day_streak ?? 0} label="Streak" />
+        </View>
       </ScrollView>
     </Screen>
   );
@@ -181,26 +146,22 @@ const styles = StyleSheet.create({
     flexDirection: "row",
   },
 
-  list: {
+  tiles: {
+    flexDirection: "row",
+    gap: SP.md,
     paddingHorizontal: SP.screen,
     marginTop: SP.xl,
   },
-  listHeader: {
-    marginBottom: SP.xs,
-  },
-  line: {
-    flexDirection: "row",
-    alignItems: "center",
-    minHeight: SP.row,
-    paddingVertical: SP.md,
-  },
-  lineIcon: {
-    width: LINE_ICON,
-    marginRight: SP.md,
-    textAlign: "center",
-  },
-  lineTitle: {
+  tile: {
     flex: 1,
-    marginRight: SP.md,
+    aspectRatio: 1,
+    alignItems: "center",
+    justifyContent: "center",
+    gap: SP.xs,
+    paddingHorizontal: SP.sm,
+    backgroundColor: C.fill,
+    borderRadius: R.md,
+    // Apple's continuous (squircle) corner, not a plain arc.
+    borderCurve: "continuous",
   },
 });

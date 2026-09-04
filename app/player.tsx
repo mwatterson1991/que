@@ -7,11 +7,11 @@ import {
   PanResponder,
   GestureResponderEvent,
   Alert,
-  Image,
 } from "react-native";
 import { useLocalSearchParams, useRouter } from "expo-router";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 import { Ionicons } from "@expo/vector-icons";
+import { useVideoPlayer, VideoView } from "expo-video";
 import Animated, {
   useSharedValue,
   useDerivedValue,
@@ -48,9 +48,17 @@ import {
   stopAmbient,
   AmbientSoundId,
 } from "@/lib/ambient";
-import { artworkFor, displayTitle, displayDescription, isHypnotherapy } from "@/lib/catalog";
+import {
+  artworkFor,
+  displayTitle,
+  displayDescription,
+  isHypnotherapy,
+  isBedtime,
+  videoForSession,
+} from "@/lib/catalog";
 import { usePremium, isLocked } from "@/lib/premium";
-import { Button, IconButton, Icon, Txt, type IconName } from "@/components/ui";
+import { getAlarmHaptic, startAlarmHaptics, stopAlarmHaptics, DEFAULT_HAPTIC } from "@/lib/haptics";
+import { Button, IconButton, Icon, Txt } from "@/components/ui";
 import { Artwork } from "@/components/SessionCard";
 import { Glass, GLASS_AVAILABLE, GLASS_FALLBACK } from "@/components/cardLayout";
 
@@ -170,13 +178,17 @@ function HypnoticOrb({ playing }: { playing: boolean }) {
 
 // ─── Transport glyphs ────────────────────────────────────
 // Apple Music's idiom: bare white glyphs, the play/pause one biggest.
+// These are Ionicons, not Feather, on purpose: transport glyphs are
+// FILLED shapes, and Feather only draws them as outlines.
+type TransportIcon = "play" | "pause" | "play-back" | "play-forward";
+
 function Transport({
   icon,
   label,
   size,
   onPress,
 }: {
-  icon: IconName;
+  icon: TransportIcon;
   label: string;
   size: number;
   onPress: () => void;
@@ -189,7 +201,7 @@ function Transport({
       accessibilityRole="button"
       accessibilityLabel={label}
     >
-      <Icon name={icon} size={size} color={C.label} />
+      <Ionicons name={icon} size={size} color={C.label} />
     </Pressable>
   );
 }
@@ -243,7 +255,12 @@ function VolumeBar() {
 
 // ─── Screen ──────────────────────────────────────────────
 export default function PlayerScreen() {
-  const { id, alarm, pick } = useLocalSearchParams<{ id: string; alarm?: string; pick?: string }>();
+  const { id, alarm, alarmId, pick } = useLocalSearchParams<{
+    id: string;
+    alarm?: string;
+    alarmId?: string;
+    pick?: string;
+  }>();
   const isAlarmMode = alarm === "1";
   const isPickMode = pick === "1";
   const router = useRouter();
@@ -308,6 +325,30 @@ export default function PlayerScreen() {
       stopAmbient();
     };
   }, [session, isAlarmMode]);
+
+  // A ringing alarm also nudges by touch, in the pattern chosen for that
+  // alarm, until the person touches the screen (or the loop times out).
+  useEffect(() => {
+    if (!isAlarmMode) return;
+    let cancelled = false;
+    (alarmId ? getAlarmHaptic(alarmId) : Promise.resolve(DEFAULT_HAPTIC))
+      .then((patternId) => { if (!cancelled) startAlarmHaptics(patternId); })
+      .catch(() => {});
+    return () => {
+      cancelled = true;
+      stopAlarmHaptics();
+    };
+  }, [isAlarmMode, alarmId]);
+
+  // A moving background where a clip exists for this session; the still
+  // artwork otherwise. The player is built either way (hooks cannot be
+  // conditional) and simply has no source when there is no clip.
+  const videoUrl = session ? videoForSession(session) : null;
+  const video = useVideoPlayer(videoUrl, (p) => {
+    p.loop = true;
+    p.muted = true;
+    p.play();
+  });
 
   const loggedRef = useRef(false);
   useEffect(() => {
@@ -395,28 +436,34 @@ export default function PlayerScreen() {
   // be lit on its real timing.
   const showOrb = session ? isHypnotherapy(session) : true;
   const title = session ? displayTitle(session) : "Loading…";
-
-  const setAsAlarm = !completed && (
-    <Button
-      title={isPickMode ? "Use" : "Set as Alarm"}
-      tone="gray"
-      icon="bell"
-      style={styles.selectPill}
-      onPress={handleSetAsAlarm}
-    />
-  );
+  const bedtime = session ? isBedtime(session) : false;
+  const subtitle = session?.narrator ?? "";
 
   return (
-    <View style={styles.container}>
-      {/* The SAME artwork as the card, with the same treatment, filling
+    // Any touch on the screen ends the alarm's haptic loop: the person is
+    // awake and holding the phone.
+    <View style={styles.container} onTouchStart={stopAlarmHaptics}>
+      {/* Behind everything: the session's clip where there is one, else
+          the SAME artwork as the card, with the same treatment, filling
           the screen. The glass dock and the scrim keep the text legible. */}
-      {session && <Artwork uri={artworkFor(session)} accessibilityLabel={`${title} artwork`} />}
+      {session && videoUrl ? (
+        <View style={StyleSheet.absoluteFill} pointerEvents="none">
+          <VideoView
+            player={video}
+            style={StyleSheet.absoluteFill}
+            contentFit="cover"
+            nativeControls={false}
+            accessibilityLabel={`${title} video`}
+          />
+          <View style={[StyleSheet.absoluteFill, styles.videoScrim]} />
+        </View>
+      ) : (
+        session && <Artwork uri={artworkFor(session)} accessibilityLabel={`${title} artwork`} />
+      )}
 
-      {/* Top chrome: close on the left, Set as Alarm on the right */}
+      {/* Top chrome: only the close disc */}
       <View style={[styles.topBar, { paddingTop: insets.top + SP.xs }]}>
-        <IconButton icon="x" label="Close" disc onPress={() => router.back()} />
-        <View style={{ flex: 1 }} />
-        {setAsAlarm}
+        <IconButton icon="x" label="Close" disc size={26} onPress={() => router.back()} />
       </View>
 
       {/* Hypnotherapy shows the orb alone until the read-along view (each
@@ -429,15 +476,31 @@ export default function PlayerScreen() {
           <View style={styles.titleRow}>
             <View style={{ flex: 1 }}>
               <Txt kind="title3" numberOfLines={1}>{title}</Txt>
-              <Txt kind="subheadline" tone="secondary" numberOfLines={1}>{session?.narrator}</Txt>
+              {/* The subtitle is the way into the description; a bedtime
+                  recording wears its moon here too. */}
+              <Pressable
+                style={({ pressed }) => [styles.subtitleRow, pressed && { opacity: PRESS_OPACITY }]}
+                hitSlop={6}
+                onPress={() => Alert.alert(title, session ? displayDescription(session) : "")}
+                accessibilityRole="button"
+                accessibilityLabel={`${subtitle}${bedtime ? ", bedtime" : ""}, session details`}
+              >
+                {bedtime && <Icon name="moon" size={14} color={C.labelSecondary} />}
+                <Txt kind="subheadline" tone="secondary" numberOfLines={1} style={styles.subtitle}>
+                  {subtitle}
+                </Txt>
+                <Icon name="info" size={14} color={C.labelSecondary} />
+              </Pressable>
             </View>
-            <IconButton
-              icon="info"
-              label="Session details"
-              size={22}
-              color={C.labelSecondary}
-              onPress={() => Alert.alert(title, session ? displayDescription(session) : "")}
-            />
+            {!completed && (
+              <Button
+                title={isPickMode ? "Use" : "Set as Alarm"}
+                tone="gray"
+                icon="bell"
+                style={styles.alarmBtn}
+                onPress={handleSetAsAlarm}
+              />
+            )}
           </View>
 
           {/* Progress — a thin channel, white fill, plain thumb */}
@@ -471,14 +534,14 @@ export default function PlayerScreen() {
           {/* Transport. Play is the biggest glyph — the one thing you reach
               for half-awake. */}
           <View style={styles.transport}>
-            <Transport icon="rewind" label="Back 15 seconds" size={30} onPress={() => skip(-15)} />
+            <Transport icon="play-back" label="Back 15 seconds" size={30} onPress={() => skip(-15)} />
             <Transport
               icon={playing ? "pause" : "play"}
               label={playing ? "Pause session" : "Play session"}
               size={52}
               onPress={togglePlay}
             />
-            <Transport icon="fast-forward" label="Forward 15 seconds" size={30} onPress={() => skip(15)} />
+            <Transport icon="play-forward" label="Forward 15 seconds" size={30} onPress={() => skip(15)} />
           </View>
 
           <VolumeBar />
@@ -501,17 +564,16 @@ const styles = StyleSheet.create({
     backgroundColor: C.bg,
   },
 
+  // A flat veil over a video clip, standing in for the artwork's tone.
+  videoScrim: {
+    backgroundColor: C.scrim,
+  },
+
   topBar: {
     flexDirection: "row",
     alignItems: "center",
     paddingHorizontal: SP.md,
     paddingBottom: SP.sm,
-  },
-  selectPill: {
-    alignSelf: "auto",
-    minHeight: 40,
-    paddingHorizontal: SP.lg,
-    backgroundColor: C.overlayFill,
   },
 
   // Orb
@@ -532,16 +594,34 @@ const styles = StyleSheet.create({
     paddingHorizontal: DOCK_MARGIN,
   },
   dock: {
-    borderRadius: R.xl,
+    borderRadius: R.xxl,
     overflow: "hidden",
     paddingHorizontal: DOCK_PAD,
     paddingTop: SP.lg,
-    paddingBottom: SP.md,
+    // Room under the volume bar so it does not sit on the dock's edge.
+    paddingBottom: SP.md + SP.lg,
   },
   titleRow: {
     flexDirection: "row",
     alignItems: "center",
+    gap: SP.md,
     marginBottom: SP.md,
+  },
+  subtitleRow: {
+    flexDirection: "row",
+    alignItems: "center",
+    alignSelf: "flex-start",
+    gap: SP.xs,
+    minHeight: 24,
+  },
+  subtitle: {
+    flexShrink: 1,
+  },
+  // Compact: sits in the dock's corner, not across it.
+  alarmBtn: {
+    alignSelf: "auto",
+    minHeight: 40,
+    paddingHorizontal: SP.md,
   },
 
   // Progress

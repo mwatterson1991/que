@@ -21,7 +21,8 @@ import Animated, {
 import { createAudioPlayer, type AudioPlayer } from "expo-audio";
 import { fadePlayerTo, releasePlayer, configureAudio } from "@/lib/audio";
 import { useAlarms } from "@/lib/useSupabase";
-import { Button, Txt, Icon } from "@/components/ui";
+import { Button, IconButton, Txt, Icon } from "@/components/ui";
+import { Glass, GLASS_AVAILABLE, GLASS_FALLBACK } from "@/components/cardLayout";
 import { C, R, SP } from "@/lib/tokens";
 
 let Haptics: any = null;
@@ -40,6 +41,11 @@ try { Haptics = require("expo-haptics"); } catch {}
  * brightness API — so it travels over the air instead of waiting on a
  * new build. The perceived dimming is a black veil that deepens with
  * the sequence, which lands the same way and costs nothing.
+ *
+ * Presented like the player (a full-screen modal that rises from the
+ * bottom) and dressed like it: the same close disc top-left, the same
+ * glass dock at the foot for the end card. The dock's numbers are copied
+ * from the player's rather than shared, so the two can drift on purpose.
  */
 
 const pex = (id: number) =>
@@ -197,7 +203,7 @@ function Intro({ onBegin, onLeave }: { onBegin: () => void; onLeave: () => void 
         <Icon name="moon" size={28} color={C.labelSecondary} />
         <Txt kind="largeTitle" style={styles.introTitle}>Wind down</Txt>
         <Txt kind="body" tone="secondary" style={styles.introText}>
-          A {TOTAL_SEC}-second wind-down — curated imagery, sound and light, designed to settle your
+          A {TOTAL_SEC}-second wind-down: curated imagery, sound and light, designed to settle your
           body for sleep. Use it while you set tomorrow's alarm and pick your habits.
         </Txt>
       </View>
@@ -279,10 +285,19 @@ export default function GoodnightScreen() {
     opacity: withTiming(done ? 1 : 0, { duration: 900 }),
   }));
 
+  // The same close disc as the player's, above everything, at every
+  // point in the sequence. Swiping the modal down closes it too.
+  const close = (
+    <View style={[styles.topBar, { paddingTop: insets.top + SP.xs }]}>
+      <IconButton icon="x" label="Close" disc size={26} onPress={() => router.back()} />
+    </View>
+  );
+
   if (phase === "intro") {
     return (
       <View style={styles.container}>
         <Intro onBegin={() => setPhase("playing")} onLeave={() => router.back()} />
+        {close}
       </View>
     );
   }
@@ -311,22 +326,21 @@ export default function GoodnightScreen() {
         </LinePanel>
       )}
 
-      {/* The end: the next alarm and one button, at the foot of the screen */}
+      {/* The end: the player's glass dock, holding the next alarm and
+          one button, at the foot of the screen */}
       {done && (
         <Animated.View
-          style={[styles.endWrap, { paddingBottom: Math.max(insets.bottom, SP.lg) + SP.xl }, endStyle]}
+          style={[styles.dockWrap, { paddingBottom: Math.max(insets.bottom, SP.lg) }, endStyle]}
         >
-          <Icon name="moon" size={28} color={C.labelSecondary} />
-          <Txt kind="largeTitle" style={styles.goodnight}>Goodnight</Txt>
-          <Txt kind="subheadline" tone="secondary" style={styles.endMeta}>
-            {nextAlarm
-              ? `${formatTime(nextAlarm.next_fire_at)} · ${nextAlarm.label}`
-              : "No alarm set for the morning"}
-          </Txt>
-          <Button title="Dim the app" tone="prominent" onPress={() => router.back()} style={styles.primary} />
-          <Txt kind="footnote" tone="tertiary" style={styles.endCaption}>
-            Takes you back with the whole app on its black background, ready to set down.
-          </Txt>
+          <Glass glassEffectStyle="clear" style={[styles.dock, !GLASS_AVAILABLE && GLASS_FALLBACK]}>
+            <Txt kind="title2">Goodnight</Txt>
+            <Txt kind="subheadline" tone="secondary" style={styles.dockMeta}>
+              {nextAlarm
+                ? `${formatTime(nextAlarm.next_fire_at)} · ${nextAlarm.label}`
+                : "No alarm set for the morning"}
+            </Txt>
+            <Button title="Lights out" tone="prominent" onPress={() => router.back()} />
+          </Glass>
         </Animated.View>
       )}
 
@@ -335,6 +349,8 @@ export default function GoodnightScreen() {
           <Txt kind="footnote" tone="tertiary">Tap anywhere to finish</Txt>
         </View>
       )}
+
+      {close}
     </Pressable>
   );
 }
@@ -342,6 +358,18 @@ export default function GoodnightScreen() {
 const styles = StyleSheet.create({
   container: { flex: 1, backgroundColor: C.bg },
   veil: { backgroundColor: C.bg },
+
+  // Top chrome, laid over whatever the screen is showing
+  topBar: {
+    position: "absolute",
+    top: 0,
+    left: 0,
+    right: 0,
+    flexDirection: "row",
+    alignItems: "center",
+    paddingHorizontal: SP.md,
+    paddingBottom: SP.sm,
+  },
 
   intro: {
     flex: 1,
@@ -390,29 +418,25 @@ const styles = StyleSheet.create({
   line: {
     textAlign: "center",
   },
-  endWrap: {
+  // The end dock: the player's floating sheet of glass, same inset,
+  // same corner, same padding.
+  dockWrap: {
     position: "absolute",
     left: 0,
     right: 0,
     bottom: 0,
-    alignItems: "center",
+    paddingHorizontal: SP.md,
+  },
+  dock: {
+    borderRadius: R.xxl,
+    overflow: "hidden",
     paddingHorizontal: SP.xl,
-    paddingTop: SP.xxxl,
-    backgroundColor: C.scrim,
+    paddingTop: SP.lg,
+    paddingBottom: SP.md + SP.lg,
   },
-  goodnight: {
-    marginTop: SP.md,
-  },
-  endMeta: {
+  dockMeta: {
     marginTop: SP.xs,
-    marginBottom: SP.xxl,
-  },
-  primary: {
-    alignSelf: "stretch",
-  },
-  endCaption: {
-    marginTop: SP.sm,
-    textAlign: "center",
+    marginBottom: SP.xl,
   },
   skipHint: {
     position: "absolute",
