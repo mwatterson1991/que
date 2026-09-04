@@ -1,9 +1,9 @@
 import { memo } from "react";
-import { View, Pressable, StyleSheet } from "react-native";
+import { View, StyleSheet } from "react-native";
 import { Feather } from "@expo/vector-icons";
 import { useVideoPlayer } from "expo-video";
-import { Txt } from "@/components/ui";
-import { C, R, SP, PRESS_OPACITY } from "@/lib/tokens";
+import { Txt, Press } from "@/components/ui";
+import { C, R, SP } from "@/lib/tokens";
 import { channelArtwork, displayName, videoForChannel } from "@/lib/catalog";
 import { Artwork } from "@/components/SessionCard";
 import {
@@ -13,7 +13,6 @@ import {
   Glass,
   GLASS_AVAILABLE,
   GLASS_FALLBACK,
-  tapFeedback,
 } from "@/components/cardLayout";
 
 // The STATION card: the upsell at the END of every shelf. Not a track,
@@ -29,6 +28,7 @@ import {
 const PROMISE: Record<string, string> = {
   Naturescapes: "A new recording every morning from a different place across the world.",
   "Positive Words": "A different reading every morning.",
+  Stoicism: "Marcus Aurelius, Seneca and Epictetus, read aloud at dawn.",
   Frequencies: "Every tone, tuned to how you want to wake.",
   Hypnotherapy: "Every guided session, narrated by Brian.",
   Horoscope: "A fresh reading for your sign every morning.",
@@ -66,12 +66,9 @@ function ChannelCard({
   });
 
   return (
-    <Pressable
-      onPress={() => {
-        tapFeedback();
-        onPress(channel);
-      }}
-      style={({ pressed }) => [styles.frameWrap, pressed && styles.pressed]}
+    <Press
+      onPress={() => onPress(channel)}
+      style={styles.frameWrap}
       accessibilityRole="button"
       accessibilityLabel={`${name} station. ${promise} ${meta}. Opens premium.`}
     >
@@ -107,7 +104,7 @@ function ChannelCard({
           </View>
         </View>
       </Glass>
-    </Pressable>
+    </Press>
   );
 }
 
@@ -119,9 +116,6 @@ const styles = StyleSheet.create({
     height: CARD_H,
     // Room above the frame for the two cards behind it to peek out.
     paddingTop: DECK_STEP * 2,
-  },
-  pressed: {
-    opacity: PRESS_OPACITY,
   },
   // The pile: the same rounded shape, narrower and dimmer with each
   // step back, anchored to the foot so only a top edge shows.

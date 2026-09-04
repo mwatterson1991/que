@@ -1,4 +1,4 @@
-import { Children, Fragment, isValidElement, type ReactNode } from "react";
+import { Children, Fragment, isValidElement, useCallback, type ReactNode } from "react";
 import {
   Pressable,
   StyleSheet,
@@ -15,16 +15,16 @@ import {
   type ViewStyle,
 } from "react-native";
 import { Feather, Ionicons } from "@expo/vector-icons";
+import Animated, { useAnimatedStyle, useSharedValue, withSpring } from "react-native-reanimated";
 import { C, R, SP, TYPE, PRESS_OPACITY, type TypeKind } from "@/lib/tokens";
-
-let Haptics: any = null;
-try { Haptics = require("expo-haptics"); } catch {}
+import { feel, PRESS_SCALE, PRESS_SPRING } from "@/lib/feel";
 
 /**
  * ui.tsx — the primitives every screen is built from.
  *
  * They are UIKit shapes, drawn with UIKit's dark values and a white accent:
  *
+ *   Press       the one pressable: spring down on touch, light haptic
  *   Screen      black ground
  *   Txt         text in one of Apple's text styles and one label colour
  *   Icon        a Feather glyph — the app's one icon set (thin line)
@@ -41,6 +41,60 @@ try { Haptics = require("expo-haptics"); } catch {}
  * Nothing here has a shadow, a gradient or a blur. If a screen needs a
  * shape that is not here, add it here, not in the screen.
  */
+
+// ─── Press ───────────────────────────────────────────────────────────────────
+// The one pressable. Every button, card and tile is built on it so the
+// whole app moves the same way under a finger: a small spring down on
+// touch, a spring back on release, and a light tap through the haptic
+// engine. `style` must be a plain style or array (not a function): the
+// press state is expressed by the spring, not by a style swap.
+
+const AnimatedPressable = Animated.createAnimatedComponent(Pressable);
+
+export function Press({
+  scale = PRESS_SCALE,
+  haptic = true,
+  style,
+  onPressIn,
+  onPressOut,
+  onPress,
+  ...rest
+}: Omit<PressableProps, "style"> & {
+  /** How far it sinks on touch. 1 disables the motion. */
+  scale?: number;
+  /** A light tap on press. Off for controls that give their own. */
+  haptic?: boolean;
+  style?: StyleProp<ViewStyle>;
+}) {
+  const s = useSharedValue(1);
+  const anim = useAnimatedStyle(() => ({ transform: [{ scale: s.value }] }));
+  const pressIn = useCallback(
+    (e: any) => {
+      s.value = withSpring(scale, PRESS_SPRING);
+      onPressIn?.(e);
+    },
+    [scale, onPressIn, s]
+  );
+  const pressOut = useCallback(
+    (e: any) => {
+      s.value = withSpring(1, PRESS_SPRING);
+      onPressOut?.(e);
+    },
+    [onPressOut, s]
+  );
+  return (
+    <AnimatedPressable
+      onPressIn={pressIn}
+      onPressOut={pressOut}
+      onPress={(e) => {
+        if (haptic) feel.tap();
+        onPress?.(e);
+      }}
+      style={[style, anim]}
+      {...rest}
+    />
+  );
+}
 
 // ─── Screen ──────────────────────────────────────────────────────────────────
 
@@ -329,7 +383,10 @@ export function Row({
   }
   return (
     <Pressable
-      onPress={onPress}
+      onPress={() => {
+        feel.tap();
+        onPress?.();
+      }}
       style={({ pressed }) => [styles.row, pressed && styles.rowPressed, style]}
       accessibilityRole="button"
       accessibilityLabel={accessibilityLabel ?? (value ? `${title}, ${value}` : title)}
@@ -357,7 +414,7 @@ export function Toggle({
       value={value}
       disabled={disabled}
       onValueChange={(v) => {
-        Haptics?.impactAsync?.(Haptics.ImpactFeedbackStyle?.Light);
+        feel.toggle(v);
         onValueChange(v);
       }}
       trackColor={{ true: C.switchOn, false: C.fillHighest }}
@@ -397,29 +454,21 @@ export function Button({
     tone === "prominent" ? "onAccent" : tone === "destructive" ? "danger" : tone === "plain" ? "accent" : "primary";
   const iconColor = TONE[labelTone];
   return (
-    <Pressable
+    <Press
       accessibilityRole="button"
       accessibilityLabel={title}
       accessibilityState={{ disabled: !!disabled }}
       disabled={disabled}
-      onPress={(e) => {
-        if (haptic) Haptics?.impactAsync?.(Haptics.ImpactFeedbackStyle?.Light);
-        onPress?.(e);
-      }}
-      style={({ pressed }) => [
-        styles.btn,
-        styles[`btn_${tone}`],
-        pressed && { opacity: PRESS_OPACITY },
-        disabled && { opacity: 0.35 },
-        style,
-      ]}
+      haptic={haptic}
+      onPress={onPress}
+      style={[styles.btn, styles[`btn_${tone}`], disabled && { opacity: 0.35 }, style]}
       {...rest}
     >
       {icon && <Glyph name={icon} size={20} color={iconColor} />}
       <Txt kind="headline" tone={labelTone} style={textStyle}>
         {title}
       </Txt>
-    </Pressable>
+    </Press>
   );
 }
 
@@ -446,19 +495,15 @@ export function IconButton({
   style?: StyleProp<ViewStyle>;
 }) {
   return (
-    <Pressable
+    <Press
       accessibilityRole="button"
       accessibilityLabel={label}
       accessibilityState={{ disabled: !!disabled }}
       disabled={disabled}
       hitSlop={6}
+      scale={0.9}
       onPress={onPress}
-      style={({ pressed }) => [
-        styles.iconBtn,
-        pressed && { opacity: PRESS_OPACITY },
-        disabled && { opacity: 0.35 },
-        style,
-      ]}
+      style={[styles.iconBtn, disabled && { opacity: 0.35 }, style]}
       {...rest}
     >
       {disc ? (
@@ -470,7 +515,7 @@ export function IconButton({
       ) : (
         <Glyph name={icon} size={size} color={color} />
       )}
-    </Pressable>
+    </Press>
   );
 }
 

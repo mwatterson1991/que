@@ -25,10 +25,8 @@ import { useAlarms, useSessions } from "@/lib/useSupabase";
 import { rollForward, scheduleAlarm, cancelAlarm, syncAlarms } from "@/lib/alarmScheduler";
 import { artworkFor } from "@/lib/catalog";
 import { Divider, Empty, Screen, Toggle, Txt } from "@/components/ui";
-import { C, R, SP, TYPE } from "@/lib/tokens";
-
-let Haptics: any = null;
-try { Haptics = require("expo-haptics"); } catch {}
+import { feel } from "@/lib/feel";
+import { C, R, SP } from "@/lib/tokens";
 import type { Database } from "@/lib/database.types";
 
 type Alarm = Database["public"]["Tables"]["alarms"]["Row"];
@@ -94,18 +92,20 @@ function DeleteAction({
 }
 
 // ─── One alarm row ─────────────────────────────────────────
-// The Clock app's row, with the sound's poster in front of it:
+// The Clock app's row, with a small poster of the sound in front of it:
 //
-//   [ artwork ]  6:30 AM                                          (o)
-//   [         ]  Calm & Centered · 7 min
+//   [art]  6:30 AM
+//          Calm & Centered · 7 min                                (o)
 //
-// The poster is exactly as tall as the text block beside it: its top sits
-// on the top of the time digits, its bottom on the bottom of the sound
-// line. The switch is centred on the time line, and the sound line runs
-// the full width beneath it, right to the row's edge. An alarm that is
-// off dims so the bright rows are the ones that will fire.
-const BODY_GAP = SP.xs;
-const ART = TYPE.clock.lineHeight + BODY_GAP + TYPE.subheadline.lineHeight;
+// Three columns: a 56pt thumbnail, the text column (ultralight time
+// digits with the sound line under them), and the switch. Thumbnail and
+// switch are both centred on the whole row, not on the time line. An
+// alarm that is off dims its digits and poster so the bright rows are the
+// ones that will fire.
+const ART = 56;
+const ART_GAP = SP.lg;
+/** Where the text column starts, so the hairline between rows can meet it. */
+const TEXT_INSET = SP.screen + ART + ART_GAP;
 
 function AlarmRow({
   item,
@@ -123,7 +123,8 @@ function AlarmRow({
   const { hour, ampm } = formatTime(item.next_fire_at);
   const soundName = session?.title || "Default";
   const duration = session ? `${Math.round(session.duration_sec / 60)} min` : "10 min";
-  const tone = item.enabled ? "primary" : "tertiary";
+  const tone = item.enabled ? "primary" : "secondary";
+  const bodyTone = item.enabled ? "secondary" : "tertiary";
 
   return (
     <ReanimatedSwipeable
@@ -144,8 +145,10 @@ function AlarmRow({
       )}
     >
       <Pressable
-        onPressIn={() => Haptics?.impactAsync?.(Haptics.ImpactFeedbackStyle?.Light)}
-        onPress={() => onOpen(item)}
+        onPress={() => {
+          feel.tap();
+          onOpen(item);
+        }}
         style={({ pressed }) => [styles.row, pressed && styles.rowPressed]}
         accessibilityRole="button"
         accessibilityLabel={`Edit ${item.label || "Alarm"}, ${hour} ${ampm}, ${soundName}, ${duration}`}
@@ -163,21 +166,21 @@ function AlarmRow({
           <View style={styles.art} />
         )}
         <View style={styles.body}>
-          <View style={styles.timeRow}>
-            <View style={styles.time}>
-              <Txt kind="clock" tone={tone} numberOfLines={1}>{hour}</Txt>
-              <Txt kind="title3" tone={tone} style={styles.ampm}>{ampm}</Txt>
-            </View>
-            <Toggle
-              value={item.enabled}
-              onValueChange={(val) => onToggle(item.id, val)}
-              accessibilityLabel={`${item.label || "Alarm"} at ${hour} ${ampm}`}
-            />
+          <View style={styles.time}>
+            <Txt kind="clockRow" tone={tone} numberOfLines={1} maxFontSizeMultiplier={1.2}>
+              {hour}
+            </Txt>
+            <Txt kind="body" tone={tone} style={styles.ampm}>{ampm}</Txt>
           </View>
-          <Txt kind="subheadline" tone={item.enabled ? "secondary" : "tertiary"} numberOfLines={2}>
+          <Txt kind="subheadline" tone={bodyTone} numberOfLines={2}>
             {soundName} · {duration}
           </Txt>
         </View>
+        <Toggle
+          value={item.enabled}
+          onValueChange={(val) => onToggle(item.id, val)}
+          accessibilityLabel={`${item.label || "Alarm"} at ${hour} ${ampm}`}
+        />
       </Pressable>
     </ReanimatedSwipeable>
   );
@@ -202,7 +205,7 @@ export default function AlarmsScreen() {
   // Swipe reveals Delete; the Alert is the actual commit point, because a
   // stray swipe should never silently drop someone's wake-up.
   const confirmDelete = useCallback((item: Alarm) => {
-    Haptics?.notificationAsync?.(Haptics.NotificationFeedbackType?.Warning);
+    feel.warn();
     Alert.alert("Delete alarm?", item.label || "This alarm", [
       { text: "Cancel", style: "cancel" },
       {
@@ -309,7 +312,7 @@ export default function AlarmsScreen() {
         >
           {alarms.map((item, i) => (
             <View key={item.id}>
-              {i > 0 && <Divider />}
+              {i > 0 && <Divider inset={TEXT_INSET} />}
               <AlarmRow
                 item={item}
                 session={sessionMap[item.mantra_id]}
@@ -319,7 +322,7 @@ export default function AlarmsScreen() {
               />
             </View>
           ))}
-          <Divider />
+          <Divider inset={TEXT_INSET} />
         </ScrollView>
       )}
     </Screen>
@@ -342,10 +345,10 @@ const styles = StyleSheet.create({
   },
   row: {
     flexDirection: "row",
-    alignItems: "flex-start",
-    gap: SP.lg,
+    alignItems: "center",
+    gap: ART_GAP,
     paddingHorizontal: SP.screen,
-    paddingVertical: SP.lg,
+    paddingVertical: SP.md,
     backgroundColor: C.bg,
   },
   rowPressed: {
@@ -354,23 +357,18 @@ const styles = StyleSheet.create({
   art: {
     width: ART,
     height: ART,
-    borderRadius: R.xl,
+    borderRadius: R.md,
+    borderCurve: "continuous",
     backgroundColor: C.fill,
   },
   artOff: {
-    opacity: 0.4,
+    opacity: 0.5,
   },
   body: {
     flex: 1,
-    gap: BODY_GAP,
-  },
-  // The switch sits on the time line, centred on it.
-  timeRow: {
-    flexDirection: "row",
-    alignItems: "center",
+    gap: SP.xs,
   },
   time: {
-    flex: 1,
     flexDirection: "row",
     alignItems: "baseline",
   },

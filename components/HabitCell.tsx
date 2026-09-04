@@ -1,21 +1,21 @@
+import { useEffect } from "react";
 import { Pressable, View, StyleSheet } from "react-native";
 import Animated, {
   useSharedValue,
   useAnimatedStyle,
   withSequence,
-  withTiming,
+  withSpring,
 } from "react-native-reanimated";
 import { HabitIcon } from "@/components/HabitIcon";
 import { Icon, Txt } from "@/components/ui";
 import { C, R, SP } from "@/lib/tokens";
+import { feel, PRESS_SPRING } from "@/lib/feel";
 
-let Haptics: any = null;
-try { Haptics = require("expo-haptics"); } catch {}
-
-// The row never moves. The only motion is the check control itself dipping
-// under the thumb for 100ms, short enough that the state change, not the
-// animation, is what you notice.
-const DIP_MS = 50;
+// The row never moves. The only motion is the check control itself: it
+// bounces under the thumb on the app's shared spring, and the tick blooms
+// in behind it. Short enough that the state change, not the animation, is
+// what you notice.
+const BOUNCE_SCALE = 0.85;
 
 /** Minimum row height: a real row you can hit without aiming. */
 const CELL_HEIGHT = 64;
@@ -50,20 +50,34 @@ export default function HabitCell({
   onToggle: () => void;
   onEdit: () => void;
 }) {
+  const complete = count >= timesPerDay;
+
   const scale = useSharedValue(1);
   const checkStyle = useAnimatedStyle(() => ({ transform: [{ scale: scale.value }] }));
 
-  const complete = count >= timesPerDay;
+  // The tick itself: 0 is gone, 1 is drawn. It springs in the moment the
+  // habit completes and springs away when a tap undoes it.
+  const tick = useSharedValue(complete ? 1 : 0);
+  useEffect(() => {
+    tick.value = withSpring(complete ? 1 : 0, PRESS_SPRING);
+  }, [complete, tick]);
+  const tickStyle = useAnimatedStyle(() => ({
+    opacity: tick.value,
+    transform: [{ scale: 0.4 + 0.6 * tick.value }],
+  }));
 
   const handleToggle = () => {
     // Flip first, feel second, animate last: the parent applies the new
     // state synchronously, so by the time the haptic lands the tick is there.
+    const adding = count < timesPerDay;
     onToggle();
-    Haptics?.impactAsync?.(Haptics.ImpactFeedbackStyle?.Light);
-    scale.value = withSequence(
-      withTiming(0.86, { duration: DIP_MS }),
-      withTiming(1, { duration: DIP_MS })
-    );
+    feel.toggle(adding);
+    scale.value = withSequence(withSpring(BOUNCE_SCALE, PRESS_SPRING), withSpring(1, PRESS_SPRING));
+  };
+
+  const handleEdit = () => {
+    feel.tap();
+    onEdit();
   };
 
   const meta = [
@@ -78,7 +92,7 @@ export default function HabitCell({
   return (
     <View style={styles.cell}>
       <Pressable
-        onPress={onEdit}
+        onPress={handleEdit}
         style={({ pressed }) => [styles.main, pressed && styles.mainPressed]}
         accessibilityRole="button"
         accessibilityLabel={`${title}, ${status}`}
@@ -109,13 +123,16 @@ export default function HabitCell({
         accessibilityValue={{ text: status }}
       >
         <Animated.View style={[styles.check, complete && styles.checkOn, checkStyle]}>
-          {complete ? (
-            <Icon name="check" size={18} color={C.onAccent} />
-          ) : count > 0 ? (
+          {/* The tick is always mounted so it can bloom in and fade out;
+              the partial count sits underneath it until the ring fills. */}
+          {!complete && count > 0 && (
             <Txt kind="caption1" maxFontSizeMultiplier={1.2}>
               {count}
             </Txt>
-          ) : null}
+          )}
+          <Animated.View style={[styles.tick, tickStyle]} pointerEvents="none">
+            <Icon name="check" size={18} color={C.onAccent} />
+          </Animated.View>
         </Animated.View>
       </Pressable>
     </View>
@@ -167,5 +184,14 @@ const styles = StyleSheet.create({
   checkOn: {
     backgroundColor: C.label,
     borderColor: C.label,
+  },
+  tick: {
+    position: "absolute",
+    top: 0,
+    left: 0,
+    right: 0,
+    bottom: 0,
+    alignItems: "center",
+    justifyContent: "center",
   },
 });
