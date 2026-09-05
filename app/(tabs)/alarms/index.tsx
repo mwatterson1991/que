@@ -26,7 +26,7 @@ import { rollForward, scheduleAlarm, cancelAlarm, syncAlarms } from "@/lib/alarm
 import { artworkFor } from "@/lib/catalog";
 import { Divider, Empty, Screen, Toggle, Txt } from "@/components/ui";
 import { feel } from "@/lib/feel";
-import { C, R, SP } from "@/lib/tokens";
+import { C, R, SP, TYPE } from "@/lib/tokens";
 import type { Database } from "@/lib/database.types";
 
 type Alarm = Database["public"]["Tables"]["alarms"]["Row"];
@@ -97,15 +97,23 @@ function DeleteAction({
 //   [art]  6:30 AM
 //          Calm & Centered · 7 min                                (o)
 //
-// Three columns: a 56pt thumbnail, the text column (ultralight time
-// digits with the sound line under them), and the switch. Thumbnail and
-// switch are both centred on the whole row, not on the time line. An
-// alarm that is off dims its digits and poster so the bright rows are the
-// ones that will fire.
-const ART = 56;
+// Geometry, so every row is the same height and nothing drifts: the text
+// column is a fixed block of exactly ART_H points, made of the time line
+// (a box exactly TYPE.clockRow.lineHeight tall, digits and AM/PM sharing
+// one baseline), a TEXT_GAP, and one line of description at
+// TYPE.subheadline.lineHeight. The thumbnail is a square of the same
+// ART_H, so its top sits on the top of the digit line box and its bottom
+// on the bottom of the description line box. Row order is thumbnail,
+// text column, switch, all centred on the row's vertical axis, with
+// identical SP.md padding above and below. Separators run full bleed.
+// The description never wraps, and the two text lines are pinned to a
+// font size multiplier of 1 so Dynamic Type cannot break the square.
+const TEXT_GAP = SP.xs;
+/** Image edge: top of the digit line box to the bottom of the description. */
+const ART_H = TYPE.clockRow.lineHeight + TEXT_GAP + TYPE.subheadline.lineHeight;
 const ART_GAP = SP.lg;
-/** Where the text column starts, so the hairline between rows can meet it. */
-const TEXT_INSET = SP.screen + ART + ART_GAP;
+/** OFF alarms keep the photo but dim it, the way Clock greys its digits. */
+const ART_OFF_OPACITY = 0.45;
 
 function AlarmRow({
   item,
@@ -154,7 +162,8 @@ function AlarmRow({
         accessibilityLabel={`Edit ${item.label || "Alarm"}, ${hour} ${ampm}, ${soundName}, ${duration}`}
         accessibilityHint="Swipe left to delete"
       >
-        {/* A blank tile when the session is still loading, so the time never jumps. */}
+        {/* A plain photo, no tone or scrim, so the poster reads at full strength.
+            A blank tile while the session loads, so the time never jumps. */}
         {session ? (
           <Image
             source={{ uri: artworkFor(session) }}
@@ -166,13 +175,25 @@ function AlarmRow({
           <View style={styles.art} />
         )}
         <View style={styles.body}>
+          {/* maxFontSizeMultiplier is pinned to 1 on both lines: the photo is
+              sized to the sum of the two line boxes, and a Dynamic Type bump
+              would push the text out of the square it is meant to match. */}
           <View style={styles.time}>
-            <Txt kind="clockRow" tone={tone} numberOfLines={1} maxFontSizeMultiplier={1.2}>
+            <Txt kind="clockRow" tone={tone} numberOfLines={1} maxFontSizeMultiplier={1}>
               {hour}
             </Txt>
-            <Txt kind="body" tone={tone} style={styles.ampm}>{ampm}</Txt>
+            <Txt kind="body" tone="secondary" numberOfLines={1} maxFontSizeMultiplier={1}>
+              {ampm}
+            </Txt>
           </View>
-          <Txt kind="subheadline" tone={bodyTone} numberOfLines={2}>
+          <Txt
+            kind="subheadline"
+            tone={bodyTone}
+            numberOfLines={1}
+            ellipsizeMode="tail"
+            maxFontSizeMultiplier={1}
+            style={styles.description}
+          >
             {soundName} · {duration}
           </Txt>
         </View>
@@ -273,7 +294,7 @@ export default function AlarmsScreen() {
     })();
   }, [loading, alarms.length, sessions, add]);
 
-  // Enabling always schedules at a FUTURE time — a stale next_fire_at
+  // Enabling always schedules at a FUTURE time, because a stale next_fire_at
   // used to be scheduled as-is and silently dropped by the OS guard.
   const handleToggle = useCallback(async (id: string, enabled: boolean) => {
     const alarm = alarms.find((a) => a.id === id);
@@ -312,7 +333,7 @@ export default function AlarmsScreen() {
         >
           {alarms.map((item, i) => (
             <View key={item.id}>
-              {i > 0 && <Divider inset={TEXT_INSET} />}
+              {i > 0 && <Divider inset={0} />}
               <AlarmRow
                 item={item}
                 session={sessionMap[item.mantra_id]}
@@ -322,7 +343,7 @@ export default function AlarmsScreen() {
               />
             </View>
           ))}
-          <Divider inset={TEXT_INSET} />
+          <Divider inset={0} />
         </ScrollView>
       )}
     </Screen>
@@ -355,25 +376,30 @@ const styles = StyleSheet.create({
     backgroundColor: C.fill,
   },
   art: {
-    width: ART,
-    height: ART,
+    width: ART_H,
+    height: ART_H,
     borderRadius: R.md,
     borderCurve: "continuous",
     backgroundColor: C.fill,
+    opacity: 1,
   },
   artOff: {
-    opacity: 0.5,
+    opacity: ART_OFF_OPACITY,
   },
+  // Exactly ART_H tall: time line box + gap + one description line box.
   body: {
     flex: 1,
-    gap: SP.xs,
+    height: ART_H,
+    gap: TEXT_GAP,
   },
   time: {
+    height: TYPE.clockRow.lineHeight,
     flexDirection: "row",
     alignItems: "baseline",
+    gap: SP.xs,
   },
-  ampm: {
-    marginLeft: SP.xs,
+  description: {
+    height: TYPE.subheadline.lineHeight,
   },
 
   // Swipe-to-delete

@@ -1,8 +1,8 @@
-import { View, ScrollView, StyleSheet } from "react-native";
+import { View, StyleSheet } from "react-native";
 import { useRouter, useLocalSearchParams } from "expo-router";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
-import { Screen, Txt, Button } from "@/components/ui";
-import { SP } from "@/lib/tokens";
+import { Txt, Button } from "@/components/ui";
+import { C, SP } from "@/lib/tokens";
 import { PTS_PER_HABIT } from "@/lib/positivity";
 
 /**
@@ -69,16 +69,11 @@ export default function StatInfoScreen() {
         tip: "Mornings add up. Keep going.",
       };
 
+  // A form sheet sized to its contents: the sheet takes its height from
+  // this view, so nothing here may be flex: 1 or the sheet has nothing to
+  // measure and opens empty.
   return (
-    <Screen>
-      <ScrollView
-        contentContainerStyle={[
-          styles.scroll,
-          { paddingBottom: Math.max(insets.bottom, SP.lg) },
-        ]}
-        showsVerticalScrollIndicator={false}
-        bounces={false}
-      >
+    <View style={[styles.sheet, { paddingBottom: Math.max(insets.bottom, SP.lg) }]}>
         <View style={styles.head} accessible accessibilityLabel={`${hasValue ? n : ""} ${copy.title}`.trim()}>
           {hasValue && (
             <Txt kind="stat" maxFontSizeMultiplier={1.2} numberOfLines={1}>
@@ -105,14 +100,13 @@ export default function StatInfoScreen() {
         </View>
 
         <Button tone="gray" title="Done" onPress={() => router.back()} style={styles.done} />
-      </ScrollView>
-    </Screen>
+    </View>
   );
 }
 
 const styles = StyleSheet.create({
-  scroll: {
-    flexGrow: 1,
+  sheet: {
+    backgroundColor: C.bg,
     paddingHorizontal: SP.screen + SP.xs,
     // The sheet's grabber sits above; leave it room.
     paddingTop: SP.xxl,
@@ -121,7 +115,6 @@ const styles = StyleSheet.create({
     gap: SP.xs,
   },
   body: {
-    flex: 1,
     gap: SP.md,
     marginTop: SP.xl,
   },
