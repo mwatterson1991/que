@@ -499,7 +499,7 @@ export function useHabitLogs(rangedays = 31) {
 type GratitudeEntry = Database["public"]["Tables"]["gratitude_entries"]["Row"];
 
 const POINTS_PER_ENTRY = 1;
-const POINTS_COMPLETION_BONUS = 3; // extra points when all 7 are saved in a day
+const POINTS_COMPLETION_BONUS = 3; // extra points when the seventh line of the day lands; later lines earn the normal point
 
 function localDateString(date = new Date()) {
   // YYYY-MM-DD in the device's local timezone
@@ -613,6 +613,7 @@ export function useGratitudeEntries() {
           (e) => e.entry_date === entry_date
         ).length + 1; // +1 for the one we just saved
 
+        // There is no daily cap on lines; only the seventh one carries the bonus.
         if (savedForDate === 7) {
           points += POINTS_COMPLETION_BONUS;
         }

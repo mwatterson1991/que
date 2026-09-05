@@ -262,7 +262,7 @@ export function channelFor(session: Pick<Session, "id" | "category"> & { title?:
 // catalog (search, alarms, deep links) but is sold through the channel
 // card rather than shown on the shelf.
 const FEATURED: Record<string, string[]> = {
-  Naturescapes: ["local-crickets", "local-river", "local-ocean-waves"],
+  Naturescapes: ["local-ocean-waves", "local-crickets", "local-river"],
   "Positive Words": ["morning prayer (lord's prayer)", "local-words-kings", "local-words-grace"],
   // The synthetic voice reading (local-words-stoic) stays in the catalog
   // for alarms that already use it, but the shelf leads with real readers.
