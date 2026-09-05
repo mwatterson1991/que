@@ -5,8 +5,8 @@ import {
   ActivityIndicator,
   Alert,
   Image,
-  ScrollView,
 } from "react-native";
+import { useSafeAreaInsets } from "react-native-safe-area-context";
 import { TAB_BAR_INSET } from "@/lib/nav";
 import { useRouter, useFocusEffect } from "expo-router";
 import { useCallback, useEffect, useRef } from "react";
@@ -24,7 +24,8 @@ import Reanimated, {
 import { useAlarms, useSessions } from "@/lib/useSupabase";
 import { rollForward, scheduleAlarm, cancelAlarm, syncAlarms } from "@/lib/alarmScheduler";
 import { artworkFor } from "@/lib/catalog";
-import { Divider, Empty, Screen, Toggle, Txt } from "@/components/ui";
+import { Divider, Empty, IconButton, Screen, Toggle, Txt } from "@/components/ui";
+import { CompactHeader, LargeTitle, useCollapsingHeader } from "@/components/CollapsingHeader";
 import { feel } from "@/lib/feel";
 import { C, R, SP, TYPE } from "@/lib/tokens";
 import type { Database } from "@/lib/database.types";
@@ -212,6 +213,8 @@ export default function AlarmsScreen() {
   const { alarms, loading, refresh, add, update, remove } = useAlarms();
   const { sessions } = useSessions();
   const router = useRouter();
+  const insets = useSafeAreaInsets();
+  const { scrollY, onScroll } = useCollapsingHeader();
   const seedingRef = useRef(false);
   const healedRef = useRef(false);
   const syncedRef = useRef(false);
@@ -317,20 +320,50 @@ export default function AlarmsScreen() {
     }
   }, [alarms, update]);
 
+  // The page's own bar: Moon top-left, Add top-right, both on glass discs.
+  // It is drawn in every state, so the buttons never come and go.
+  const bar = (
+    <CompactHeader
+      title="Alarms"
+      scrollY={scrollY}
+      left={
+        <IconButton
+          icon="moon"
+          label="Goodnight, wind down for sleep"
+          disc
+          onPress={() => router.push("/goodnight" as any)}
+        />
+      }
+      right={<IconButton icon="add" label="Add alarm" disc onPress={() => router.push("/alarm-config" as any)} />}
+    />
+  );
+
   return (
     <Screen>
+      {bar}
       {loading ? (
-        <View style={styles.center}>
-          <ActivityIndicator color={C.labelSecondary} />
+        <View style={styles.flex}>
+          <LargeTitle title="Alarms" scrollY={scrollY} />
+          <View style={styles.center}>
+            <ActivityIndicator color={C.labelSecondary} />
+          </View>
         </View>
       ) : alarms.length === 0 ? (
-        <Empty title="No Alarms" body="Tap + to add one." />
+        <View style={styles.flex}>
+          <LargeTitle title="Alarms" scrollY={scrollY} />
+          <Empty title="No Alarms" body="Tap + to add one." />
+        </View>
       ) : (
-        <ScrollView
-          contentInsetAdjustmentBehavior="automatic"
-          contentContainerStyle={[styles.list, { paddingBottom: TAB_BAR_INSET }]}
+        <Reanimated.ScrollView
+          onScroll={onScroll}
+          scrollEventThrottle={16}
+          contentInsetAdjustmentBehavior="never"
+          // Our bar does not inset the content, so the home indicator is
+          // paid for here along with the floating tab bar.
+          contentContainerStyle={[styles.list, { paddingBottom: TAB_BAR_INSET + insets.bottom }]}
           showsVerticalScrollIndicator={false}
         >
+          <LargeTitle title="Alarms" scrollY={scrollY} />
           {alarms.map((item, i) => (
             <View key={item.id}>
               {i > 0 && <Divider inset={0} />}
@@ -344,13 +377,16 @@ export default function AlarmsScreen() {
             </View>
           ))}
           <Divider inset={0} />
-        </ScrollView>
+        </Reanimated.ScrollView>
       )}
     </Screen>
   );
 }
 
 const styles = StyleSheet.create({
+  flex: {
+    flex: 1,
+  },
   list: {
     paddingBottom: SP.xxxl,
   },
@@ -378,7 +414,7 @@ const styles = StyleSheet.create({
   art: {
     width: ART_H,
     height: ART_H,
-    borderRadius: R.md,
+    borderRadius: R.sm,
     borderCurve: "continuous",
     backgroundColor: C.fill,
     opacity: 1,

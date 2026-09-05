@@ -1,9 +1,11 @@
 import { useRef } from "react";
 import { TAB_BAR_INSET } from "@/lib/nav";
-import { View, ScrollView, StyleSheet, Share, Pressable } from "react-native";
-import { Stack, useRouter, useLocalSearchParams } from "expo-router";
+import { View, StyleSheet, Share, Pressable } from "react-native";
+import { useRouter, useLocalSearchParams } from "expo-router";
+import { useSafeAreaInsets } from "react-native-safe-area-context";
 import Animated, { useAnimatedStyle, useSharedValue, withSpring } from "react-native-reanimated";
 import { Screen, Txt, IconButton } from "@/components/ui";
+import { CompactHeader, LargeTitle, useCollapsingHeader } from "@/components/CollapsingHeader";
 import { C, R, SP } from "@/lib/tokens";
 import { feel, PRESS_SCALE, PRESS_SPRING } from "@/lib/feel";
 import { Ticker } from "@/components/Ticker";
@@ -95,6 +97,8 @@ export default function ProfileScreen() {
   const router = useRouter();
   const { from } = useLocalSearchParams<{ from?: string }>();
   const chartRef = useRef(null);
+  const insets = useSafeAreaInsets();
+  const { scrollY, onScroll } = useCollapsingHeader();
   const { profile } = useProfile();
   const { habits } = useHabits();
   const { entries } = useGratitudeEntries();
@@ -136,21 +140,28 @@ export default function ProfileScreen() {
 
   return (
     <Screen>
-      <Stack.Screen
-        options={{
-          title: "Progress",
-          headerLeft: backTarget
-            ? () => <IconButton icon="chevron-left" label="Back" onPress={goBack} />
-            : undefined,
-          headerRight: () => (
-            <View style={styles.barItems}>
-              <IconButton icon="share" label="Share" onPress={handleShare} />
-              <IconButton icon="settings" label="Settings" onPress={() => router.push("/settings" as any)} />
-            </View>
-          ),
-        }}
+      {/* The page's own bar: the way back (only when another tab sent you
+          here) top-left, share and settings top-right, all on glass discs. */}
+      <CompactHeader
+        title="Progress"
+        scrollY={scrollY}
+        left={backTarget ? <IconButton icon="chevron-left" label="Back" disc onPress={goBack} /> : undefined}
+        right={
+          <View style={styles.barItems}>
+            <IconButton icon="share" label="Share" disc onPress={handleShare} />
+            <IconButton icon="settings" label="Settings" disc onPress={() => router.push("/settings" as any)} />
+          </View>
+        }
       />
-      <ScrollView contentInsetAdjustmentBehavior="automatic" contentContainerStyle={[styles.scroll, { paddingBottom: TAB_BAR_INSET }]}>
+      <Animated.ScrollView
+        onScroll={onScroll}
+        scrollEventThrottle={16}
+        contentInsetAdjustmentBehavior="never"
+        // Our bar does not inset the content, so the home indicator is paid
+        // for here along with the floating tab bar.
+        contentContainerStyle={[styles.scroll, { paddingBottom: TAB_BAR_INSET + insets.bottom }]}
+      >
+        <LargeTitle title="Progress" scrollY={scrollY} />
         <ScoreTicker chartRef={chartRef} lifetimeScore={profile?.score ?? 0} onInfo={openInfo} />
 
         <View style={styles.tiles}>
@@ -158,7 +169,7 @@ export default function ProfileScreen() {
           <Tile kind="habits" value={habits.length} label="Habits" />
           <Tile kind="streak" value={profile?.day_streak ?? 0} label="Streak" />
         </View>
-      </ScrollView>
+      </Animated.ScrollView>
     </Screen>
   );
 }

@@ -39,11 +39,11 @@ const TAIL = `M${TAIL_FROM.x},${TAIL_FROM.y} L${TAIL_TO.x},${TAIL_TO.y}`;
 const TAIL_LEN = Math.hypot(TAIL_TO.x - TAIL_FROM.x, TAIL_TO.y - TAIL_FROM.y);
 
 // Timing, in ms.
-const RING_MS = 620;
-const TAIL_AT = 540;
-const TAIL_MS = 170;
-const HOLD_MS = 140;
-const OUT_MS = 300;
+const RING_MS = 460;
+const TAIL_AT = 380;
+const TAIL_MS = 130;
+const HOLD_MS = 90;
+const OUT_MS = 240;
 
 let shownThisLaunch = false;
 

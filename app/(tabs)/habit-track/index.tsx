@@ -1,7 +1,8 @@
 import { useCallback, useEffect, useRef, useState } from "react";
 import { TAB_BAR_INSET } from "@/lib/nav";
-import { View, FlatList, Pressable, StyleSheet, ActivityIndicator, Alert } from "react-native";
-import { Stack, useRouter, useFocusEffect } from "expo-router";
+import { View, Pressable, StyleSheet, ActivityIndicator, Alert } from "react-native";
+import { useRouter, useFocusEffect } from "expo-router";
+import { useSafeAreaInsets } from "react-native-safe-area-context";
 // The Reanimated Swipeable, the same one the alarms list uses: it shares the
 // Reanimated driver with the check control's dip.
 import ReanimatedSwipeable from "react-native-gesture-handler/ReanimatedSwipeable";
@@ -19,6 +20,7 @@ import { useHabits, useHabitLogs } from "@/lib/useSupabase";
 import { useAuth } from "@/lib/auth";
 import { clearReminder } from "@/lib/habitReminders";
 import { Screen, Empty, Button, Divider, IconButton, Txt, Icon } from "@/components/ui";
+import { CompactHeader, LargeTitle, useCollapsingHeader } from "@/components/CollapsingHeader";
 import { C, R, SP } from "@/lib/tokens";
 import { feel } from "@/lib/feel";
 import HabitCell, { HABIT_SEPARATOR_INSET } from "@/components/HabitCell";
@@ -116,6 +118,8 @@ function DeleteAction({
 export default function HabitTrackScreen() {
   const router = useRouter();
   const { user, isGuest } = useAuth();
+  const insets = useSafeAreaInsets();
+  const { scrollY, onScroll } = useCollapsingHeader();
   const { habits, loading: habitsLoading, refresh: refreshHabits, archive } = useHabits();
   const { logs, loading: logsLoading, refresh: refreshLogs, logHabit, removeLog, todayCount } = useHabitLogs(31);
 
@@ -236,20 +240,24 @@ export default function HabitTrackScreen() {
   const editHabit = (habitId: string) => router.push(`/habit-add?id=${habitId}` as any);
   const seeGraph = () => router.push("/profile-page?from=habits" as any);
 
+  // The page's own bar: the plus top-right on a glass disc. Drawn in every
+  // state, so it never comes and goes.
   const header = (
-    <Stack.Screen
-      options={{
-        title: "Habits",
-        headerRight: () => <IconButton icon="plus" label="Add habit" onPress={addHabit} />,
-      }}
+    <CompactHeader
+      title="Habits"
+      scrollY={scrollY}
+      right={<IconButton icon="plus" label="Add habit" disc onPress={addHabit} />}
     />
   );
 
   if (loading) {
     return (
-      <Screen style={styles.centered}>
+      <Screen>
         {header}
-        <ActivityIndicator color={C.labelSecondary} />
+        <LargeTitle title="Habits" scrollY={scrollY} />
+        <View style={styles.centered}>
+          <ActivityIndicator color={C.labelSecondary} />
+        </View>
       </Screen>
     );
   }
@@ -259,6 +267,7 @@ export default function HabitTrackScreen() {
     return (
       <Screen>
         {header}
+        <LargeTitle title="Habits" scrollY={scrollY} />
         <View style={styles.gate}>
           <Empty
             title="Small habits, tracked daily."
@@ -280,15 +289,20 @@ export default function HabitTrackScreen() {
   return (
     <Screen>
       {header}
-      <FlatList
+      <Reanimated.FlatList
         data={habits}
         keyExtractor={(h) => h.id}
-        contentInsetAdjustmentBehavior="automatic"
-        contentContainerStyle={[styles.list, { paddingBottom: TAB_BAR_INSET }]}
+        onScroll={onScroll}
+        scrollEventThrottle={16}
+        contentInsetAdjustmentBehavior="never"
+        // Our bar does not inset the content, so the home indicator is paid
+        // for here along with the floating tab bar.
+        contentContainerStyle={[styles.list, { paddingBottom: TAB_BAR_INSET + insets.bottom }]}
         ListHeaderComponent={
-          allDone ? (
-            <DoneHero points={points} streak={longestStreak} onSeeGraph={seeGraph} />
-          ) : null
+          <>
+            <LargeTitle title="Habits" scrollY={scrollY} />
+            {allDone && <DoneHero points={points} streak={longestStreak} onSeeGraph={seeGraph} />}
+          </>
         }
         renderItem={({ item }) => (
           <ReanimatedSwipeable
@@ -358,6 +372,7 @@ export default function HabitTrackScreen() {
 
 const styles = StyleSheet.create({
   centered: {
+    flex: 1,
     alignItems: "center",
     justifyContent: "center",
   },
