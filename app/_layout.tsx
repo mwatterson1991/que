@@ -17,6 +17,7 @@ import { initBackgroundAudio } from "@/lib/backgroundAudio";
 import { loadVolume } from "@/lib/audio";
 import { STACK, BARE, SHEET } from "@/lib/nav";
 import { C } from "@/lib/tokens";
+import QueIntro from "@/components/QueIntro";
 import { WELCOME_COUNT_KEY, WELCOME_MAX_SHOWS } from "./welcome";
 
 SplashScreen.preventAutoHideAsync();
@@ -224,7 +225,7 @@ export default function RootLayout() {
           <Stack.Screen name="score-info" options={{ ...BARE, presentation: "modal", animation: "slide_from_bottom" }} />
           <Stack.Screen
             name="stat-info"
-            options={{ ...BARE, presentation: "formSheet", sheetAllowedDetents: [0.5], sheetGrabberVisible: true, sheetCornerRadius: 28 }}
+            options={{ ...BARE, presentation: "formSheet", sheetAllowedDetents: "fitToContents", sheetGrabberVisible: true, sheetCornerRadius: 28 }}
           />
 
           {/* Editors present as sheets */}
@@ -240,6 +241,8 @@ export default function RootLayout() {
           <Stack.Screen name="haptic-picker" options={{ title: "Haptics" }} />
           <Stack.Screen name="alarm-debug" options={{ title: "Alarm Diagnostics" }} />
         </Stack>
+        {/* The Q draws itself in over everything on a cold launch. */}
+        <QueIntro />
       </GestureHandlerRootView>
     </AuthProvider>
   );

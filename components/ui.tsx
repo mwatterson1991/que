@@ -18,6 +18,7 @@ import { Feather, Ionicons } from "@expo/vector-icons";
 import Animated, { useAnimatedStyle, useSharedValue, withSpring } from "react-native-reanimated";
 import { C, R, SP, TYPE, PRESS_OPACITY, type TypeKind } from "@/lib/tokens";
 import { feel, PRESS_SCALE, PRESS_SPRING } from "@/lib/feel";
+import { Glass, GLASS_AVAILABLE } from "@/components/cardLayout";
 
 /**
  * ui.tsx — the primitives every screen is built from.
@@ -479,7 +480,7 @@ export function IconButton({
   label,
   size = 24,
   color = C.accent,
-  /** A translucent disc behind the glyph, for placement over artwork. */
+  /** A Liquid Glass disc behind the glyph, the same glass as the player dock, for placement over artwork. */
   disc = false,
   disabled,
   style,
@@ -509,9 +510,9 @@ export function IconButton({
       {disc ? (
         // The disc is its own square view inside the hit area, so it can
         // never be stretched into an oval by whatever the parent lays out.
-        <View style={styles.disc}>
+        <Glass glassEffectStyle="clear" style={[styles.disc, !GLASS_AVAILABLE && styles.discFallback]}>
           <Glyph name={icon} size={Math.min(size, 22)} color={C.label} />
-        </View>
+        </Glass>
       ) : (
         <Glyph name={icon} size={size} color={color} />
       )}
@@ -688,6 +689,10 @@ const styles = StyleSheet.create({
     borderRadius: 20,
     alignItems: "center",
     justifyContent: "center",
+    overflow: "hidden",
+  },
+  // Where there is no Liquid Glass to bend the picture, a translucent fill.
+  discFallback: {
     backgroundColor: C.overlayFill,
   },
 

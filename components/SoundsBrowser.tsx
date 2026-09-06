@@ -1,6 +1,7 @@
 import { useMemo, useState, useCallback, ReactNode } from "react";
 import { useRouter } from "expo-router";
 import { View, FlatList, StyleSheet, ActivityIndicator } from "react-native";
+import Animated, { type ScrollHandlerProcessed } from "react-native-reanimated";
 import { Txt, Empty, SearchField } from "@/components/ui";
 import { C, SP } from "@/lib/tokens";
 import { useSessions } from "@/lib/useSupabase";
@@ -29,6 +30,12 @@ import type { Session } from "@/lib/types";
 // column of wide tiles while searching — with the search field as its
 // header, so the field never remounts (and never drops the keyboard)
 // when the first character is typed.
+//
+// The Sounds tab draws its own collapsing bar (CollapsingHeader), so it
+// hands in the large title as `header` and listens to the scroll through
+// `onScroll`; the list then leaves the top inset to the caller. Under a
+// native header (the alarm editor's picker) both are absent and the list
+// insets itself the usual way.
 
 type RailItem =
   | { kind: "channel"; channel: string; count: number }
@@ -92,12 +99,21 @@ function Rail({
 export default function SoundsBrowser({
   onPressSession,
   selectedId,
+  header,
+  onScroll,
   footer,
   bottomInset = SP.xxxl,
 }: {
   onPressSession: (session: Session) => void;
   /** When given, the browser is a picker: the matching card wears a tick. */
   selectedId?: string;
+  /**
+   * Rendered above the search field (the tab's large title). When given the
+   * caller owns the bar, so the list does not inset itself for a native one.
+   */
+  header?: ReactNode;
+  /** A Reanimated scroll handler, so the caller's bar can follow the list. */
+  onScroll?: ScrollHandlerProcessed;
   footer?: ReactNode;
   /** Room to leave under the list (the floating tab bar, or a picker's action bar). */
   bottomInset?: number;
@@ -187,24 +203,29 @@ export default function SoundsBrowser({
     );
 
   return (
-    <FlatList
+    <Animated.FlatList
       data={items}
       keyExtractor={(item) => (item.kind === "rail" ? `rail:${item.rail.channel}` : item.session.id)}
       renderItem={renderItem}
-      contentInsetAdjustmentBehavior="automatic"
+      onScroll={onScroll}
+      scrollEventThrottle={16}
+      contentInsetAdjustmentBehavior={header ? "never" : "automatic"}
       contentContainerStyle={{ paddingBottom: bottomInset }}
       showsVerticalScrollIndicator={false}
       keyboardDismissMode="on-drag"
       keyboardShouldPersistTaps="handled"
       ListHeaderComponent={
-        <SearchField
-          value={query}
-          onChangeText={setQuery}
-          onClear={() => setQuery("")}
-          placeholder="Search sounds, topics, goals"
-          accessibilityLabel="Search sounds"
-          style={styles.search}
-        />
+        <>
+          {header}
+          <SearchField
+            value={query}
+            onChangeText={setQuery}
+            onClear={() => setQuery("")}
+            placeholder="Search sounds, topics, goals"
+            accessibilityLabel="Search sounds"
+            style={styles.search}
+          />
+        </>
       }
       ListEmptyComponent={
         loading ? (

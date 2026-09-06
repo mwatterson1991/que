@@ -1,5 +1,5 @@
 import { useState, useEffect, useCallback } from "react";
-import { Stack, useRouter, useLocalSearchParams } from "expo-router";
+import { useRouter, useLocalSearchParams } from "expo-router";
 import {
   View,
   StyleSheet,
@@ -7,7 +7,9 @@ import {
   KeyboardAvoidingView,
   Platform,
 } from "react-native";
+import { useSafeAreaInsets } from "react-native-safe-area-context";
 import { Screen, Txt, Button, IconButton, Icon, Field } from "@/components/ui";
+import { CompactHeader, LargeTitle, useCollapsingHeader } from "@/components/CollapsingHeader";
 import { C, SP } from "@/lib/tokens";
 import { TAB_BAR_INSET } from "@/lib/nav";
 import { useAuth } from "@/lib/auth";
@@ -132,6 +134,8 @@ export default function SoundsScreen() {
   const { user } = useAuth();
   const params = useLocalSearchParams<{ suggest?: string }>();
   const [modalVisible, setModalVisible] = useState(false);
+  const insets = useSafeAreaInsets();
+  const { scrollY, onScroll } = useCollapsingHeader();
 
   useEffect(() => {
     if (params.suggest === "1") {
@@ -152,11 +156,15 @@ export default function SoundsScreen() {
     <Screen>
       {/* No bar action: the one thing this screen asks you to do is pick a
           sound. Suggesting one is a quiet link at the foot of the shelves. */}
-      <Stack.Screen options={{ title: "Sounds" }} />
+      <CompactHeader title="Sounds" scrollY={scrollY} />
       <SoundsBrowser
         onPressSession={(session) => router.push(`/player?id=${session.id}` as any)}
+        header={<LargeTitle title="Sounds" scrollY={scrollY} />}
+        onScroll={onScroll}
         footer={<Button title="Suggest a Sound" tone="plain" onPress={openSuggest} />}
-        bottomInset={TAB_BAR_INSET}
+        // Our bar does not inset the content, so the home indicator is paid
+        // for here along with the floating tab bar.
+        bottomInset={TAB_BAR_INSET + insets.bottom}
       />
       <SuggestionModal visible={modalVisible} onClose={closeModal} userId={user?.id} />
     </Screen>

@@ -262,7 +262,7 @@ export function channelFor(session: Pick<Session, "id" | "category"> & { title?:
 // catalog (search, alarms, deep links) but is sold through the channel
 // card rather than shown on the shelf.
 const FEATURED: Record<string, string[]> = {
-  Naturescapes: ["local-crickets", "local-river", "local-ocean-waves"],
+  Naturescapes: ["local-ocean-waves", "local-crickets", "local-river"],
   "Positive Words": ["morning prayer (lord's prayer)", "local-words-kings", "local-words-grace"],
   // The synthetic voice reading (local-words-stoic) stays in the catalog
   // for alarms that already use it, but the shelf leads with real readers.
@@ -347,17 +347,35 @@ export type VideoSource = string | number;
 
 const OCEAN = require("../assets/video/ocean.mp4") as number;
 
+// Pexels clips, chosen by Michael, streamed through the site's download
+// endpoint, which answers with the clip's largest file. This session
+// could not reach pexels.com to read the per-size file names, so once a
+// Pexels API key exists the app should resolve the 1080p portrait file
+// instead (see lib/pexels.ts when it lands).
+const pexVideo = (id: number) => `https://www.pexels.com/download/video/${id}/`;
+
 const VIDEO_BY_CHANNEL: Record<string, VideoSource> = {
-  Naturescapes: OCEAN,
+  Naturescapes: pexVideo(38594546), // Earth from orbit, Adis Resic
+  "Positive Words": pexVideo(28052212), // sun through a grassy field, Alazkan
+  Stoicism: pexVideo(13096730), // pages of a book turning, beytlik
+  Hypnotherapy: pexVideo(8795406), // a couple meditating, Anastasia Shuraeva
+  Horoscope: pexVideo(8095903), // the full moon, Abhijit Rout
 };
 const VIDEO_BY_SESSION: Record<string, VideoSource> = {
   "local-ocean-waves": OCEAN,
+  "local-stoic-med-2": pexVideo(29672321), // a hiker at sunset, Kefalonia, Matthias Groeneveld
+  "local-stoic-med-5": pexVideo(29672321),
+  "local-stoic-enchiridion": pexVideo(13096730),
+};
+// Database sessions are matched by lowercase title.
+const VIDEO_BY_TITLE: Record<string, VideoSource> = {
+  "morning prayer (lord's prayer)": pexVideo(28905443), // golden hour grass in a breeze, Joshua Woroniecki
 };
 
 export function videoForChannel(channel: string): VideoSource | null {
   return VIDEO_BY_CHANNEL[channel] ?? null;
 }
 
-export function videoForSession(session: Pick<Session, "id">): VideoSource | null {
-  return VIDEO_BY_SESSION[session.id] ?? null;
+export function videoForSession(session: Pick<Session, "id"> & { title?: string }): VideoSource | null {
+  return VIDEO_BY_SESSION[session.id] ?? (session.title ? VIDEO_BY_TITLE[session.title.toLowerCase()] : null) ?? null;
 }

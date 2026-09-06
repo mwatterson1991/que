@@ -339,7 +339,7 @@ export default function GoodnightScreen() {
                 ? `${formatTime(nextAlarm.next_fire_at)} · ${nextAlarm.label}`
                 : "No alarm set for the morning"}
             </Txt>
-            <Button title="Lights out" tone="prominent" onPress={() => router.back()} />
+            <Button title="Lights out" tone="prominent" onPress={() => router.replace("/player?id=local-crickets" as any)} />
           </Glass>
         </Animated.View>
       )}
